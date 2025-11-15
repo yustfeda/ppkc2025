@@ -159,7 +159,7 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
     }, []);
 
     useEffect(() => {
-        if (window.location.pathname === '/adminppkckece1') {
+        if (window.location.pathname === '/adminppkcsatu') {
             setIsAdminLoginOpen(true);
         }
     }, []);
