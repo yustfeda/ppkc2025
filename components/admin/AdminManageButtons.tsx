@@ -26,7 +26,7 @@ const AdminManageButtons: React.FC<AdminPageProps> = ({ showNotification, showCo
     const handleAddButton = () => {
         const newButton: ManagedButton = {
             id: `btn_${Date.now()}`,
-            label: 'Tombol Baru',
+            label: '',
             icon: 'fas fa-link',
             link: '#',
             formFields: [],
@@ -52,7 +52,7 @@ const AdminManageButtons: React.FC<AdminPageProps> = ({ showNotification, showCo
     const handleAddField = (buttonIndex: number) => {
         const newField: FormField = {
             id: `field_${Date.now()}`,
-            label: 'Label Baru',
+            label: '',
             type: 'text',
             required: false,
         };
@@ -74,25 +74,36 @@ const AdminManageButtons: React.FC<AdminPageProps> = ({ showNotification, showCo
         setButtons(newButtons);
     };
 
-    const inputClass = "p-2 border rounded text-sm w-full bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-brand-accent";
+    const inputClass = "peer form-input p-3 border rounded text-sm w-full bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-brand-accent";
+    const labelClass = "form-label text-sm text-gray-500 dark:text-gray-400";
+
 
     if (loading) return <div className="text-center p-4"><i className="fas fa-spinner fa-spin text-2xl text-brand-secondary"></i></div>;
 
     return (
-        <div className="bg-brand-light dark:bg-gray-900 p-6 rounded-lg shadow-md animate-fade-in">
-            <h1 className="text-2xl font-bold text-brand-dark dark:text-white mb-6">Kelola Tombol Navigasi</h1>
+        <div className="bg-white dark:bg-brand-primary p-6 rounded-lg shadow-md animate-fade-in">
+            <h1 className="text-2xl font-bold text-brand-primary dark:text-white mb-6">Kelola Tombol Navigasi</h1>
             <div className="space-y-4">
                 {buttons.map((button, buttonIndex) => (
-                    <div key={button.id} className="p-4 bg-white dark:bg-gray-800/50 rounded-lg shadow-sm">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <input value={button.label} onChange={e => handleButtonChange(buttonIndex, 'label', e.target.value)} className={inputClass} placeholder="Label Tombol" />
-                            <input value={button.icon} onChange={e => handleButtonChange(buttonIndex, 'icon', e.target.value)} className={inputClass} placeholder="Ikon (e.g., fas fa-link)" />
-                            <input value={button.link} onChange={e => handleButtonChange(buttonIndex, 'link', e.target.value)} className={inputClass} placeholder="URL Link (jika bukan form)" />
+                    <div key={button.id} className="p-4 bg-gray-50 dark:bg-brand-dark rounded-lg shadow-sm form-input-bg-dark">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="relative input-group">
+                                <input id={`label-${button.id}`} value={button.label} onChange={e => handleButtonChange(buttonIndex, 'label', e.target.value)} className={inputClass} placeholder=" " />
+                                <label htmlFor={`label-${button.id}`} className={labelClass}>Label Tombol</label>
+                            </div>
+                            <div className="relative input-group">
+                                <input id={`icon-${button.id}`} value={button.icon} onChange={e => handleButtonChange(buttonIndex, 'icon', e.target.value)} className={inputClass} placeholder=" " />
+                                <label htmlFor={`icon-${button.id}`} className={labelClass}>Ikon (e.g., fas fa-link)</label>
+                            </div>
+                            <div className="relative input-group">
+                                <input id={`link-${button.id}`} value={button.link} onChange={e => handleButtonChange(buttonIndex, 'link', e.target.value)} className={inputClass} placeholder=" " />
+                                <label htmlFor={`link-${button.id}`} className={labelClass}>URL Link (jika bukan form)</label>
+                            </div>
                         </div>
 
                         <div className="mt-4 pt-3 border-t dark:border-gray-700">
-                            <h3 className="text-sm font-semibold dark:text-white mb-2">Visibilitas Tombol</h3>
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                            <h3 className="text-sm font-semibold dark:text-white mb-2">Pengaturan Tombol</h3>
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-wrap">
                                 <label className="flex items-center gap-2 text-sm dark:text-gray-300 cursor-pointer">
                                     <input type="checkbox" checked={!!button.showOnGuest} onChange={e => handleButtonChange(buttonIndex, 'showOnGuest', e.target.checked)} className="h-4 w-4 rounded text-brand-secondary focus:ring-brand-secondary"/>
                                     Tampil di Global Panel (Guest)
@@ -101,21 +112,42 @@ const AdminManageButtons: React.FC<AdminPageProps> = ({ showNotification, showCo
                                     <input type="checkbox" checked={!!button.showOnUser} onChange={e => handleButtonChange(buttonIndex, 'showOnUser', e.target.checked)} className="h-4 w-4 rounded text-brand-secondary focus:ring-brand-secondary"/>
                                     Tampil di User Panel (Logged In)
                                 </label>
+                                {button.formFields && button.formFields.length > 0 && (
+                                     <label className="flex items-center gap-2 text-sm dark:text-gray-300 cursor-pointer">
+                                        <input type="checkbox" checked={!!button.includeInRecap} onChange={e => handleButtonChange(buttonIndex, 'includeInRecap', e.target.checked)} className="h-4 w-4 rounded text-brand-secondary focus:ring-brand-secondary"/>
+                                        Sertakan data form di Rekap
+                                    </label>
+                                )}
                             </div>
                         </div>
 
                         <div className="mt-4 pt-3 border-t dark:border-gray-700">
                             <h3 className="text-sm font-semibold dark:text-white mb-2">Form (Opsional)</h3>
-                            <input value={button.formTitle || ''} onChange={e => handleButtonChange(buttonIndex, 'formTitle', e.target.value)} className={`${inputClass} mb-2`} placeholder="Judul Form" />
+                             <div className="relative input-group mb-4">
+                                <input id={`form-title-${button.id}`} value={button.formTitle || ''} onChange={e => handleButtonChange(buttonIndex, 'formTitle', e.target.value)} className={`${inputClass}`} placeholder=" " />
+                                <label htmlFor={`form-title-${button.id}`} className={labelClass}>Judul Form</label>
+                             </div>
                             <div className="space-y-2">
                                 {(button.formFields || []).map((field, fieldIndex) => (
-                                    <div key={field.id} className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded">
-                                        <input value={field.label} onChange={e => handleFieldChange(buttonIndex, fieldIndex, 'label', e.target.value)} className={inputClass} placeholder="Label Field" />
-                                        <select value={field.type} onChange={e => handleFieldChange(buttonIndex, fieldIndex, 'type', e.target.value)} className={inputClass}>
-                                            <option value="text">Teks</option>
-                                            <option value="textarea">Text Area</option>
-                                        </select>
-                                        <button onClick={() => handleDeleteField(buttonIndex, field.id)} className="text-red-500 hover:text-red-700 p-2"><i className="fas fa-trash"></i></button>
+                                    <div key={field.id} className="grid grid-cols-1 sm:grid-cols-3 gap-2 p-2 bg-gray-100 dark:bg-gray-700/50 rounded form-input-bg-darkest">
+                                        <div className="relative input-group">
+                                            <input id={`field-label-${field.id}`} value={field.label} onChange={e => handleFieldChange(buttonIndex, fieldIndex, 'label', e.target.value)} className={inputClass} placeholder=" " />
+                                            <label htmlFor={`field-label-${field.id}`} className={labelClass}>Label Field</label>
+                                        </div>
+                                         <div className="relative input-group">
+                                            <select id={`field-type-${field.id}`} value={field.type} onChange={e => handleFieldChange(buttonIndex, fieldIndex, 'type', e.target.value)} className={inputClass}>
+                                                <option value="text">Teks</option>
+                                                <option value="textarea">Text Area</option>
+                                            </select>
+                                            <label htmlFor={`field-type-${field.id}`} className={labelClass}>Tipe Field</label>
+                                        </div>
+                                        <div className="flex items-center justify-end gap-4">
+                                            <label className="flex items-center gap-2 text-sm dark:text-gray-300 cursor-pointer">
+                                                <input type="checkbox" checked={field.required} onChange={e => handleFieldChange(buttonIndex, fieldIndex, 'required', e.target.checked)} className="h-4 w-4 rounded text-brand-secondary focus:ring-brand-secondary"/>
+                                                Wajib
+                                            </label>
+                                            <button onClick={() => handleDeleteField(buttonIndex, field.id)} className="text-red-500 hover:text-red-700 p-2"><i className="fas fa-trash"></i></button>
+                                        </div>
                                     </div>
                                 ))}
                                 <button onClick={() => handleAddField(buttonIndex)} className="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"><i className="fas fa-plus mr-1"></i>Tambah Field</button>

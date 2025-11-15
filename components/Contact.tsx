@@ -3,8 +3,8 @@ import React from 'react';
 const Contact: React.FC = () => {
   const whatsappNumber = "6285817938860";
   const emailAddress = "septianadanu06@gmail.com";
-  const whatsappLink = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Halo, saya ingin bertanya mengenai seleksi Paskibraka.")}`;
-  const emailLink = `mailto:${emailAddress}?subject=${encodeURIComponent("Pertanyaan Mengenai Seleksi Paskibraka")}`;
+  const whatsappLink = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Halo, saya ingin bertanya mengenai seleksi Paskibra.")}`;
+  const emailLink = `mailto:${emailAddress}?subject=${encodeURIComponent("Pertanyaan Mengenai Seleksi Paskibra")}`;
 
   return (
     <div className="bg-brand-light dark:bg-gray-800 flex items-center justify-center min-h-[calc(100vh-5rem)] p-4">

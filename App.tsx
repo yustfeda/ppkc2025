@@ -9,6 +9,7 @@ const App: React.FC = () => {
     const [user, setUser] = useState<User | null>(null);
     const [isAdmin, setIsAdmin] = useState(false);
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+    const [fadeOutLoader, setFadeOutLoader] = useState(false);
 
     useEffect(() => {
         const unsubscribe = onAuthChange((firebaseUser) => {
@@ -17,18 +18,18 @@ const App: React.FC = () => {
             const adminStatus = sessionStorage.getItem('isAdmin') === 'true';
             
             if (!firebaseUser) {
-                // If user logs out, clear admin status completely
                 sessionStorage.removeItem('isAdmin');
                 setIsAdmin(false);
             } else {
-                // If there's a user, respect the session's admin status
                 setIsAdmin(adminStatus);
             }
 
-            setIsCheckingAuth(false);
+            // Start fade out process
+            setFadeOutLoader(true);
+            // Unmount loader after animation
+            setTimeout(() => setIsCheckingAuth(false), 300); 
         });
 
-        // Cleanup subscription on unmount
         return () => unsubscribe();
     }, []);
 
@@ -38,13 +39,18 @@ const App: React.FC = () => {
     };
 
     const handleLogout = () => {
-        logoutUser().then(() => {
-            // State will be updated by onAuthChange listener
-        });
+        sessionStorage.removeItem('isAdmin');
+        sessionStorage.removeItem('seenAdminWelcome');
+        setIsAdmin(false);
+        logoutUser();
     };
 
     if (isCheckingAuth) {
-        return <div className="flex items-center justify-center h-screen bg-white dark:bg-gray-900"><i className="fas fa-spinner fa-spin text-4xl text-brand-secondary"></i></div>;
+        return (
+            <div className={`flex items-center justify-center h-screen bg-white dark:bg-gray-900 ${fadeOutLoader ? 'animate-fade-out' : ''}`}>
+                <i className="fas fa-spinner fa-spin text-4xl text-brand-secondary"></i>
+            </div>
+        );
     }
 
     if (isAdmin) {

@@ -24,14 +24,14 @@ interface SidebarProps {
   setCurrentPage: (page: PublicPage) => void;
   toggleSidebar: () => void;
   user: User | null;
-  openAdminLogin: () => void;
   onLogout: () => void;
   isSelectionFinished: boolean;
   managedButtons: ManagedButton[];
   onManagedButtonClick: (button: ManagedButton) => void;
+  loginActive: boolean;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPage, setCurrentPage, toggleSidebar, user, openAdminLogin, onLogout, isSelectionFinished, managedButtons, onManagedButtonClick }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPage, setCurrentPage, toggleSidebar, user, onLogout, isSelectionFinished, managedButtons, onManagedButtonClick, loginActive }) => {
   const handleNavigation = (page: PublicPage) => {
     setCurrentPage(page);
     toggleSidebar();
@@ -44,11 +44,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPage, setCurrentPage, 
 
   const handleLogout = () => {
     onLogout();
-    toggleSidebar();
-  }
-
-  const handleAdminLogin = () => {
-    openAdminLogin();
     toggleSidebar();
   }
   
@@ -122,14 +117,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPage, setCurrentPage, 
                 </button>
             ) : (
                 <>
-                <button onClick={() => handleNavigation('login')} className="w-full text-left flex items-center p-3 rounded-lg my-1 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 text-sm">
-                    <i className="fas fa-sign-in-alt text-lg w-8"></i>
-                    <span className="ml-3 font-semibold">Daftar / Masuk</span>
-                </button>
-                <button onClick={handleAdminLogin} className="w-full text-left flex items-center p-3 rounded-lg my-1 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 text-sm">
-                    <i className="fas fa-user-secret text-lg w-8"></i>
-                    <span className="ml-3 font-semibold">Admin Login</span>
-                </button>
+                {loginActive && (
+                  <button onClick={() => handleNavigation('login')} className="w-full text-left flex items-center p-3 rounded-lg my-1 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 text-sm">
+                      <i className="fas fa-sign-in-alt text-lg w-8"></i>
+                      <span className="ml-3 font-semibold">Daftar / Masuk</span>
+                  </button>
+                )}
                 </>
             )}
           </div>

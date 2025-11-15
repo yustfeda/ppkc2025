@@ -30,6 +30,9 @@ export interface AdminConfig {
     registrationActive: boolean;
     loginActive: boolean;
     theme: 'light' | 'dark';
+    showRegistrationButton: boolean;
+    registrationComingSoonText: string;
+    appVersion: string;
 }
 
 export interface HomePageUpdate {
@@ -96,8 +99,9 @@ export interface Notification {
 export interface FormField {
   id: string;
   label: string;
-  type: 'text' | 'textarea';
+  type: 'text' | 'textarea' | 'select' | 'date' | 'email' | 'url' | 'password';
   required: boolean;
+  options?: string[]; // for select type
 }
 
 export interface ManagedButton {
@@ -109,9 +113,32 @@ export interface ManagedButton {
   formFields?: FormField[];
   showOnGuest?: boolean;
   showOnUser?: boolean;
+  includeInRecap?: boolean; // New field
 }
 
 export interface DynamicFormModalState {
     isOpen: boolean;
     button: ManagedButton | null;
+}
+
+export interface Supporter {
+  id: string;
+  name: string;
+  imageUrl?: string;
+  icon?: string;
+  link?: string;
+}
+
+export interface SupportersSection {
+  title: string;
+  items: Supporter[];
+}
+
+export interface FormSubmission {
+    id: string; // submission id (e.g., user uid + timestamp)
+    buttonId: string;
+    userId: string;
+    userEmail: string;
+    submittedAt: number;
+    data: Record<string, string>;
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import type { AdminPage, AdminPageProps, Notification, User, RegistrationData, ConfirmationState } from './types';
+import type { AdminPage, AdminPageProps, Notification, User, RegistrationData, ConfirmationState, AdminConfig } from './types';
 import { getAdminConfig, getRegistrations, onAuthChange } from './services/firebase';
 
 import AdminLayout from './components/admin/AdminLayout';
@@ -45,7 +45,7 @@ const NotificationPopup: React.FC<{ notification: Notification, onClose: () => v
 
 const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
     const [currentPage, setCurrentPage] = useState<AdminPage>('dashboard');
-    const [theme, setTheme] = useState<'light' | 'dark'>('light');
+    const [adminConfig, setAdminConfig] = useState<AdminConfig | null>(null);
     const [showAdminWelcome, setShowAdminWelcome] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [notification, setNotification] = useState<Notification | null>(null);
@@ -72,7 +72,10 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
 
     const fetchAdminData = useCallback(() => {
         getAdminConfig().then(config => {
-            setTheme(config?.theme || 'light');
+            setAdminConfig(config);
+             if (config) {
+                document.documentElement.classList.toggle('dark', config.theme === 'dark');
+            }
         });
         getRegistrations().then(regs => {
             const pendingCount = Object.values(regs).filter(r => r.status === 'Terkirim').length;
@@ -91,17 +94,9 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
         return () => unsubscribe();
     }, [fetchAdminData]);
 
-    useEffect(() => {
-        if (theme === 'dark') {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-    }, [theme]);
     
     const handleLogout = () => {
         sessionStorage.setItem('adminLoggedOut', 'true');
-        sessionStorage.removeItem('seenAdminWelcome');
         onLogout();
     }
 
@@ -135,6 +130,8 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
                 notificationBadge={notificationBadge}
                 confirmation={confirmation}
                 hideConfirmation={hideConfirmation}
+                showConfirmation={showConfirmation}
+                appVersion={adminConfig?.appVersion}
             >
                 {renderPage()}
             </AdminLayout>

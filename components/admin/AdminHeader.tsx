@@ -23,21 +23,19 @@ interface AdminHeaderProps {
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
   notificationBadge?: number;
+  showConfirmation: (message: string, onConfirm: () => void) => void;
 }
 
-const AdminHeader: React.FC<AdminHeaderProps> = ({ currentPage, setCurrentPage, onLogout, isSidebarOpen, toggleSidebar, notificationBadge }) => {
+const AdminHeader: React.FC<AdminHeaderProps> = ({ currentPage, setCurrentPage, onLogout, isSidebarOpen, toggleSidebar, notificationBadge, showConfirmation }) => {
     const handleNavigation = (page: AdminPage) => {
         setCurrentPage(page);
         if (isSidebarOpen) {
             toggleSidebar();
         }
     };
-
-    const handleLogout = () => {
-        onLogout();
-         if (isSidebarOpen) {
-            toggleSidebar();
-        }
+    
+    const confirmLogout = () => {
+        showConfirmation('Anda yakin ingin keluar dari Admin Panel?', onLogout);
     }
     
     return (
@@ -46,12 +44,12 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ currentPage, setCurrentPage, 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
           <div className="flex items-center justify-between h-full">
             {/* Logo - Now acts as a logout button */}
-            <div onClick={onLogout} className="flex items-center cursor-pointer" title="Logout from Admin Panel">
+            <div onClick={() => setCurrentPage('dashboard')} className="flex items-center cursor-pointer" title="Go to Dashboard">
               <h1 className="text-lg font-bold flex items-center gap-4">
                   <span className="text-white">Admin Panel</span>
                   <span className="text-gray-400 text-sm">|</span>
                   <span className="text-xl">
-                    <span className="text-brand-yellow">PPKC</span>
+                    <span className="text-orange-500">PPKC</span>
                     <span className="text-brand-logo-blue">2025</span>
                   </span>
               </h1>
@@ -83,7 +81,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ currentPage, setCurrentPage, 
               </nav>
               <div className="h-8 w-px bg-gray-600 mx-3"></div>
               <button
-                onClick={onLogout}
+                onClick={confirmLogout}
                 className="group relative flex flex-col items-center justify-center w-16 h-14 rounded-md transition-colors hover:bg-red-500/50"
                 aria-label="Logout"
                 >
@@ -146,7 +144,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ currentPage, setCurrentPage, 
           </ul>
           <div className="p-2 border-t border-gray-700">
             <button
-                onClick={handleLogout}
+                onClick={confirmLogout}
                 className="w-full text-left flex items-center p-3 rounded-md my-1 transition-colors text-sm font-medium hover:bg-red-500/50"
             >
                 <i className="fas fa-sign-out-alt text-lg w-8 text-center"></i>

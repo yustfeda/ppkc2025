@@ -36,7 +36,8 @@ const Status: React.FC<StatusProps> = ({ user }) => {
         if (!registration) return 'pending';
         if (registration.status === 'Gagal') return 'gagal';
 
-        const hasFailedStage = Object.values(registration.stageProgress || {}).some(p => p.status === 'gagal');
+        // FIX: Added a check for `p` to prevent runtime errors if a stage progress entry is null.
+        const hasFailedStage = registration.stageProgress && Object.values(registration.stageProgress).some((p: { status: 'lolos' | 'gagal' | 'pending' }) => p && p.status === 'gagal');
         if (hasFailedStage) return 'gagal';
 
         if (allStages.length > 0) {
@@ -65,7 +66,7 @@ const Status: React.FC<StatusProps> = ({ user }) => {
         ctx.textAlign = 'center';
         ctx.fillText('BUKTI KELULUSAN SELEKSI', canvas.width / 2, 40);
         ctx.font = '16px Inter, sans-serif';
-        ctx.fillText('Paskibraka Kec. Cileles 2025', canvas.width / 2, 70);
+        ctx.fillText('Paskibra Kec. Cileles 2025', canvas.width / 2, 70);
 
         // User Info
         ctx.textAlign = 'left';

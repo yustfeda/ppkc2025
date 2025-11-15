@@ -7,9 +7,10 @@ interface RegistrationProps {
     setCurrentPage: (page: PublicPage) => void;
     showNotification: (message: string, type: 'success' | 'error') => void;
     showConfirmation: (message: string, onConfirm: () => void) => void;
+    registrationActive?: boolean;
 }
 
-const Registration: React.FC<RegistrationProps> = ({ user, setCurrentPage, showNotification, showConfirmation }) => {
+const Registration: React.FC<RegistrationProps> = ({ user, setCurrentPage, showNotification, showConfirmation, registrationActive }) => {
     const [formData, setFormData] = useState<Omit<RegistrationData, 'status' | 'stageProgress' | 'submittedAt'>>({
         uid: user.uid,
         fullName: '',
@@ -129,12 +130,14 @@ const Registration: React.FC<RegistrationProps> = ({ user, setCurrentPage, showN
         )
     };
     
-    const inputClass = "mt-1 block w-full border-gray-300 dark:border-gray-600 bg-white dark:bg-brand-dark rounded-md shadow-sm p-2 text-sm dark:text-white dark:placeholder-gray-400";
+    const inputClass = "peer form-input block w-full border-gray-300 dark:border-gray-600 bg-white dark:bg-brand-dark rounded-md shadow-sm p-3 text-sm dark:text-white focus:ring-brand-accent focus:border-brand-accent";
+    const labelClass = "form-label text-sm text-gray-500 dark:text-gray-400";
     
     const isSelectionFinished = () => {
         if (!registration) return false;
         if (registration.status === 'Gagal') return true;
-        const hasFailedStage = Object.values(registration.stageProgress || {}).some(p => p.status === 'gagal');
+        // FIX: Added a check for `p` to prevent runtime errors if a stage progress entry is null.
+        const hasFailedStage = registration.stageProgress && Object.values(registration.stageProgress).some((p: any) => p && p.status === 'gagal');
         if (hasFailedStage) return true;
         if (allStages.length > 0) {
             const lastStage = allStages[allStages.length - 1];
@@ -144,6 +147,16 @@ const Registration: React.FC<RegistrationProps> = ({ user, setCurrentPage, showN
     };
 
     const renderContent = () => {
+        if (registrationActive === false) {
+            return (
+                <StatusCard 
+                    status="Info" 
+                    title="Pendaftaran Ditutup" 
+                    message="Pendaftaran untuk saat ini sedang ditutup oleh admin. Silakan kembali lagi nanti."
+                />
+            );
+        }
+
         if (isSelectionFinished()) {
             return (
                 <StatusCard 
@@ -165,60 +178,60 @@ const Registration: React.FC<RegistrationProps> = ({ user, setCurrentPage, showN
 
         if (!registration) {
              return (
-                <form onSubmit={handleInitialSubmit} className="bg-white dark:bg-brand-primary p-6 rounded-lg shadow-md space-y-4 animate-fade-in">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium dark:text-gray-300">Nama Lengkap</label>
-                            <input name="fullName" onChange={handleChange} className={inputClass} required />
+                <form onSubmit={handleInitialSubmit} className="bg-white dark:bg-brand-primary p-6 rounded-lg shadow-md space-y-6 animate-fade-in">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="relative input-group">
+                            <input id="fullName" name="fullName" onChange={handleChange} className={inputClass} required placeholder=" " />
+                            <label htmlFor="fullName" className={labelClass}>Nama Lengkap</label>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium dark:text-gray-300">Asal Satuan</label>
-                            <input name="originUnit" onChange={handleChange} className={inputClass} required />
+                        <div className="relative input-group">
+                            <input id="originUnit" name="originUnit" onChange={handleChange} className={inputClass} required placeholder=" " />
+                             <label htmlFor="originUnit" className={labelClass}>Asal Satuan</label>
                         </div>
-                         <div>
-                            <label className="block text-sm font-medium dark:text-gray-300">Tempat Lahir</label>
-                            <input name="birthPlace" onChange={handleChange} className={inputClass} required />
+                         <div className="relative input-group">
+                            <input id="birthPlace" name="birthPlace" onChange={handleChange} className={inputClass} required placeholder=" " />
+                             <label htmlFor="birthPlace" className={labelClass}>Tempat Lahir</label>
                         </div>
-                         <div>
-                            <label className="block text-sm font-medium dark:text-gray-300">Tanggal Lahir</label>
-                            <input type="date" name="birthDate" onChange={handleChange} className={inputClass} required />
+                         <div className="relative input-group">
+                            <input id="birthDate" type="date" name="birthDate" onChange={handleChange} className={inputClass} required placeholder=" " />
+                             <label htmlFor="birthDate" className={labelClass}>Tanggal Lahir</label>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium dark:text-gray-300">Jenis Kelamin</label>
-                            <select name="gender" onChange={handleChange} className={inputClass}>
+                        <div className="relative input-group">
+                            <select id="gender" name="gender" onChange={handleChange} className={inputClass}>
                                 <option>Laki-laki</option>
                                 <option>Perempuan</option>
                             </select>
+                             <label htmlFor="gender" className={labelClass}>Jenis Kelamin</label>
                         </div>
-                        <div>
-                             <label className="block text-sm font-medium dark:text-gray-300">Email</label>
-                            <input type="email" name="email" value={formData.email} onChange={handleChange} className={`${inputClass} bg-gray-100 dark:bg-gray-700`} required readOnly />
+                        <div className="relative input-group">
+                             <input id="email" type="email" name="email" value={formData.email} onChange={handleChange} className={`${inputClass} bg-gray-100 dark:bg-gray-700 cursor-not-allowed`} required readOnly placeholder=" " />
+                             <label htmlFor="email" className={labelClass}>Email</label>
                         </div>
                     </div>
-                     <div>
-                        <label className="block text-sm font-medium dark:text-gray-300">Riwayat Penyakit (jika ada)</label>
-                        <textarea name="medicalHistory" onChange={handleChange} className={inputClass} rows={2}></textarea>
+                     <div className="relative input-group">
+                        <textarea id="medicalHistory" name="medicalHistory" onChange={handleChange} className={inputClass} rows={2} placeholder=" "></textarea>
+                         <label htmlFor="medicalHistory" className={labelClass}>Riwayat Penyakit (jika ada)</label>
                     </div>
-                     <div>
-                        <label className="block text-sm font-medium dark:text-gray-300">Kontak Darurat (Nama & No. HP)</label>
-                        <input name="emergencyContact" onChange={handleChange} className={inputClass} required />
+                     <div className="relative input-group">
+                        <input id="emergencyContact" name="emergencyContact" onChange={handleChange} className={inputClass} required placeholder=" " />
+                         <label htmlFor="emergencyContact" className={labelClass}>Kontak Darurat (Nama & No. HP)</label>
                     </div>
 
-                    <div className="pt-2 border-t dark:border-gray-700 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium dark:text-gray-300">Upload Kartu Keluarga <span className="text-red-500">*</span></label>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Upload ke Google Drive, lalu salin link-nya.</p>
-                            <input type="url" name="kkUrl" onChange={handleChange} className={inputClass} placeholder="https://drive.google.com/..." required />
+                    <div className="pt-4 border-t dark:border-gray-700 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="relative input-group">
+                             <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 absolute -top-4">Upload ke G-Drive, lalu salin link.</p>
+                            <input id="kkUrl" type="url" name="kkUrl" onChange={handleChange} className={inputClass} placeholder=" " required />
+                             <label htmlFor="kkUrl" className={labelClass}>Link Kartu Keluarga <span className="text-red-500">*</span></label>
                         </div>
-                         <div>
-                            <label className="block text-sm font-medium dark:text-gray-300">Upload Foto 4x6 BG Merah <span className="text-red-500">*</span></label>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Upload foto formal Anda ke Google Drive.</p>
-                            <input type="url" name="photoUrl" onChange={handleChange} className={inputClass} placeholder="https://drive.google.com/..." required />
+                         <div className="relative input-group">
+                             <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 absolute -top-4">Upload foto formal Anda ke G-Drive.</p>
+                            <input id="photoUrl" type="url" name="photoUrl" onChange={handleChange} className={inputClass} placeholder=" " required />
+                             <label htmlFor="photoUrl" className={labelClass}>Link Foto 4x6 BG Merah <span className="text-red-500">*</span></label>
                         </div>
-                         <div className="md:col-span-2">
-                            <label className="block text-sm font-medium dark:text-gray-300">Upload Surat Izin Orang Tua (Opsional)</label>
-                             <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Format surat dapat diunduh di halaman pengumuman.</p>
-                            <input type="url" name="parentPermitUrl" onChange={handleChange} className={inputClass} placeholder="https://drive.google.com/..." />
+                         <div className="md:col-span-2 relative input-group">
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 absolute -top-4">Format surat dapat diunduh di halaman pengumuman.</p>
+                            <input id="parentPermitUrl" type="url" name="parentPermitUrl" onChange={handleChange} className={inputClass} placeholder=" " />
+                             <label htmlFor="parentPermitUrl" className={labelClass}>Link Surat Izin Orang Tua (Opsional)</label>
                         </div>
                     </div>
 

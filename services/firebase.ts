@@ -1,4 +1,4 @@
-import type { SelectionStage, AnnouncementDocument, AdminConfig, RegistrationData, User, HomePageUpdate, ManagedButton } from '../types';
+import type { SelectionStage, AnnouncementDocument, AdminConfig, RegistrationData, User, HomePageUpdate, ManagedButton, Supporter, SupportersSection, FormSubmission } from '../types';
 
 declare const firebase: any;
 
@@ -33,7 +33,7 @@ const MOCK_STAGES: SelectionStage[] = [
   
 const MOCK_ANNOUNCEMENTS: AnnouncementDocument[] = [
     { id: "1", title: "Buku Teks Utama Pancasila Kelas X", fileUrl: "#", thumbnailUrl: "https://i.imgur.com/r6M4UfN.png", description: "Materi untuk seleksi wawasan kebangsaan." },
-    { id: "2", title: "Format Surat Pernyataan Kesediaan Mematuhi Peraturan Program Paskibraka", fileUrl: "#", thumbnailUrl: "https://i.imgur.com/8z2n1qH.png", description: "Harap diisi dan dibawa saat seleksi parade." },
+    { id: "2", title: "Format Surat Pernyataan Kesediaan Mematuhi Peraturan Program Paskibra", fileUrl: "#", thumbnailUrl: "https://i.imgur.com/8z2n1qH.png", description: "Harap diisi dan dibawa saat seleksi parade." },
     { id: "3", title: "Format Surat Persetujuan Orang Tua / Wali", fileUrl: "#", thumbnailUrl: "https://i.imgur.com/J3hL9wK.png", description: "Wajib dilengkapi sebagai syarat administrasi." }
 ];
 
@@ -41,6 +41,9 @@ const MOCK_CONFIG: AdminConfig = {
     registrationActive: true,
     loginActive: true,
     theme: 'light',
+    showRegistrationButton: true,
+    registrationComingSoonText: 'SEGERA HADIR',
+    appVersion: 'v1.1.11'
 };
 
 const MOCK_UPDATES: HomePageUpdate[] = [
@@ -51,6 +54,14 @@ const MOCK_UPDATES: HomePageUpdate[] = [
 const MOCK_BUTTONS: ManagedButton[] = [
     { id: '1', label: 'Download Panduan', icon: 'fas fa-book', link: '#', formFields: [], showOnGuest: true, showOnUser: true }
 ]
+
+const MOCK_SUPPORTERS_SECTION: SupportersSection = {
+    title: 'Didukung Oleh',
+    items: [
+        { id: 'sup1', name: 'Logo 1', imageUrl: 'https://via.placeholder.com/150x60/CCCCCC/FFFFFF?text=Logo+1', link: '#' },
+        { id: 'sup2', name: 'Logo 2', imageUrl: 'https://via.placeholder.com/150x60/CCCCCC/FFFFFF?text=Logo+2', link: '#' },
+    ]
+};
 
 // Data Fetching
 export const getData = async <T>(path: string, mockData?: T): Promise<T> => {
@@ -81,12 +92,28 @@ export const getHomeUpdates = () => getData<HomePageUpdate[]>('homeUpdates', MOC
 export const getRegistrations = () => getData<{[uid: string]: RegistrationData}>('registrations', {});
 export const getUserRegistration = (uid: string) => getData<RegistrationData | null>(`registrations/${uid}`);
 export const getManagedButtons = () => getData<ManagedButton[]>('managedButtons', MOCK_BUTTONS);
+export const getSupporters = () => getData<SupportersSection>('supporters', MOCK_SUPPORTERS_SECTION);
 export const getAttendanceData = () => getData<{[uid: string]: { present: boolean }}>('attendance', {});
+export const getAllFormSubmissions = () => getData<{[buttonId: string]: {[submissionId: string]: FormSubmission}}>('formSubmissions', {});
+
 
 // Data Writing
 export const setData = async (path: string, data: any): Promise<void> => {
     return database.ref(path).set(data);
 };
+
+export const setFormSubmission = async (buttonId: string, userId: string, userEmail: string, data: Record<string, string>): Promise<void> => {
+    const submissionId = `${userId}_${Date.now()}`;
+    const submissionData: FormSubmission = {
+        id: submissionId,
+        buttonId,
+        userId,
+        userEmail,
+        submittedAt: Date.now(),
+        data,
+    };
+    return database.ref(`formSubmissions/${buttonId}/${submissionId}`).set(submissionData);
+}
 
 export const updateRegistrationStatus = (uid: string, status: 'Lolos' | 'Gagal'): Promise<void> => {
     return database.ref(`registrations/${uid}/status`).set(status);
@@ -105,6 +132,9 @@ export const setAttendanceStatus = async (uid: string, present: boolean): Promis
     return database.ref(`attendance/${uid}`).set({ present });
 };
 
+export const resetAllRegistrations = (): Promise<void> => {
+    return database.ref('registrations').remove();
+};
 
 // Auth Functions
 export const onAuthChange = (callback: (user: User | null) => void) => {
@@ -120,8 +150,6 @@ export const loginUser = (email: string, password: string): Promise<any> => {
 };
 
 export const logoutUser = (): Promise<void> => {
-    sessionStorage.removeItem('isAdmin');
-    sessionStorage.removeItem('seenAdminWelcome');
     return auth.signOut();
 };
 

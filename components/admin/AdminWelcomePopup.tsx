@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 interface AdminWelcomePopupProps {
     onClose: () => void;
@@ -6,10 +6,19 @@ interface AdminWelcomePopupProps {
 }
 
 const AdminWelcomePopup: React.FC<AdminWelcomePopupProps> = ({ onClose, notificationCount }) => {
+    const [isClosing, setIsClosing] = useState(false);
+
+    const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(() => onClose(), 300);
+    };
     
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[999] p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md transform transition-all duration-300 scale-95 opacity-0 animate-scale-in">
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[999] p-4" onClick={handleClose}>
+            <div 
+                className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'}`}
+                onClick={e => e.stopPropagation()}
+            >
                 <div className="text-center">
                     <div className="relative inline-block">
                         <i className="fas fa-crown text-4xl text-brand-secondary"></i>
@@ -37,18 +46,11 @@ const AdminWelcomePopup: React.FC<AdminWelcomePopupProps> = ({ onClose, notifica
                 </div>
 
                 <div className="mt-6 text-center">
-                    <button onClick={onClose} className="bg-brand-secondary text-white font-bold py-2 px-6 rounded-md hover:bg-blue-700">
+                    <button onClick={handleClose} className="bg-brand-secondary text-white font-bold py-2 px-6 rounded-md hover:bg-blue-700">
                         Masuk ke Dashboard
                     </button>
                 </div>
             </div>
-            <style>{`
-                @keyframes scale-in {
-                    from { transform: scale(0.95); opacity: 0; }
-                    to { transform: scale(1); opacity: 1; }
-                }
-                .animate-scale-in { animation: scale-in 0.3s ease-out forwards; }
-            `}</style>
         </div>
     );
 };

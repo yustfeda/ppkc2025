@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { getRegistrations, getSelectionStages, deleteUserRegistration } from '../../services/firebase';
-import type { RegistrationData, SelectionStage, AdminPageProps } from '../../types';
+import React, { useState, useEffect, useCallback } from 'react';
+import { getRegistrations, getSelectionStages, deleteUserRegistration, getManagedButtons, getAllFormSubmissions } from '../../services/firebase';
+import type { RegistrationData, SelectionStage, AdminPageProps, ManagedButton, FormSubmission } from '../../types';
 
 declare const jspdf: any;
 declare const XLSX: any;
@@ -10,12 +10,31 @@ const AdminRecap: React.FC<AdminPageProps> = ({ showNotification, showConfirmati
     const [stages, setStages] = useState<SelectionStage[]>([]);
     const [selectedStage, setSelectedStage] = useState<string>('all');
     const [loading, setLoading] = useState(true);
+    const [formSubmissions, setFormSubmissions] = useState<{[buttonId: string]: FormSubmission[]}>({});
+    const [recapButtons, setRecapButtons] = useState<ManagedButton[]>([]);
 
-    const fetchData = React.useCallback(() => {
+    const fetchData = useCallback(() => {
         setLoading(true);
-        Promise.all([getRegistrations(), getSelectionStages()]).then(([regsData, stagesData]) => {
+        Promise.all([
+            getRegistrations(), 
+            getSelectionStages(),
+            getManagedButtons(),
+            getAllFormSubmissions()
+        ]).then(([regsData, stagesData, buttonsData, submissionsData]) => {
             setRegistrations(regsData ? Object.values(regsData) : []);
             setStages([{ id: 'administration', title: 'Lolos Administrasi', description: '', date: '' }, ...stagesData]);
+            
+            const recapEnabledButtons = (buttonsData || []).filter(b => b.includeInRecap && b.formFields && b.formFields.length > 0);
+            setRecapButtons(recapEnabledButtons);
+
+            const submissionsByButton: {[buttonId: string]: FormSubmission[]} = {};
+            for (const buttonId in submissionsData) {
+                if (submissionsData[buttonId]) {
+                    submissionsByButton[buttonId] = Object.values(submissionsData[buttonId]).sort((a, b) => b.submittedAt - a.submittedAt);
+                }
+            }
+            setFormSubmissions(submissionsByButton);
+
             setLoading(false);
         });
     }, []);
@@ -53,7 +72,7 @@ const AdminRecap: React.FC<AdminPageProps> = ({ showNotification, showConfirmati
     const exportToPDF = () => {
         const doc = new jspdf.jsPDF({ orientation: 'landscape' });
         doc.setFontSize(10);
-        doc.text("Rekapitulasi Pendaftar Calon Paskibraka Kecamatan Cileles Tahun 2025", 14, 16);
+        doc.text("Rekapitulasi Pendaftar Calon Paskibra Kecamatan Cileles Tahun 2025", 14, 16);
         doc.setFontSize(9);
         doc.text(`Filter Tahapan: ${currentStageTitle}`, 14, 22);
         
@@ -76,11 +95,30 @@ const AdminRecap: React.FC<AdminPageProps> = ({ showNotification, showConfirmati
             styles: { fontSize: 7, cellPadding: 1.5 },
             headStyles: { fontSize: 8, fillColor: [11, 36, 71] },
         });
+
+        recapButtons.forEach(button => {
+            const submissions = formSubmissions[button.id] || [];
+            if (submissions.length > 0) {
+                doc.addPage();
+                doc.setFontSize(10);
+                doc.text(`Rekapitulasi Form: ${button.label}`, 14, 16);
+                const formFields = button.formFields || [];
+                const head = [['No', 'Email', 'Tanggal Submit', ...formFields.map(f => f.label)]];
+                const body = submissions.map((s, i) => [
+                    i + 1,
+                    s.userEmail,
+                    new Date(s.submittedAt).toLocaleDateString('id-ID'),
+                    ...formFields.map(f => s.data[f.id] || '-')
+                ]);
+                doc.autoTable({ startY: 22, head, body, styles: { fontSize: 7, cellPadding: 1.5 }, headStyles: { fontSize: 8, fillColor: [11, 36, 71] } });
+            }
+        });
+
         doc.save(`Rekap Peserta - ${currentStageTitle}.pdf`);
     };
 
     const exportToExcel = () => {
-        const dataToExport = filteredData.map(r => ({
+        const mainData = filteredData.map(r => ({
             'Nama Lengkap': r.fullName,
             'Tempat Lahir': r.birthPlace,
             'Tanggal Lahir': r.birthDate,
@@ -96,9 +134,30 @@ const AdminRecap: React.FC<AdminPageProps> = ({ showNotification, showConfirmati
             'Waktu Pendaftaran': r.submittedAt ? new Date(r.submittedAt).toLocaleString('id-ID') : '',
         }));
 
-        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        const mainWorksheet = XLSX.utils.json_to_sheet(mainData);
         const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Peserta");
+        XLSX.utils.book_append_sheet(workbook, mainWorksheet, `Peserta - ${currentStageTitle.substring(0,20)}`);
+
+        recapButtons.forEach(button => {
+            const submissions = formSubmissions[button.id] || [];
+            if (submissions.length > 0) {
+                const formFields = button.formFields || [];
+                const dataToExport = submissions.map(s => {
+                    const row: Record<string, any> = {
+                        'Email': s.userEmail,
+                        'Tanggal Submit': new Date(s.submittedAt).toLocaleString('id-ID'),
+                    };
+                    formFields.forEach(field => {
+                        row[field.label] = s.data[field.id] || '-';
+                    });
+                    return row;
+                });
+                const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+                const sheetName = button.label.substring(0, 30);
+                XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+            }
+        });
+
         XLSX.writeFile(workbook, `Rekap Peserta - ${currentStageTitle}.xlsx`);
     };
 
@@ -158,6 +217,44 @@ const AdminRecap: React.FC<AdminPageProps> = ({ showNotification, showConfirmati
                     </tbody>
                 </table>
             </div>
+
+             {recapButtons.map(button => {
+                const submissions = formSubmissions[button.id] || [];
+                const formFields = button.formFields || [];
+                if (loading) return null;
+                
+                return (
+                    <div key={button.id} className="mt-8">
+                        <h2 className="text-xl font-bold text-brand-primary dark:text-white mb-4">Rekap Form: {button.label}</h2>
+                        {submissions.length > 0 ? (
+                             <div className="overflow-x-auto">
+                                <table className="w-full text-xs text-left">
+                                     <thead className="bg-gray-50 dark:bg-brand-dark">
+                                        <tr className="text-gray-800 dark:text-gray-200">
+                                            <th className="p-2 font-semibold">#</th>
+                                            <th className="p-2 font-semibold">Email</th>
+                                            <th className="p-2 font-semibold">Tanggal Submit</th>
+                                            {formFields.map(f => <th key={f.id} className="p-2 font-semibold">{f.label}</th>)}
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
+                                        {submissions.map((s, i) => (
+                                            <tr key={s.id}>
+                                                <td className="p-2">{i + 1}</td>
+                                                <td className="p-2">{s.userEmail}</td>
+                                                <td className="p-2">{new Date(s.submittedAt).toLocaleString('id-ID')}</td>
+                                                {formFields.map(f => <td key={f.id} className="p-2">{s.data[f.id] || '-'}</td>)}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                             <p className="text-sm text-center text-gray-500 dark:text-gray-400 p-4 bg-gray-50 dark:bg-brand-dark rounded-md">Belum ada data yang masuk untuk form ini.</p>
+                        )}
+                    </div>
+                );
+            })}
         </div>
     );
 };

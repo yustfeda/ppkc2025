@@ -21,8 +21,8 @@ const navItems: NavItem[] = [
 const Logo: React.FC = () => (
     <div className="flex-shrink-0 flex items-center cursor-pointer">
         <span className="text-xl font-bold">
-            <span className="text-brand-yellow">PPKC</span>
-            <span className="text-brand-logo-blue">2025</span>
+            <span className="text-orange-500">PPKC</span>
+            <span className="text-brand-primary dark:text-brand-logo-blue">2025</span>
         </span>
     </div>
 );
@@ -33,15 +33,15 @@ interface HeaderProps {
   setCurrentPage: (page: PublicPage) => void;
   toggleSidebar: () => void;
   user: User | null;
-  openAdminLogin: () => void;
   onLogout: () => void;
   isSidebarOpen: boolean;
   isSelectionFinished: boolean;
   managedButtons: ManagedButton[];
   onManagedButtonClick: (button: ManagedButton) => void;
+  loginActive: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, toggleSidebar, user, openAdminLogin, onLogout, isSidebarOpen, isSelectionFinished, managedButtons, onManagedButtonClick }) => {
+const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, toggleSidebar, user, onLogout, isSidebarOpen, isSelectionFinished, managedButtons, onManagedButtonClick, loginActive }) => {
   
   const getRole = (): 'user' | 'guest' => {
     return user ? 'user' : 'guest';
@@ -102,12 +102,11 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, toggleSide
                  </button>
             ) : (
                 <>
-                <button onClick={() => setCurrentPage('login')} className="bg-brand-secondary text-white font-bold py-1 px-4 rounded-md text-xs hover:bg-brand-accent transition-colors">
-                    Daftar/Masuk
-                </button>
-                <button onClick={openAdminLogin} className="text-gray-300 dark:text-gray-600 hover:text-gray-500 ml-1" aria-label="Admin Login">
-                    <i className="fas fa-user-secret"></i>
-                </button>
+                {loginActive && (
+                  <button onClick={() => setCurrentPage('login')} className="bg-brand-secondary text-white font-bold py-1 px-4 rounded-md text-xs hover:bg-brand-accent transition-colors">
+                      Daftar/Masuk
+                  </button>
+                )}
                 </>
             )}
           </div>

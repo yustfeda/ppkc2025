@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import type { PublicPage, AdminConfig, HomePageUpdate, User, RegistrationData, SelectionStage, ManagedButton } from '../types';
-import { getAdminConfig, getHomeUpdates, getUserRegistration, getSelectionStages } from '../services/firebase';
+import type { PublicPage, AdminConfig, HomePageUpdate, User, RegistrationData, SelectionStage, ManagedButton, SupportersSection } from '../types';
+import { getAdminConfig, getHomeUpdates, getUserRegistration, getSelectionStages, getSupporters } from '../services/firebase';
 
 interface HomeProps {
   setCurrentPage: (page: PublicPage) => void;
@@ -11,20 +11,22 @@ interface HomeProps {
 const Home: React.FC<HomeProps> = ({ setCurrentPage, user, onManagedButtonClick }) => {
   const [config, setConfig] = useState<AdminConfig | null>(null);
   const [updates, setUpdates] = useState<HomePageUpdate[]>([]);
+  const [supportersSection, setSupportersSection] = useState<SupportersSection | null>(null);
   const [registration, setRegistration] = useState<RegistrationData | null>(null);
   const [stages, setStages] = useState<SelectionStage[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
-    const promises: any[] = [getAdminConfig(), getHomeUpdates(), getSelectionStages()];
+    const promises: any[] = [getAdminConfig(), getHomeUpdates(), getSelectionStages(), getSupporters()];
     if (user) {
         promises.push(getUserRegistration(user.uid));
     }
-    Promise.all(promises).then(([configData, updatesData, stagesData, regData]) => {
+    Promise.all(promises).then(([configData, updatesData, stagesData, supportersData, regData]) => {
       setConfig(configData);
       setUpdates(updatesData);
       setStages(stagesData || []);
+      setSupportersSection(supportersData || { title: 'Didukung Oleh', items: [] });
       if (user && regData) {
         setRegistration(regData as RegistrationData);
       }
@@ -94,43 +96,71 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage, user, onManagedButtonClick 
           Selamat Datang di Portal PPI Cileles
         </h1>
         <p className="text-sm text-gray-600 dark:text-gray-300 mb-6 max-w-xl mx-auto">
-          Platform informasi terpusat untuk seluruh tahapan seleksi, pengumuman penting, dan pendaftaran Calon Anggota Paskibraka.
+          Platform informasi terpusat untuk seluruh tahapan seleksi, pengumuman penting, dan pendaftaran Calon Anggota Paskibra.
         </p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          {config?.registrationActive ? (
-            <button 
-              onClick={() => setCurrentPage('login')}
-              className="bg-brand-secondary text-white font-bold py-2 px-6 rounded-lg text-sm hover:bg-brand-accent transition-colors w-full sm:w-auto">
-              Daftar Sekarang
-            </button>
-          ) : (
-            <button 
-              disabled
-              className="bg-gray-300 text-gray-500 font-bold py-2 px-6 rounded-lg text-sm w-full sm:w-auto cursor-not-allowed flex items-center justify-center gap-2">
-              <i className="far fa-clock"></i> Pendaftaran Ditutup
-            </button>
-          )}
-           {config?.loginActive ? (
-            <button 
-              onClick={() => setCurrentPage('login')}
-              className="bg-gray-200 dark:bg-gray-700 text-brand-primary dark:text-gray-200 font-bold py-2 px-6 rounded-lg text-sm hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors w-full sm:w-auto">
-              Masuk
-            </button>
-          ) : (
-            <button 
-              disabled
-              className="bg-gray-300 text-gray-500 font-bold py-2 px-6 rounded-lg text-sm w-full sm:w-auto cursor-not-allowed flex items-center justify-center gap-2">
-              <i className="far fa-clock"></i> Login Ditutup
-            </button>
-          )}
+         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            {config?.showRegistrationButton && (
+                <div className="flex flex-col items-center gap-2">
+                    {!config.registrationActive && config.registrationComingSoonText && (
+                        <p className="text-yellow-600 dark:text-yellow-400 text-xs font-semibold animate-pulse">
+                            {config.registrationComingSoonText}
+                        </p>
+                    )}
+                    {config.registrationActive ? (
+                        <button
+                            onClick={() => setCurrentPage('login')}
+                            className="bg-brand-secondary text-white font-bold py-2 px-6 rounded-lg text-sm hover:bg-brand-accent transition-colors w-full sm:w-auto"
+                        >
+                            Daftar Sekarang
+                        </button>
+                    ) : (
+                        <button
+                            disabled
+                            className="bg-gray-300 text-gray-500 font-bold py-2 px-6 rounded-lg text-sm w-full sm:w-auto cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                            <i className="far fa-clock text-yellow-600"></i> Pendaftaran Belum Dibuka
+                        </button>
+                    )}
+                </div>
+            )}
+            {config?.loginActive && (
+                 <button 
+                    onClick={() => setCurrentPage('login')}
+                    className="bg-gray-200 dark:bg-gray-700 text-brand-primary dark:text-gray-200 font-bold py-2 px-6 rounded-lg text-sm hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors w-full sm:w-auto">
+                    Masuk
+                </button>
+            )}
         </div>
-        <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-            <h3 className="text-md font-semibold text-gray-700 dark:text-gray-300 mb-4">Didukung Oleh</h3>
-            <div className="flex justify-center items-center gap-8 opacity-80">
-                <img src="/images/logo1.png" alt="Organization Logo 1" className="h-16 object-contain" onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/150x60?text=Logo+1'; e.currentTarget.onerror = null; }} />
-                <img src="/images/logo2.png" alt="Organization Logo 2" className="h-16 object-contain" onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/150x60?text=Logo+2'; e.currentTarget.onerror = null; }}/>
+        {(supportersSection && (supportersSection.title || supportersSection.items.length > 0)) && (
+            <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <h3 className="text-md font-semibold text-gray-700 dark:text-gray-300 mb-4">{supportersSection.title || 'Didukung Oleh'}</h3>
+                {supportersSection.items.length > 0 ? (
+                    <div className="flex justify-center items-center gap-6 flex-wrap">
+                        {supportersSection.items.map(supporter => (
+                             <div key={supporter.id} title={supporter.name} className="flex items-center justify-center h-20 w-32 transition-all duration-300">
+                               {supporter.imageUrl ? (
+                                   <img src={supporter.imageUrl} alt={supporter.name} className="max-h-full max-w-full object-contain border border-orange-500 rounded-md" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                               ) : supporter.icon ? (
+                                   <i className={`${supporter.icon} text-4xl text-gray-700 dark:text-gray-200 p-4 border border-orange-500 rounded-lg`}></i>
+                               ) : (
+                                   <span className="text-sm text-gray-700 dark:text-gray-200 font-semibold text-center p-4 border border-orange-500 rounded-lg">{supporter.name}</span>
+                               )}
+                           </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="flex justify-center items-center gap-6 h-16">
+                        {[...Array(5)].map((_, i) => (
+                            <div
+                                key={i}
+                                className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 animate-float"
+                                style={{ animationDelay: `${i * 0.2}s` }}
+                            ></div>
+                        ))}
+                    </div>
+                )}
             </div>
-        </div>
+        )}
       </div>
     );
   }

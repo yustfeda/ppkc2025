@@ -75,7 +75,8 @@ const Profile: React.FC<ProfileProps> = ({ user, showNotification, showConfirmat
         );
     }
     
-    const inputClass = "mt-1 block w-full border-gray-300 dark:border-gray-600 bg-white dark:bg-brand-dark rounded-md shadow-sm p-2 text-sm dark:text-white dark:placeholder-gray-400";
+    const inputClass = "peer form-input block w-full border-gray-300 dark:border-gray-600 bg-white dark:bg-brand-dark rounded-md shadow-sm p-3 text-sm dark:text-white focus:ring-brand-accent focus:border-brand-accent";
+    const labelClass = "form-label text-sm text-gray-500 dark:text-gray-400";
 
 
     return (
@@ -93,59 +94,59 @@ const Profile: React.FC<ProfileProps> = ({ user, showNotification, showConfirmat
                     <p className="text-base text-gray-500 dark:text-gray-400">{formData.email}</p>
                 </div>
                 
-                <form onSubmit={handleSave} className="bg-white dark:bg-brand-primary p-6 rounded-lg shadow-lg space-y-4">
+                <form onSubmit={handleSave} className="bg-white dark:bg-brand-primary p-6 rounded-lg shadow-lg space-y-6">
                     <h2 className="text-xl font-semibold text-brand-primary dark:text-white border-b dark:border-gray-700 pb-2 mb-4">Data Diri</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium dark:text-gray-300">Nama Lengkap</label>
-                            <input name="fullName" value={formData.fullName || ''} onChange={handleChange} className={inputClass} required />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="relative input-group">
+                            <input id="fullName" name="fullName" value={formData.fullName || ''} onChange={handleChange} className={inputClass} required placeholder=" " />
+                            <label htmlFor="fullName" className={labelClass}>Nama Lengkap</label>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium dark:text-gray-300">Asal Satuan</label>
-                            <input name="originUnit" value={formData.originUnit || ''} onChange={handleChange} className={inputClass} required />
+                        <div className="relative input-group">
+                            <input id="originUnit" name="originUnit" value={formData.originUnit || ''} onChange={handleChange} className={inputClass} required placeholder=" " />
+                             <label htmlFor="originUnit" className={labelClass}>Asal Satuan</label>
                         </div>
-                         <div>
-                            <label className="block text-sm font-medium dark:text-gray-300">Tempat Lahir</label>
-                            <input name="birthPlace" value={formData.birthPlace || ''} onChange={handleChange} className={inputClass} required />
+                         <div className="relative input-group">
+                            <input id="birthPlace" name="birthPlace" value={formData.birthPlace || ''} onChange={handleChange} className={inputClass} required placeholder=" " />
+                            <label htmlFor="birthPlace" className={labelClass}>Tempat Lahir</label>
                         </div>
-                         <div>
-                            <label className="block text-sm font-medium dark:text-gray-300">Tanggal Lahir</label>
-                            <input type="date" name="birthDate" value={formData.birthDate || ''} onChange={handleChange} className={inputClass} required />
+                         <div className="relative input-group">
+                            <input id="birthDate" type="date" name="birthDate" value={formData.birthDate || ''} onChange={handleChange} className={inputClass} required placeholder=" " />
+                             <label htmlFor="birthDate" className={labelClass}>Tanggal Lahir</label>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium dark:text-gray-300">Jenis Kelamin</label>
-                            <select name="gender" value={formData.gender || 'Laki-laki'} onChange={handleChange} className={inputClass}>
+                        <div className="relative input-group">
+                            <select id="gender" name="gender" value={formData.gender || 'Laki-laki'} onChange={handleChange} className={inputClass}>
                                 <option>Laki-laki</option>
                                 <option>Perempuan</option>
                             </select>
+                             <label htmlFor="gender" className={labelClass}>Jenis Kelamin</label>
                         </div>
-                        <div>
-                             <label className="block text-sm font-medium dark:text-gray-300">Email</label>
-                            <input type="email" name="email" value={formData.email || ''} className={`${inputClass} bg-gray-100 dark:bg-gray-700`} required readOnly />
+                        <div className="relative input-group">
+                             <input id="email" type="email" name="email" value={formData.email || ''} className={`${inputClass} bg-gray-100 dark:bg-gray-700 cursor-not-allowed`} required readOnly placeholder=" " />
+                             <label htmlFor="email" className={labelClass}>Email</label>
                         </div>
                     </div>
-                     <div>
-                        <label className="block text-sm font-medium dark:text-gray-300">Riwayat Penyakit (jika ada)</label>
-                        <textarea name="medicalHistory" value={formData.medicalHistory || ''} onChange={handleChange} className={inputClass} rows={2}></textarea>
+                     <div className="relative input-group">
+                        <textarea id="medicalHistory" name="medicalHistory" value={formData.medicalHistory || ''} onChange={handleChange} className={inputClass} rows={2} placeholder=" "></textarea>
+                         <label htmlFor="medicalHistory" className={labelClass}>Riwayat Penyakit (jika ada)</label>
                     </div>
-                     <div>
-                        <label className="block text-sm font-medium dark:text-gray-300">Kontak Darurat (Nama & No. HP)</label>
-                        <input name="emergencyContact" value={formData.emergencyContact || ''} onChange={handleChange} className={inputClass} required />
+                     <div className="relative input-group">
+                        <input id="emergencyContact" name="emergencyContact" value={formData.emergencyContact || ''} onChange={handleChange} className={inputClass} required placeholder=" " />
+                         <label htmlFor="emergencyContact" className={labelClass}>Kontak Darurat (Nama & No. HP)</label>
                     </div>
 
                     <h2 className="text-xl font-semibold text-brand-primary dark:text-white border-b dark:border-gray-700 pb-2 pt-4">Dokumen Pendukung</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium dark:text-gray-300">Link Kartu Keluarga</label>
-                            <input type="url" name="kkUrl" value={formData.kkUrl || ''} onChange={handleChange} className={inputClass} placeholder="https://drive.google.com/..." required />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="relative input-group">
+                            <input id="kkUrl" type="url" name="kkUrl" value={formData.kkUrl || ''} onChange={handleChange} className={inputClass} placeholder=" " required />
+                             <label htmlFor="kkUrl" className={labelClass}>Link Kartu Keluarga</label>
                         </div>
-                         <div>
-                            <label className="block text-sm font-medium dark:text-gray-300">Link Foto 4x6</label>
-                            <input type="url" name="photoUrl" value={formData.photoUrl || ''} onChange={handleChange} className={inputClass} placeholder="https://drive.google.com/..." required />
+                         <div className="relative input-group">
+                            <input id="photoUrl" type="url" name="photoUrl" value={formData.photoUrl || ''} onChange={handleChange} className={inputClass} placeholder=" " required />
+                             <label htmlFor="photoUrl" className={labelClass}>Link Foto 4x6</label>
                         </div>
-                         <div className="md:col-span-2">
-                            <label className="block text-sm font-medium dark:text-gray-300">Link Surat Izin Orang Tua (Opsional)</label>
-                            <input type="url" name="parentPermitUrl" value={formData.parentPermitUrl || ''} onChange={handleChange} className={inputClass} placeholder="https://drive.google.com/..." />
+                         <div className="md:col-span-2 relative input-group">
+                            <input id="parentPermitUrl" type="url" name="parentPermitUrl" value={formData.parentPermitUrl || ''} onChange={handleChange} className={inputClass} placeholder=" " />
+                             <label htmlFor="parentPermitUrl" className={labelClass}>Link Surat Izin Orang Tua (Opsional)</label>
                         </div>
                     </div>
 

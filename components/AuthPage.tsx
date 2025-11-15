@@ -5,10 +5,13 @@ import { registerUser, loginUser, logoutUser } from '../services/firebase';
 interface AuthPageProps {
     setCurrentPage: (page: PublicPage) => void;
     showNotification: (message: string, type: 'success' | 'error') => void;
+    loginActive?: boolean;
+    registrationActive?: boolean;
 }
 
-const AuthPage: React.FC<AuthPageProps> = ({ setCurrentPage, showNotification }) => {
-    const [isLogin, setIsLogin] = useState(true);
+const AuthPage: React.FC<AuthPageProps> = ({ setCurrentPage, showNotification, loginActive, registrationActive }) => {
+    // Default to registration form if login is inactive but registration is active
+    const [isLogin, setIsLogin] = useState(loginActive || !registrationActive);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -48,38 +51,70 @@ const AuthPage: React.FC<AuthPageProps> = ({ setCurrentPage, showNotification })
         }
     };
 
+    const renderToggleButton = () => {
+        const commonClasses = "inline-block align-baseline font-bold text-sm text-brand-secondary hover:text-brand-accent";
+        if (isLogin) {
+            if (registrationActive) {
+                return (
+                    <button type="button" onClick={() => setIsLogin(false)} className={commonClasses}>
+                        Buat Akun
+                    </button>
+                );
+            }
+        } else { // isRegister
+            if (loginActive) {
+                return (
+                    <button type="button" onClick={() => setIsLogin(true)} className={commonClasses}>
+                        Sudah Punya Akun?
+                    </button>
+                );
+            }
+        }
+        return <div className="w-24 h-5"></div>; // Placeholder to prevent layout shift
+    };
+
+
     return (
-        <div className="min-h-[calc(100vh-5rem)] flex items-center justify-center bg-brand-light dark:bg-brand-dark p-4 animate-fade-in">
-            <div className="w-full max-w-md bg-white dark:bg-brand-primary p-8 rounded-xl shadow-lg interactive-card">
+        <div className="min-h-[calc(100vh-5rem)] flex items-center justify-center bg-brand-light dark:bg-brand-dark p-4">
+            <div className="relative w-full max-w-md bg-white dark:bg-brand-primary p-8 rounded-xl shadow-lg interactive-card">
+                 <button
+                    onClick={() => setCurrentPage('home')}
+                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                    aria-label="Tutup"
+                >
+                    <i className="fas fa-times text-xl"></i>
+                </button>
                 <h2 className="text-2xl font-bold text-center text-brand-primary dark:text-white mb-6">
                     {isLogin ? 'Masuk Akun' : 'Daftar Akun Baru'}
                 </h2>
-                <form onSubmit={handleSubmit}>
-                    <div className="mb-4">
-                        <label className="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2" htmlFor="email">
-                            Alamat Email
-                        </label>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="relative input-group form-input-bg-light dark:form-input-bg-dark">
                         <input
                             id="email"
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="shadow-inner appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-brand-dark dark:border-gray-600 leading-tight focus:outline-none focus:shadow-outline focus:ring-2 focus:ring-brand-accent text-sm"
+                            className="peer form-input shadow-inner appearance-none border rounded w-full py-3 px-3 text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-brand-dark dark:border-gray-600 leading-tight focus:outline-none focus:shadow-outline focus:ring-2 focus:ring-brand-accent text-sm"
                             required
+                            placeholder=" "
                         />
-                    </div>
-                    <div className="mb-6">
-                        <label className="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2" htmlFor="password">
-                            Password
+                         <label htmlFor="email" className="form-label text-sm">
+                            Alamat Email
                         </label>
+                    </div>
+                    <div className="relative input-group form-input-bg-light dark:form-input-bg-dark">
                         <input
                             id="password"
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="shadow-inner appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-brand-dark dark:border-gray-600 mb-3 leading-tight focus:outline-none focus:shadow-outline focus:ring-2 focus:ring-brand-accent text-sm"
+                            className="peer form-input shadow-inner appearance-none border rounded w-full py-3 px-3 text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-brand-dark dark:border-gray-600 leading-tight focus:outline-none focus:shadow-outline focus:ring-2 focus:ring-brand-accent text-sm"
                             required
+                             placeholder=" "
                         />
+                         <label htmlFor="password" className="form-label text-sm">
+                            Password
+                        </label>
                     </div>
                     <div className="flex items-center justify-between">
                         <button
@@ -89,13 +124,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ setCurrentPage, showNotification })
                         >
                             {loading ? <i className="fas fa-spinner fa-spin"></i> : (isLogin ? 'Masuk' : 'Daftar')}
                         </button>
-                        <button
-                            type="button"
-                            onClick={() => setIsLogin(!isLogin)}
-                            className="inline-block align-baseline font-bold text-sm text-brand-secondary hover:text-brand-accent"
-                        >
-                            {isLogin ? 'Buat Akun' : 'Sudah Punya Akun?'}
-                        </button>
+                        {renderToggleButton()}
                     </div>
                 </form>
             </div>

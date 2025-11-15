@@ -5,6 +5,13 @@ import type { SelectionStage, User, RegistrationData, PublicPage } from '../type
 type StageStatus = 'lolos' | 'gagal' | 'pending' | 'locked' | 'default';
 
 const StageDetailPopup: React.FC<{ stage: SelectionStage; status: StageStatus; onClose: () => void }> = ({ stage, status, onClose }) => {
+    const [isClosing, setIsClosing] = useState(false);
+
+    const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(() => onClose(), 300);
+    };
+
     const getPopupContent = () => {
         switch(status) {
             case 'pending': return { icon: 'fa-solid fa-hourglass-half', color: 'text-yellow-500', title: 'Sedang Ditinjau', message: 'Pendaftaran Anda untuk tahap ini telah kami terima dan sedang dalam proses peninjauan oleh tim panitia. Mohon tunggu informasi selanjutnya.'};
@@ -18,12 +25,15 @@ const StageDetailPopup: React.FC<{ stage: SelectionStage; status: StageStatus; o
     if (!content) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4" onClick={onClose}>
-            <div className="bg-brand-light dark:bg-brand-primary rounded-lg shadow-xl p-6 w-full max-w-sm text-center" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4" onClick={handleClose}>
+            <div 
+                className={`bg-brand-light dark:bg-brand-primary rounded-lg shadow-xl p-6 w-full max-w-sm text-center ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'}`}
+                onClick={e => e.stopPropagation()}
+            >
                  <i className={`${content.icon} ${content.color} text-4xl mb-4`}></i>
                  <h3 className={`text-xl font-bold text-brand-primary dark:text-white mb-2`}>{content.title}</h3>
                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">{content.message}</p>
-                 <button onClick={onClose} className="bg-brand-secondary text-white font-bold py-2 px-6 rounded-md hover:bg-brand-accent">Tutup</button>
+                 <button onClick={handleClose} className="bg-brand-secondary text-white font-bold py-2 px-6 rounded-md hover:bg-brand-accent">Tutup</button>
             </div>
         </div>
     );
@@ -155,7 +165,7 @@ const SelectionStages: React.FC<SelectionStagesProps> = ({ user, setCurrentPage 
     }
     
     return (
-        <div className="bg-brand-light dark:bg-brand-dark min-h-screen py-8 px-4 sm:px-6 lg:px-8 animate-fade-in">
+        <div className="bg-brand-light dark:bg-brand-dark min-h-screen py-8 px-4 sm:px-6 lg:px-8">
             {popupStage && <StageDetailPopup stage={popupStage} status={getStageProgress(popupStage, stages.findIndex(s => s.id === popupStage.id))} onClose={() => setPopupStage(null)} />}
             <div className="max-w-7xl mx-auto">
                 <div className="text-center mb-10">

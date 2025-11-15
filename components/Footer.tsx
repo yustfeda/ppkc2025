@@ -3,18 +3,19 @@ import type { PublicPage } from '../types';
 
 interface FooterProps {
     setCurrentPage: (page: PublicPage) => void;
+    appVersion?: string;
 }
 
 const Logo: React.FC = () => (
     <div className="flex-shrink-0 flex items-center cursor-pointer">
         <span className="text-xl font-bold">
-            <span className="text-brand-yellow">PPKC</span>
+            <span className="text-orange-500">PPKC</span>
             <span className="text-brand-logo-blue">2025</span>
         </span>
     </div>
 );
 
-const Footer: React.FC<FooterProps> = ({ setCurrentPage }) => {
+const Footer: React.FC<FooterProps> = ({ setCurrentPage, appVersion }) => {
     return (
         <footer className="bg-brand-primary text-white">
             <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -24,7 +25,7 @@ const Footer: React.FC<FooterProps> = ({ setCurrentPage }) => {
                     </div>
                     <div className="text-center md:text-right">
                         <p className="text-xs text-gray-300">
-                            &copy; {new Date().getFullYear()} Purna Paskibraka Kecamatan Cileles. All Rights Reserved.
+                            &copy; {new Date().getFullYear()} Purna Paskibraka Kecamatan Cileles. All Rights Reserved. {appVersion && `| ${appVersion}`}
                         </p>
                         <div className="mt-3 flex justify-center md:justify-end space-x-4">
                             <a href="#" className="text-gray-400 hover:text-white"><i className="fab fa-facebook-f"></i></a>

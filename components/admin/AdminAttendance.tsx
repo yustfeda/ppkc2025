@@ -14,6 +14,7 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
     const [attendees, setAttendees] = useState<Attendee[]>([]);
     const [loading, setLoading] = useState(true);
     const [scannerActive, setScannerActive] = useState(false);
+    const [scanResult, setScanResult] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -50,51 +51,64 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
     }, [fetchData]);
 
     useEffect(() => {
-        if (!scannerActive) return;
+        if (!scannerActive) {
+            setScanResult(null);
+            return;
+        }
 
         const qrCodeScanner = new Html5QrcodeScanner(
             "qr-reader", 
-            { fps: 10, qrbox: 250 },
+            { fps: 10, qrbox: { width: 250, height: 250 } },
             false
         );
 
-        const onScanSuccess = async (decodedText: string, decodedResult: any) => {
+        const onScanSuccess = async (decodedText: string) => {
             try {
                 const data = JSON.parse(decodedText);
                 const uid = data.uid;
 
                 if (!uid) {
-                    showNotification('QR Code tidak valid.', 'error');
+                    setScanResult({ message: 'QR Code tidak valid.', type: 'error' });
                     return;
                 }
 
-                const userIndex = attendees.findIndex(att => att.uid === uid);
-                if (userIndex === -1) {
-                    showNotification('Peserta tidak ditemukan dalam daftar hadir.', 'error');
-                    return;
-                }
-                
-                const userToUpdate = attendees[userIndex];
-                const newStatus = !userToUpdate.present;
-                await setAttendanceStatus(uid, newStatus);
-                
-                showNotification(`Kehadiran ${userToUpdate.fullName} ${newStatus ? 'berhasil dicatat' : 'dibatalkan'}.`, 'success');
-                
-                // Update local state immediately for better UX
-                setAttendees(prev => prev.map(att => att.uid === uid ? { ...att, present: newStatus } : att));
+                setAttendees(currentAttendees => {
+                    const userIndex = currentAttendees.findIndex(att => att.uid === uid);
+                    if (userIndex === -1) {
+                        setScanResult({ message: 'Peserta tidak ditemukan.', type: 'error' });
+                        return currentAttendees;
+                    }
+
+                    const userToUpdate = currentAttendees[userIndex];
+                    const newStatus = !userToUpdate.present;
+
+                    setAttendanceStatus(uid, newStatus).catch(err => {
+                        showNotification('Gagal update status di server.', 'error');
+                        setAttendees(currentAttendees);
+                    });
+                    
+                    setScanResult({ message: `Berhasil! ${userToUpdate.fullName} - ${newStatus ? 'Hadir' : 'Batal'}`, type: 'success' });
+                    
+                    const updatedAttendees = [...currentAttendees];
+                    updatedAttendees[userIndex] = { ...userToUpdate, present: newStatus };
+                    return updatedAttendees;
+                });
 
             } catch (e) {
-                showNotification('Gagal memproses QR Code. Pastikan QR code benar.', 'error');
-                console.error("QR Scan Error:", e);
+                setScanResult({ message: 'Gagal memproses QR Code.', type: 'error' });
+            } finally {
+                setTimeout(() => setScanResult(null), 3000);
             }
         };
-
+        
         qrCodeScanner.render(onScanSuccess, (error: any) => {});
 
         return () => {
-            qrCodeScanner.clear().catch((error: any) => console.error("Failed to clear scanner.", error));
+             if (qrCodeScanner && qrCodeScanner.getState() !== 1) { // 1 is NOT_STARTED
+                qrCodeScanner.clear().catch((error: any) => console.error("Failed to clear scanner.", error));
+            }
         };
-    }, [scannerActive, attendees, showNotification]);
+    }, [scannerActive, showNotification]);
     
     const exportToPDF = () => {
         const doc = new jspdf.jsPDF();
@@ -152,8 +166,16 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
                         <i className="fas fa-qrcode mr-2"></i>Mulai Scan Kehadiran
                     </button>
                 ) : (
-                    <div>
+                    <div className="relative">
                         <div id="qr-reader" style={{ width: '100%' }}></div>
+                        {scanResult && (
+                             <div className={`absolute inset-0 flex items-center justify-center p-4 transition-opacity duration-300 bg-black/70 rounded-md`}>
+                                <div className={`text-center p-4 rounded-lg ${scanResult.type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white shadow-lg`}>
+                                    <i className={`fas ${scanResult.type === 'success' ? 'fa-check-circle' : 'fa-times-circle'} text-3xl mb-2`}></i>
+                                    <p className="font-bold">{scanResult.message}</p>
+                                </div>
+                            </div>
+                        )}
                         <button 
                             onClick={() => setScannerActive(false)}
                             className="mt-4 bg-red-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-red-700"

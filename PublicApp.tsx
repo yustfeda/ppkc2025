@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import type { PublicPage, User, Notification, ConfirmationState, ManagedButton, DynamicFormModalState } from './types';
+import type { PublicPage, User, Notification, ConfirmationState, ManagedButton, DynamicFormModalState, AdminConfig } from './types';
 import { getAdminConfig, getUserRegistration, getSelectionStages, getManagedButtons } from './services/firebase';
 
 import Header from './components/Header';
@@ -39,15 +39,29 @@ const NotificationPopup: React.FC<{ notification: Notification, onClose: () => v
 };
 
 const ConfirmationModal: React.FC<{ confirmation: ConfirmationState; onCancel: () => void; }> = ({ confirmation, onCancel }) => {
+    const [isClosing, setIsClosing] = useState(false);
+    
+    useEffect(() => {
+        setIsClosing(false); // Reset on new confirmation
+    }, [confirmation]);
+
+    const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(() => onCancel(), 300); // Wait for animation
+    };
+
     if (!confirmation.isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[1002] p-4">
-            <div className="bg-brand-light dark:bg-gray-800 rounded-lg p-6 max-w-sm w-full shadow-lg">
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[1002] p-4" onClick={handleClose}>
+            <div 
+                className={`bg-brand-light dark:bg-gray-800 rounded-lg p-6 max-w-sm w-full shadow-lg ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'}`}
+                onClick={e => e.stopPropagation()}
+            >
                 <h3 className="text-lg font-semibold text-brand-dark dark:text-white mb-4">Konfirmasi Tindakan</h3>
                 <p className="text-gray-800 dark:text-white mb-6">{confirmation.message}</p>
                 <div className="flex justify-end gap-3">
-                    <button onClick={onCancel} className="bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-2 px-4 rounded-md text-sm hover:bg-gray-300">Tidak</button>
+                    <button onClick={handleClose} className="bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-2 px-4 rounded-md text-sm hover:bg-gray-300">Tidak</button>
                     <button onClick={confirmation.onConfirm} className="bg-brand-secondary text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-brand-accent">Ya, Lanjutkan</button>
                 </div>
             </div>
@@ -69,7 +83,7 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
     const [notification, setNotification] = useState<Notification | null>(null);
     const [confirmation, setConfirmation] = useState<ConfirmationState>({ isOpen: false, message: '', onConfirm: () => {} });
     const [dynamicFormState, setDynamicFormState] = useState<DynamicFormModalState>({ isOpen: false, button: null });
-    const [theme, setTheme] = useState<'light' | 'dark'>('light');
+    const [adminConfig, setAdminConfig] = useState<AdminConfig | null>(null);
     const [prevUser, setPrevUser] = useState<User | null>(user);
     const [isSelectionFinished, setIsSelectionFinished] = useState(false);
     const [managedButtons, setManagedButtons] = useState<ManagedButton[]>([]);
@@ -106,7 +120,7 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
                 setIsSelectionFinished(true);
                 return;
             }
-            const hasFailedStage = Object.values(regData.stageProgress || {}).some(p => p.status === 'gagal');
+            const hasFailedStage = Object.values(regData.stageProgress || {}).some((p: any) => p.status === 'gagal');
             if (hasFailedStage) {
                 setIsSelectionFinished(true);
                 return;
@@ -136,18 +150,25 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
 
     useEffect(() => {
         getAdminConfig().then(config => {
-            setTheme(config?.theme || 'light');
+            setAdminConfig(config);
+            if (config) {
+                document.documentElement.classList.toggle('dark', config.theme === 'dark');
+            }
         });
         getManagedButtons().then(setManagedButtons);
     }, []);
 
     useEffect(() => {
-        if (theme === 'dark') {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
+        if (window.location.pathname === '/adminppkckece1') {
+            setIsAdminLoginOpen(true);
         }
-    }, [theme]);
+    }, []);
+
+    const handleCloseAdminLogin = () => {
+        setIsAdminLoginOpen(false);
+        window.history.pushState({}, '', '/');
+    };
+
     
      useEffect(() => {
         if(user && sessionStorage.getItem('justLoggedIn') === 'true'){
@@ -158,16 +179,30 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
      }, [user, showNotification]);
 
     const navigate = useCallback(async (page: PublicPage) => {
-        const userPages: PublicPage[] = ['registration', 'profile', 'status'];
-        if (!user && userPages.includes(page)) {
-            setCurrentPage('login');
+        if (page === 'login' && !adminConfig?.loginActive) {
+            showNotification('Fitur login saat ini dinonaktifkan oleh admin.', 'error');
             return;
         }
+        if (page === 'registration' && !adminConfig?.registrationActive) {
+            showNotification('Pendaftaran saat ini ditutup oleh admin.', 'error');
+            return;
+        }
+    
+        const userPages: PublicPage[] = ['registration', 'profile', 'status'];
+        if (!user && userPages.includes(page)) {
+            if (adminConfig?.loginActive) {
+                setCurrentPage('login');
+            } else {
+                showNotification('Anda harus masuk untuk mengakses halaman ini.', 'error');
+            }
+            return;
+        }
+    
         if (user && page === 'login') {
             setCurrentPage('home');
             return;
         }
-        
+    
         if (user && page === 'registration') {
             const regData = await getUserRegistration(user.uid);
             if (!regData) {
@@ -175,9 +210,9 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
                 return;
             }
         }
-
+    
         setCurrentPage(page);
-    }, [user]);
+    }, [user, adminConfig, showNotification]);
     
     const handleLogout = () => {
         onLogout();
@@ -202,10 +237,10 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
             case 'stages': return <SelectionStages user={user} setCurrentPage={navigate} />;
             case 'announcements': return <Announcements />;
             case 'contact': return <Contact />;
-            case 'login': return <AuthPage setCurrentPage={navigate} showNotification={showNotification} />;
-            case 'registration': return user ? <Registration user={user} setCurrentPage={navigate} showNotification={showNotification} showConfirmation={showConfirmation} /> : <AuthPage setCurrentPage={navigate} showNotification={showNotification} />;
-            case 'profile': return user ? <Profile user={user} showNotification={showNotification} showConfirmation={showConfirmation} /> : <AuthPage setCurrentPage={navigate} showNotification={showNotification} />;
-            case 'status': return user ? <Status user={user} /> : <AuthPage setCurrentPage={navigate} showNotification={showNotification} />;
+            case 'login': return <AuthPage setCurrentPage={navigate} showNotification={showNotification} loginActive={adminConfig?.loginActive} registrationActive={adminConfig?.registrationActive} />;
+            case 'registration': return user ? <Registration user={user} setCurrentPage={navigate} showNotification={showNotification} showConfirmation={showConfirmation} registrationActive={adminConfig?.registrationActive} /> : <AuthPage setCurrentPage={navigate} showNotification={showNotification} loginActive={adminConfig?.loginActive} registrationActive={adminConfig?.registrationActive} />;
+            case 'profile': return user ? <Profile user={user} showNotification={showNotification} showConfirmation={showConfirmation} /> : <AuthPage setCurrentPage={navigate} showNotification={showNotification} loginActive={adminConfig?.loginActive} registrationActive={adminConfig?.registrationActive}/>;
+            case 'status': return user ? <Status user={user} /> : <AuthPage setCurrentPage={navigate} showNotification={showNotification} loginActive={adminConfig?.loginActive} registrationActive={adminConfig?.registrationActive} />;
             default: return <Home setCurrentPage={navigate} user={user} onManagedButtonClick={handleManagedButtonClick} />;
         }
     };
@@ -225,6 +260,7 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
             {dynamicFormState.isOpen && dynamicFormState.button && (
                 <DynamicFormModal 
                     button={dynamicFormState.button} 
+                    user={user}
                     onClose={() => setDynamicFormState({ isOpen: false, button: null })} 
                     showNotification={showNotification}
                 />
@@ -234,12 +270,12 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
                 setCurrentPage={navigate}
                 toggleSidebar={toggleSidebar}
                 user={user}
-                openAdminLogin={() => setIsAdminLoginOpen(true)}
                 onLogout={handleLogout}
                 isSidebarOpen={isSidebarOpen}
                 isSelectionFinished={isSelectionFinished}
                 managedButtons={visibleButtons}
                 onManagedButtonClick={handleManagedButtonClick}
+                loginActive={adminConfig?.loginActive ?? true}
             />
             <Sidebar
                 isOpen={isSidebarOpen}
@@ -247,17 +283,19 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
                 setCurrentPage={navigate}
                 toggleSidebar={toggleSidebar}
                 user={user}
-                openAdminLogin={() => setIsAdminLoginOpen(true)}
                 onLogout={handleLogout}
                 isSelectionFinished={isSelectionFinished}
                 managedButtons={visibleButtons}
                 onManagedButtonClick={handleManagedButtonClick}
+                loginActive={adminConfig?.loginActive ?? true}
             />
             <main className="flex-grow">
-                {renderPage()}
+                <div key={currentPage} className="animate-fade-in-up">
+                    {renderPage()}
+                </div>
             </main>
-            <Footer setCurrentPage={navigate} />
-            {isAdminLoginOpen && <AdminLoginModal onClose={() => setIsAdminLoginOpen(false)} onLogin={onSetAdmin} />}
+            <Footer setCurrentPage={navigate} appVersion={adminConfig?.appVersion} />
+            {isAdminLoginOpen && <AdminLoginModal onClose={handleCloseAdminLogin} onLogin={onSetAdmin} />}
         </div>
     );
 };
