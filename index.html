@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Purna Paskibra Kecamatan Cileles</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+      html { font-size: 14px; }
+      body { 
+        font-size: 1rem; 
+        background-color: #F5F5F5;
+      }
+      .dark body {
+        background-color: #1A1A2E;
+      }
+      /* Button & Card hover effect */
+      .interactive-card, button, a.button, input[type="submit"], input[type="button"] {
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+      }
+      .interactive-card:hover, button:hover, a.button:hover, input[type="submit"]:hover, input[type="button"]:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      }
+      button:active, a.button:active, input[type="submit"]:active, input[type="button"]:active {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      }
+       /* Hamburger Menu Animation */
+      .hamburger {
+        cursor: pointer;
+        padding: 10px;
+        display: inline-block;
+      }
+      .hamburger-line {
+        width: 24px;
+        height: 2px;
+        background-color: #333;
+        display: block;
+        margin: 5px 0;
+        transition: all 0.3s ease-in-out;
+      }
+      .dark .hamburger-line { background-color: #F5F5F5; }
+      .hamburger.is-active .hamburger-line:nth-child(1) {
+        transform: translateY(7px) rotate(45deg);
+      }
+      .hamburger.is-active .hamburger-line:nth-child(2) {
+        opacity: 0;
+      }
+      .hamburger.is-active .hamburger-line:nth-child(3) {
+        transform: translateY(-7px) rotate(-45deg);
+      }
+      /* Notification & Fade-in Animation */
+       @keyframes slide-in {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes fade-in {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes float-animation {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-8px); }
+        100% { transform: translateY(0px); }
+      }
+      .animate-float {
+        animation: float-animation 6s ease-in-out infinite;
+      }
+      .animate-slide-in {
+        animation: slide-in 0.5s ease-out forwards;
+      }
+      .animate-fade-in {
+        animation: fade-in 0.5s ease-out forwards;
+      }
+    </style>
+    <script>
+      tailwind.config = {
+        darkMode: 'class', // Enable dark mode
+        theme: {
+          extend: {
+            colors: {
+              'brand-primary': '#0B2447', // Biru Tua
+              'brand-secondary': '#1976D2', // Biru Sedang
+              'brand-accent': '#576CBC', // Biru Muda
+              'brand-light': '#F5F5F5', // Putih Keabuan
+              'brand-dark': '#1A1A2E',  // Abu Tua Gelap
+              'brand-yellow': '#FFC107', // Kuning untuk logo
+              'brand-logo-blue': '#42A5F5' // Biru untuk logo
+            },
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <!-- PDF & Excel Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Chart.js for Dashboard -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- QR Code Generation & Scanning -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+  </body>
+</html>

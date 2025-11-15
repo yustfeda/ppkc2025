@@ -1,0 +1,7 @@
+{
+  "name": "Copy of Purna Paskibra Kecamatan Cileles",
+  "description": "Portal pendaftaran dan informasi untuk seleksi Paskibraka Kecamatan Cileles. Dilengkapi dengan panel admin untuk mengelola konten dan pendaftaran.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
