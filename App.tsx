@@ -23,18 +23,19 @@ const App: React.FC = () => {
 
             if (firebaseUser) {
                 const isAdminUser = await checkAdminClaim(firebaseUser);
-                 if (isAdminUser) {
+                
+                if (isAdminUser) {
                     setIsAdmin(true);
                     sessionStorage.setItem('isAdmin', 'true');
                 } else {
                     setIsAdmin(false);
                     sessionStorage.removeItem('isAdmin');
-                    // If this was an admin login attempt, log them out
+                    // If this was an admin login attempt by a non-admin, log them out
                     if (sessionStorage.getItem('isAdminLoginAttempt') === 'true') {
                         sessionStorage.removeItem('isAdminLoginAttempt');
                         await logoutUser();
                         // This will trigger onAuthChange again with user=null
-                        return; // Exit early
+                        return; // Exit early to prevent flicker
                     }
                 }
             } else {
@@ -51,11 +52,6 @@ const App: React.FC = () => {
 
         return () => unsubscribe();
     }, []);
-
-    const handleSetAdmin = () => {
-        setIsAdmin(true);
-        sessionStorage.setItem('isAdmin', 'true');
-    };
 
     const handleLogout = () => {
         sessionStorage.removeItem('isAdmin');
@@ -77,7 +73,7 @@ const App: React.FC = () => {
         return <AdminApp onLogout={handleLogout} />;
     }
 
-    return <PublicApp user={user} onSetAdmin={handleSetAdmin} onLogout={handleLogout} />;
+    return <PublicApp user={user} onLogout={handleLogout} />;
 };
 
 export default App;
