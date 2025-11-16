@@ -28,7 +28,7 @@ const Footer: React.FC<FooterProps> = ({ setCurrentPage, appVersion }) => {
                     </div>
                     <div className="text-center md:text-right">
                         <p className="text-xs text-gray-300">
-                            &copy; {new Date().getFullYear()} Purna Paskibraka Kecamatan Cileles.</p><p> All Rights Reserved. {appVersion && `| ${appVersion}`}
+                            &copy; {new Date().getFullYear()} Purna Paskibra Kecamatan Cileles.</p><p> All Rights Reserved. {appVersion && `| ${appVersion}`}
                         </p>
                         <div className="mt-3 flex justify-center md:justify-end space-x-4">
                             <a href="#" className="text-gray-400 hover:text-white"><i className="fab fa-facebook-f"></i></a>
