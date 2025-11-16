@@ -43,7 +43,7 @@ const MOCK_CONFIG: AdminConfig = {
     theme: 'light',
     showRegistrationButton: true,
     registrationComingSoonText: 'SEGERA HADIR',
-    appVersion: ''
+    appVersion: 'v1.1.11'
 };
 
 const MOCK_UPDATES: HomePageUpdate[] = [
@@ -166,4 +166,15 @@ export const updateAdminPassword = (newPassword: string): Promise<void> => {
         return user.updatePassword(newPassword);
     }
     return Promise.reject(new Error("No user is currently signed in."));
+};
+
+export const checkAdminClaim = async (user: any): Promise<boolean> => {
+    if (!user) return false;
+    try {
+        const idTokenResult = await user.getIdTokenResult(true); // Force refresh
+        return idTokenResult.claims.admin === true;
+    } catch (error) {
+        console.error("Error checking admin claim:", error);
+        return false;
+    }
 };

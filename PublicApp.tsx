@@ -13,7 +13,6 @@ import Registration from './components/Registration';
 import Profile from './components/Profile';
 import Status from './components/Status';
 import Footer from './components/Footer';
-import AdminLoginModal from './components/AdminLoginModal';
 import DynamicFormModal from './components/DynamicFormModal';
 
 const NotificationPopup: React.FC<{ notification: Notification, onClose: () => void }> = ({ notification, onClose }) => {
@@ -79,7 +78,6 @@ interface PublicAppProps {
 const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => {
     const [currentPage, setCurrentPage] = useState<PublicPage>('home');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
     const [notification, setNotification] = useState<Notification | null>(null);
     const [confirmation, setConfirmation] = useState<ConfirmationState>({ isOpen: false, message: '', onConfirm: () => {} });
     const [dynamicFormState, setDynamicFormState] = useState<DynamicFormModalState>({ isOpen: false, button: null });
@@ -142,11 +140,18 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
             showNotification('Anda telah logout dari halaman admin.', 'success');
             sessionStorage.removeItem('adminLoggedOut');
         } 
-        else if (prevUser && !user) {
-            showNotification('Anda berhasil logout.', 'success');
+        else if (prevUser && !user) { // Standard user logout
+            // Check if it was a failed admin login attempt
+            if (sessionStorage.getItem('isAdminLoginAttempt') === 'true') {
+                 showNotification('Login gagal. Akun tidak memiliki hak akses admin.', 'error');
+                 sessionStorage.removeItem('isAdminLoginAttempt');
+            } else {
+                 showNotification('Anda berhasil logout.', 'success');
+            }
         }
         setPrevUser(user);
     }, [user, prevUser, showNotification]);
+
 
     useEffect(() => {
         getAdminConfig().then(setAdminConfig);
@@ -155,19 +160,20 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
 
     useEffect(() => {
         if (window.location.pathname === '/adminppkcsatu') {
-            setIsAdminLoginOpen(true);
+            sessionStorage.setItem('isAdminLoginAttempt', 'true');
+            setCurrentPage('login');
+            window.history.pushState({}, '', '/');
         }
     }, []);
 
-    const handleCloseAdminLogin = () => {
-        setIsAdminLoginOpen(false);
-        window.history.pushState({}, '', '/');
-    };
-
     
      useEffect(() => {
-        if(user && sessionStorage.getItem('justLoggedIn') === 'true'){
-            showNotification(`Selamat datang, ${user.displayName || user.email}!`, 'success');
+        const justLoggedIn = sessionStorage.getItem('justLoggedIn') === 'true';
+        if(user && justLoggedIn){
+            // Avoid showing welcome message if it was a failed admin login attempt
+            if (!sessionStorage.getItem('isAdminLoginAttempt')) {
+                showNotification(`Selamat datang, ${user.displayName || user.email}!`, 'success');
+            }
             setCurrentPage('home');
             sessionStorage.removeItem('justLoggedIn');
         }
@@ -290,7 +296,6 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
                 </div>
             </main>
             <Footer setCurrentPage={navigate} appVersion={adminConfig?.appVersion} />
-            {isAdminLoginOpen && <AdminLoginModal onClose={handleCloseAdminLogin} onLogin={onSetAdmin} />}
         </div>
     );
 };

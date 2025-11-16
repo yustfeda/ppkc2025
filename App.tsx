@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { User } from './types';
-import { onAuthChange, logoutUser } from './services/firebase';
+import { onAuthChange, logoutUser, checkAdminClaim } from './services/firebase';
 
 import PublicApp from './PublicApp';
 import AdminApp from './AdminApp';
@@ -18,16 +18,29 @@ const App: React.FC = () => {
             document.documentElement.classList.remove('dark')
         }
 
-        const unsubscribe = onAuthChange((firebaseUser) => {
+        const unsubscribe = onAuthChange(async (firebaseUser) => {
             setUser(firebaseUser as User | null);
 
-            const adminStatus = sessionStorage.getItem('isAdmin') === 'true';
-            
-            if (!firebaseUser) {
-                sessionStorage.removeItem('isAdmin');
-                setIsAdmin(false);
+            if (firebaseUser) {
+                const isAdminUser = await checkAdminClaim(firebaseUser);
+                 if (isAdminUser) {
+                    setIsAdmin(true);
+                    sessionStorage.setItem('isAdmin', 'true');
+                } else {
+                    setIsAdmin(false);
+                    sessionStorage.removeItem('isAdmin');
+                    // If this was an admin login attempt, log them out
+                    if (sessionStorage.getItem('isAdminLoginAttempt') === 'true') {
+                        sessionStorage.removeItem('isAdminLoginAttempt');
+                        await logoutUser();
+                        // This will trigger onAuthChange again with user=null
+                        return; // Exit early
+                    }
+                }
             } else {
-                setIsAdmin(adminStatus);
+                // No user logged in, clear admin status
+                setIsAdmin(false);
+                sessionStorage.removeItem('isAdmin');
             }
 
             // Start fade out process
@@ -47,6 +60,7 @@ const App: React.FC = () => {
     const handleLogout = () => {
         sessionStorage.removeItem('isAdmin');
         sessionStorage.removeItem('seenAdminWelcome');
+        sessionStorage.removeItem('isAdminLoginAttempt');
         setIsAdmin(false);
         logoutUser();
     };
