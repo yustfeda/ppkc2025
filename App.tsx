@@ -18,23 +18,22 @@ const App: React.FC = () => {
         }
 
         const unsubscribe = onAuthChange(async (firebaseUser) => {
-            // Setiap kali auth berubah, reset state dan mulai proses pengecekan.
-            // Ini mencegah render dengan state lama/salah.
-            setIsAdmin(false);
-            setUser(null);
+            // Start the loading state immediately to prevent rendering the wrong UI.
             setIsCheckingAuth(true);
 
             if (firebaseUser) {
-                // Ada pengguna, verifikasi apakah dia admin.
+                // If a user is logged in, check for admin claims.
                 const isAdminUser = await checkAdminClaim(firebaseUser);
-                
-                // Setelah verifikasi selesai, atur state final yang benar.
+                // Set both user and admin state in one go after the check.
                 setUser(firebaseUser as User);
                 setIsAdmin(isAdminUser);
+            } else {
+                // If no user is logged in, reset to default guest state.
+                setUser(null);
+                setIsAdmin(false);
             }
             
-            // Pengecekan selesai, sembunyikan loader.
-            // React akan merender komponen yang tepat (AdminApp atau PublicApp) berdasarkan state final.
+            // Pengecekan selesai, sembunyikan loader dan render komponen yang tepat.
             setIsCheckingAuth(false);
         });
 
@@ -44,7 +43,7 @@ const App: React.FC = () => {
     const handleLogout = () => {
         sessionStorage.removeItem('seenAdminWelcome');
         logoutUser();
-        // onAuthChange akan menangani pembaruan state secara otomatis setelah logout berhasil.
+        // onAuthChange will handle state updates automatically after successful logout.
     };
 
     if (isCheckingAuth) {
@@ -59,7 +58,7 @@ const App: React.FC = () => {
         return <AdminApp onLogout={handleLogout} />;
     }
 
-    // Render PublicApp untuk pengguna non-admin yang sudah login atau untuk tamu (user === null)
+    // Render PublicApp for non-admin logged-in users or for guests (user === null)
     return <PublicApp user={user} onLogout={handleLogout} />;
 };
 
