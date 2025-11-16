@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { PublicPage, User, Notification, ConfirmationState, ManagedButton, DynamicFormModalState, AdminConfig } from './types';
 import { getAdminConfig, getUserRegistration, getSelectionStages, getManagedButtons } from './services/firebase';
 
@@ -81,9 +81,10 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onLogout }) => {
     const [confirmation, setConfirmation] = useState<ConfirmationState>({ isOpen: false, message: '', onConfirm: () => {} });
     const [dynamicFormState, setDynamicFormState] = useState<DynamicFormModalState>({ isOpen: false, button: null });
     const [adminConfig, setAdminConfig] = useState<AdminConfig | null>(null);
-    const [prevUser, setPrevUser] = useState<User | null>(user);
     const [isSelectionFinished, setIsSelectionFinished] = useState(false);
     const [managedButtons, setManagedButtons] = useState<ManagedButton[]>([]);
+    const [showAdminLoginModal, setShowAdminLoginModal] = useState(false);
+    const prevUserRef = useRef<User | null>(user);
 
 
     const showNotification = useCallback((message: string, type: 'success' | 'error') => {
@@ -135,15 +136,25 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onLogout }) => {
     }, [user]);
 
     useEffect(() => {
+        const previousUser = prevUserRef.current;
+
+        // Case 1: Admin logout message (special case)
         if (sessionStorage.getItem('adminLoggedOut') === 'true') {
             showNotification('Anda telah logout dari halaman admin.', 'success');
             sessionStorage.removeItem('adminLoggedOut');
         } 
-        else if (prevUser && !user) { // Standard user logout
-             showNotification('Anda berhasil logout.', 'success');
+        // Case 2: Regular user login
+        else if (!previousUser && user) {
+            showNotification(`Selamat datang, ${user.displayName || user.email}!`, 'success');
         }
-        setPrevUser(user);
-    }, [user, prevUser, showNotification]);
+        // Case 3: Regular user logout
+        else if (previousUser && !user) {
+            showNotification('Anda berhasil logout.', 'success');
+        }
+
+        // Update the ref for the next render cycle
+        prevUserRef.current = user;
+    }, [user, showNotification]);
 
 
     useEffect(() => {
@@ -152,10 +163,9 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onLogout }) => {
     }, []);
 
     useEffect(() => {
-        if (window.location.pathname === '/adminppkcsatu') {
-            sessionStorage.setItem('isAdminLoginAttempt', 'true');
-            setCurrentPage('login');
-            window.history.pushState({}, '', '/');
+        if (window.location.pathname.endsWith('/adminppkcsatu')) {
+            setShowAdminLoginModal(true);
+            window.history.replaceState({}, document.title, window.location.pathname.replace('/adminppkcsatu', ''));
         }
     }, []);
 
@@ -195,20 +205,6 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onLogout }) => {
     
         setCurrentPage(page);
     }, [user, adminConfig, showNotification]);
-
-     useEffect(() => {
-        const justLoggedIn = sessionStorage.getItem('justLoggedIn') === 'true';
-        if(user && justLoggedIn){
-            // Welcome message is only for regular users, as admins are immediately
-            // switched to the AdminApp component which has its own welcome logic.
-            const isAdmin = sessionStorage.getItem('isAdmin') === 'true';
-            if (!isAdmin) {
-                showNotification(`Selamat datang, ${user.displayName || user.email}!`, 'success');
-                navigate('home');
-            }
-            sessionStorage.removeItem('justLoggedIn');
-        }
-     }, [user, showNotification, navigate]);
     
     const handleLogout = () => {
         onLogout();
@@ -261,6 +257,19 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onLogout }) => {
                     showNotification={showNotification}
                 />
             )}
+            
+            {showAdminLoginModal && (
+                <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
+                    <AuthPage 
+                        setCurrentPage={() => setShowAdminLoginModal(false)}
+                        showNotification={showNotification}
+                        isAdminLoginAttempt={true}
+                        loginActive={true}
+                        registrationActive={false}
+                    />
+                </div>
+            )}
+
             <Header 
                 currentPage={currentPage}
                 setCurrentPage={navigate}

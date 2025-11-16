@@ -29,9 +29,8 @@ const AuthPage: React.FC<AuthPageProps> = ({
         try {
             if (isLogin) {
                 await loginUser(email, password);
-                sessionStorage.setItem('justLoggedIn', 'true');
-                // Navigation will be handled by onAuthChange in App.tsx
-                // For modals, the parent component handles closing.
+                // Navigasi sekarang sepenuhnya ditangani oleh onAuthChange di App.tsx
+                // Modal akan ditutup oleh komponen induk setelah state user berubah.
             } else {
                 await registerUser(email, password);
                 await logoutUser(); // Ensure user is logged out after registration

@@ -18,11 +18,14 @@ const App: React.FC = () => {
         }
 
         const unsubscribe = onAuthChange(async (firebaseUser) => {
+            // Selalu mulai proses pengecekan
+            setIsCheckingAuth(true);
+
             if (firebaseUser) {
                 // Lakukan pengecekan admin *sebelum* mengatur state apa pun
                 const isAdminUser = await checkAdminClaim(firebaseUser);
                 
-                // Sekarang perbarui state dengan nilai akhir yang benar
+                // Sekarang perbarui state dengan nilai akhir yang benar secara bersamaan
                 setUser(firebaseUser as User | null);
                 setIsAdmin(isAdminUser);
             } else {
@@ -40,7 +43,6 @@ const App: React.FC = () => {
 
     const handleLogout = () => {
         // onAuthChange akan menangani pembaruan state secara otomatis
-        sessionStorage.removeItem('isAdmin');
         sessionStorage.removeItem('seenAdminWelcome');
         logoutUser();
     };
