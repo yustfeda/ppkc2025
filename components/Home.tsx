@@ -93,10 +93,12 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage, user, onManagedButtonClick 
     return (
        <div className="bg-white dark:bg-brand-primary p-6 md:p-8 rounded-xl shadow-lg animate-float">
         <h1 className="text-3xl md:text-4xl font-bold text-brand-primary dark:text-gray-100 mb-4">
-          Selamat Datang di Portal PPI Cileles
+          Purna Paskibra Kecamatan Cileles
         </h1>
         <p className="text-sm text-gray-600 dark:text-gray-300 mb-6 max-w-xl mx-auto">
-          Platform informasi terpusat untuk seluruh tahapan seleksi, pengumuman penting, dan pendaftaran Calon Anggota Paskibra.
+          Selamat Datang di Sistem Seleksi Paskibra Kecamatan
+Aplikasi ini disiapkan untuk mendukung proses seleksi calon Pasukan Pengibar Bendera secara transparan, profesional, dan terstandar.
+Gunakan menu navigasi untuk melakukan pendaftaran, melihat pengumuman, atau memantau progres seleksi..
         </p>
          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             {config?.showRegistrationButton && (
