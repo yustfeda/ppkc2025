@@ -6,13 +6,13 @@ const DocumentCard: React.FC<{ doc: AnnouncementDocument }> = ({ doc }) => {
     return (
         <div className="bg-brand-light dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md flex flex-col overflow-hidden transition-transform hover:scale-105 duration-300">
 
-            {/* THUMBNAIL FIT - TIDAK TERPOTONG */}
+            {/* THUMBNAIL FULL-FIT (TIDAK TERPOTONG, PROPORSIONAL) */}
             {doc.thumbnailUrl && (
-                <div className="relative w-full h-48 md:h-56 overflow-hidden flex items-center justify-center bg-gray-200 dark:bg-gray-700">
+                <div className="relative w-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                     <img 
                         src={doc.thumbnailUrl}
                         alt={doc.title}
-                        className="max-w-full max-h-full object-contain"
+                        className="w-full h-auto object-contain rounded-t-lg"
                     />
                 </div>
             )}
