@@ -1,18 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { getAnnouncements } from '../services/firebase';
-import type { AnnouncementDocument } from '../types';
-
 const DocumentCard: React.FC<{ doc: AnnouncementDocument }> = ({ doc }) => {
     return (
         <div className="bg-brand-light dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md flex flex-col overflow-hidden transition-transform hover:scale-105 duration-300">
 
-            {/* THUMBNAIL FULL-FIT (TIDAK TERPOTONG, PROPORSIONAL) */}
+            {/* THUMBNAIL FIX (FULL LEBAR, 16:9, OBJECT-COVER) */}
             {doc.thumbnailUrl && (
-                <div className="relative w-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                    <img 
+                <div className="relative w-full aspect-video bg-gray-200 dark:bg-gray-700 overflow-hidden rounded-t-lg">
+                    <img
                         src={doc.thumbnailUrl}
                         alt={doc.title}
-                        className="w-full h-auto object-contain rounded-t-lg"
+                        className="absolute top-0 left-0 w-full h-full object-cover"
                     />
                 </div>
             )}
@@ -26,13 +22,11 @@ const DocumentCard: React.FC<{ doc: AnnouncementDocument }> = ({ doc }) => {
             
             {/* DESKRIPSI */}
             <div className="p-4 flex-grow">
-                {doc.description && (
+                {doc.description ? (
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                         {doc.description}
                     </p>
-                )}
-
-                {(!doc.thumbnailUrl && !doc.description) && (
+                ) : (
                     <p className="text-sm text-gray-400 italic">
                         Tidak ada detail tambahan.
                     </p>
@@ -63,50 +57,3 @@ const DocumentCard: React.FC<{ doc: AnnouncementDocument }> = ({ doc }) => {
         </div>
     );
 };
-
-const Announcements: React.FC = () => {
-    const [documents, setDocuments] = useState<AnnouncementDocument[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchDocs = async () => {
-            setLoading(true);
-            const data = await getAnnouncements();
-            setDocuments(data);
-            setLoading(false);
-        };
-        fetchDocs();
-    }, []);
-
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-[calc(100vh-80px)]">
-                <i className="fas fa-spinner fa-spin text-4xl text-brand-secondary"></i>
-            </div>
-        );
-    }
-    
-    return (
-        <div className="bg-gray-100 dark:bg-brand-dark min-h-screen py-10 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto">
-                <div className="text-center mb-12">
-                    <h1 className="text-4xl font-bold text-brand-dark dark:text-gray-100">
-                        Pengumuman
-                    </h1>
-                    <p className="text-lg text-gray-600 dark:text-gray-300 mt-2">
-                        Informasi resmi terkait jadwal seleksi, latihan, perubahan data,
-                        dan pengumuman tahapan. Cek secara berkala untuk update terbaru.
-                    </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {documents.map(doc => (
-                        <DocumentCard key={doc.id} doc={doc} />
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-};
-
-export default Announcements;
