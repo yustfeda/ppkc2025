@@ -71,11 +71,10 @@ const ConfirmationModal: React.FC<{ confirmation: ConfirmationState; onCancel: (
 
 interface PublicAppProps {
     user: User | null;
-    onSetAdmin: () => void;
     onLogout: () => void;
 }
 
-const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => {
+const PublicApp: React.FC<PublicAppProps> = ({ user, onLogout }) => {
     const [currentPage, setCurrentPage] = useState<PublicPage>('home');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [notification, setNotification] = useState<Notification | null>(null);
@@ -141,13 +140,7 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
             sessionStorage.removeItem('adminLoggedOut');
         } 
         else if (prevUser && !user) { // Standard user logout
-            // Check if it was a failed admin login attempt
-            if (sessionStorage.getItem('isAdminLoginAttempt') === 'true') {
-                 showNotification('Login gagal. Akun tidak memiliki hak akses admin.', 'error');
-                 sessionStorage.removeItem('isAdminLoginAttempt');
-            } else {
-                 showNotification('Anda berhasil logout.', 'success');
-            }
+             showNotification('Anda berhasil logout.', 'success');
         }
         setPrevUser(user);
     }, [user, prevUser, showNotification]);
@@ -160,25 +153,12 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
 
     useEffect(() => {
         if (window.location.pathname === '/adminppkcsatu') {
-            sessionStorage.setItem('isAdminLoginAttempt', 'true');
             setCurrentPage('login');
             window.history.pushState({}, '', '/');
         }
     }, []);
 
     
-     useEffect(() => {
-        const justLoggedIn = sessionStorage.getItem('justLoggedIn') === 'true';
-        if(user && justLoggedIn){
-            // Avoid showing welcome message if it was a failed admin login attempt
-            if (!sessionStorage.getItem('isAdminLoginAttempt')) {
-                showNotification(`Selamat datang, ${user.displayName || user.email}!`, 'success');
-            }
-            setCurrentPage('home');
-            sessionStorage.removeItem('justLoggedIn');
-        }
-     }, [user, showNotification]);
-
     const navigate = useCallback(async (page: PublicPage) => {
         if (page === 'login' && !adminConfig?.loginActive) {
             showNotification('Fitur login saat ini dinonaktifkan oleh admin.', 'error');
@@ -214,6 +194,20 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
     
         setCurrentPage(page);
     }, [user, adminConfig, showNotification]);
+
+     useEffect(() => {
+        const justLoggedIn = sessionStorage.getItem('justLoggedIn') === 'true';
+        if(user && justLoggedIn){
+            // Welcome message is only for regular users, as admins are immediately
+            // switched to the AdminApp component which has its own welcome logic.
+            const isAdmin = sessionStorage.getItem('isAdmin') === 'true';
+            if (!isAdmin) {
+                showNotification(`Selamat datang, ${user.displayName || user.email}!`, 'success');
+                navigate('home');
+            }
+            sessionStorage.removeItem('justLoggedIn');
+        }
+     }, [user, showNotification, navigate]);
     
     const handleLogout = () => {
         onLogout();

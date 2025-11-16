@@ -23,20 +23,11 @@ const App: React.FC = () => {
 
             if (firebaseUser) {
                 const isAdminUser = await checkAdminClaim(firebaseUser);
-                
+                setIsAdmin(isAdminUser);
                 if (isAdminUser) {
-                    setIsAdmin(true);
                     sessionStorage.setItem('isAdmin', 'true');
                 } else {
-                    setIsAdmin(false);
                     sessionStorage.removeItem('isAdmin');
-                    // If this was an admin login attempt by a non-admin, log them out
-                    if (sessionStorage.getItem('isAdminLoginAttempt') === 'true') {
-                        sessionStorage.removeItem('isAdminLoginAttempt');
-                        await logoutUser();
-                        // This will trigger onAuthChange again with user=null
-                        return; // Exit early to prevent flicker
-                    }
                 }
             } else {
                 // No user logged in, clear admin status
@@ -56,7 +47,7 @@ const App: React.FC = () => {
     const handleLogout = () => {
         sessionStorage.removeItem('isAdmin');
         sessionStorage.removeItem('seenAdminWelcome');
-        sessionStorage.removeItem('isAdminLoginAttempt');
+        sessionStorage.removeItem('isAdminLoginAttempt'); // Cleanup old flag
         setIsAdmin(false);
         logoutUser();
     };
