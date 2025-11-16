@@ -9,6 +9,22 @@ const App: React.FC = () => {
     const [user, setUser] = useState<User | null>(null);
     const [isAdmin, setIsAdmin] = useState(false);
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+    const [isDevToolsOpen, setIsDevToolsOpen] = useState(false);
+
+    useEffect(() => {
+        // Anti-DevTools: Displays a blank page if developer tools are open.
+        const devtools = /./;
+        devtools.toString = function() {
+            setIsDevToolsOpen(true);
+            return '';
+        };
+
+        const checkInterval = setInterval(() => {
+            console.log('%c', devtools);
+        }, 1000);
+
+        return () => clearInterval(checkInterval);
+    }, []);
 
     useEffect(() => {
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -17,24 +33,24 @@ const App: React.FC = () => {
             document.documentElement.classList.remove('dark')
         }
 
-        const unsubscribe = onAuthChange(async (firebaseUser) => {
-            // Start the loading state immediately to prevent rendering the wrong UI.
-            setIsCheckingAuth(true);
+        const unsubscribe = onAuthChange((firebaseUser) => {
+            setIsCheckingAuth(true); // Always show loader on any auth state change
 
             if (firebaseUser) {
-                // If a user is logged in, check for admin claims.
-                const isAdminUser = await checkAdminClaim(firebaseUser);
-                // Set both user and admin state in one go after the check.
-                setUser(firebaseUser as User);
-                setIsAdmin(isAdminUser);
+                // If a user exists, check for admin claims before rendering anything.
+                checkAdminClaim(firebaseUser).then(isAdminUser => {
+                    // Once the check is complete, set the user and admin state together.
+                    // This prevents rendering PublicApp for an admin user temporarily.
+                    setUser(firebaseUser as User);
+                    setIsAdmin(isAdminUser);
+                    setIsCheckingAuth(false); // Finished checking, ready to render correct app.
+                });
             } else {
-                // If no user is logged in, reset to default guest state.
+                // No user is logged in, clear all state and stop loading.
                 setUser(null);
                 setIsAdmin(false);
+                setIsCheckingAuth(false);
             }
-            
-            // Pengecekan selesai, sembunyikan loader dan render komponen yang tepat.
-            setIsCheckingAuth(false);
         });
 
         return () => unsubscribe();
@@ -45,6 +61,11 @@ const App: React.FC = () => {
         logoutUser();
         // onAuthChange will handle state updates automatically after successful logout.
     };
+
+    if (isDevToolsOpen) {
+        // Return a blank page if DevTools is detected.
+        return null;
+    }
 
     if (isCheckingAuth) {
         return (

@@ -93,7 +93,7 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage, user, onManagedButtonClick 
     return (
        <div className="bg-white dark:bg-brand-primary p-6 md:p-8 rounded-xl shadow-lg animate-float">
         <h1 className="text-3xl md:text-4xl font-bold text-brand-primary dark:text-gray-100 mb-4">
-          Purna Paskibra Kecamatan Cileles
+          Selamat Datang di Portal PPI Cileles
         </h1>
         <p className="text-sm text-gray-600 dark:text-gray-300 mb-6 max-w-xl mx-auto">
           Platform informasi terpusat untuk seluruh tahapan seleksi, pengumuman penting, dan pendaftaran Calon Anggota Paskibra.
@@ -139,11 +139,11 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage, user, onManagedButtonClick 
                         {supportersSection.items.map(supporter => (
                              <div key={supporter.id} title={supporter.name} className="flex items-center justify-center h-20 w-32 transition-all duration-300">
                                {supporter.imageUrl ? (
-                                   <img src={supporter.imageUrl} alt={supporter.name} className="max-h-full max-w-full object-contain border border-orange-500 rounded-md" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                   <img src={supporter.imageUrl} alt={supporter.name} className="max-h-full max-w-full object-contain rounded-md" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                                ) : supporter.icon ? (
-                                   <i className={`${supporter.icon} text-4xl text-gray-700 dark:text-gray-200 p-4 border border-orange-500 rounded-lg`}></i>
+                                   <i className={`${supporter.icon} text-4xl text-gray-700 dark:text-gray-200 p-4 rounded-lg`}></i>
                                ) : (
-                                   <span className="text-sm text-gray-700 dark:text-gray-200 font-semibold text-center p-4 border border-orange-500 rounded-lg">{supporter.name}</span>
+                                   <span className="text-sm text-gray-700 dark:text-gray-200 font-semibold text-center p-4 rounded-lg">{supporter.name}</span>
                                )}
                            </div>
                         ))}
