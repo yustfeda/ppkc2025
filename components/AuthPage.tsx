@@ -3,27 +3,25 @@ import type { PublicPage } from '../types';
 import { registerUser, loginUser, logoutUser } from '../services/firebase';
 
 interface AuthPageProps {
-    setCurrentPage: (page: PublicPage) => void;
+    setCurrentPage: (page: PublicPage | 'close') => void;
     showNotification: (message: string, type: 'success' | 'error') => void;
     loginActive?: boolean;
     registrationActive?: boolean;
+    isAdminLoginAttempt?: boolean;
 }
 
-const AuthPage: React.FC<AuthPageProps> = ({ setCurrentPage, showNotification, loginActive, registrationActive }) => {
-    const isAdminLoginAttempt = sessionStorage.getItem('isAdminLoginAttempt') === 'true';
-
+const AuthPage: React.FC<AuthPageProps> = ({ 
+    setCurrentPage, 
+    showNotification, 
+    loginActive, 
+    registrationActive, 
+    isAdminLoginAttempt = false 
+}) => {
     // Force login form for admin attempts
     const [isLogin, setIsLogin] = useState(isAdminLoginAttempt || loginActive || !registrationActive);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
-
-    useEffect(() => {
-        // Clean up the flag after the component has mounted and read it
-        if (isAdminLoginAttempt) {
-            sessionStorage.removeItem('isAdminLoginAttempt');
-        }
-    }, [isAdminLoginAttempt]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -33,6 +31,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ setCurrentPage, showNotification, l
                 await loginUser(email, password);
                 sessionStorage.setItem('justLoggedIn', 'true');
                 // Navigation will be handled by onAuthChange in App.tsx
+                // For modals, the parent component handles closing.
             } else {
                 await registerUser(email, password);
                 await logoutUser(); // Ensure user is logged out after registration
@@ -88,7 +87,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ setCurrentPage, showNotification, l
 
 
     return (
-        <div className="min-h-[calc(100vh-5rem)] flex items-center justify-center bg-brand-light dark:bg-brand-dark p-4">
+        <div className="min-h-[calc(100vh-5rem)] flex items-center justify-center bg-brand-light dark:bg-brand-dark p-4 sm:bg-transparent sm:dark:bg-transparent">
             <div className="relative w-full max-w-md bg-white dark:bg-brand-primary p-8 rounded-xl shadow-lg interactive-card">
                  <button
                     onClick={() => setCurrentPage('home')}
