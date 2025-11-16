@@ -1,4 +1,4 @@
-import type { SelectionStage, AnnouncementDocument, AdminConfig, RegistrationData, User, HomePageUpdate, ManagedButton, Supporter, SupportersSection, FormSubmission } from '../types';
+import type { SelectionStage, AnnouncementDocument, AdminConfig, RegistrationData, User, HomePageUpdate, ManagedButton, Supporter, SupportersSection, FormSubmission, FormField } from '../types';
 
 declare const firebase: any;
 
@@ -63,6 +63,12 @@ const MOCK_SUPPORTERS_SECTION: SupportersSection = {
     ]
 };
 
+const MOCK_REG_FORM_FIELDS: FormField[] = [
+    { id: 'kkUrl', label: 'Link Kartu Keluarga', type: 'url', required: true },
+    { id: 'photoUrl', label: 'Link Foto 4x6 BG Merah', type: 'url', required: true },
+    { id: 'parentPermitUrl', label: 'Link Surat Izin Orang Tua (Opsional)', type: 'url', required: false },
+]
+
 // Data Fetching
 export const getData = async <T>(path: string, mockData?: T): Promise<T> => {
     try {
@@ -95,6 +101,7 @@ export const getManagedButtons = () => getData<ManagedButton[]>('managedButtons'
 export const getSupporters = () => getData<SupportersSection>('supporters', MOCK_SUPPORTERS_SECTION);
 export const getAttendanceData = () => getData<{[uid: string]: { present: boolean }}>('attendance', {});
 export const getAllFormSubmissions = () => getData<{[buttonId: string]: {[submissionId: string]: FormSubmission}}>('formSubmissions', {});
+export const getRegistrationFormFields = () => getData<FormField[]>('registrationFormFields', MOCK_REG_FORM_FIELDS);
 
 
 // Data Writing

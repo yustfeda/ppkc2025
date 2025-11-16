@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { PublicPage, User, ManagedButton } from '../types';
 
 interface NavItem {
@@ -18,14 +18,58 @@ const navItems: NavItem[] = [
   { page: 'contact', label: 'Kontak', icon: 'fas fa-address-book', roles: ['guest', 'user'] },
 ];
 
-const Logo: React.FC = () => (
-    <div className="flex-shrink-0 flex items-center cursor-pointer">
-        <span className="text-xl font-bold">
-            <span className="text-orange-500">PPKC</span>
-            <span className="text-brand-primary dark:text-brand-logo-blue">2025</span>
-        </span>
-    </div>
-);
+const AnimatedLogo: React.FC = () => {
+    const [animate, setAnimate] = useState(true);
+    useEffect(() => {
+      const interval = setInterval(() => {
+        setAnimate(false);
+        setTimeout(() => setAnimate(true), 50);
+      }, 5000);
+      return () => clearInterval(interval);
+    }, []);
+
+    return (
+        <div className="flex-shrink-0 flex items-center cursor-pointer">
+            <span className="text-xl font-bold">
+                <span className="text-orange-500 font-quicksand tracking-wide">PPKC</span>
+                <span className="text-brand-logo-blue font-orbitron">
+                  202
+                  {animate ? (
+                     <span className="inline-block animate-logo-5">5</span>
+                  ) : (
+                     <span className="inline-block">5</span>
+                  )}
+                </span>
+            </span>
+        </div>
+    );
+};
+
+const ThemeToggle: React.FC = () => {
+    const [isDarkMode, setIsDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
+
+    const toggleTheme = () => {
+        const newIsDark = !isDarkMode;
+        setIsDarkMode(newIsDark);
+        if (newIsDark) {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+        }
+    };
+
+    return (
+        <button onClick={toggleTheme} className="group relative flex flex-col items-center justify-center px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-brand-secondary transition-colors text-xs"
+        >
+            <i className={`text-xl ${isDarkMode ? 'fas fa-sun' : 'fas fa-moon'}`}></i>
+             <span className="absolute top-full mt-2 text-xs font-semibold bg-brand-dark text-white px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                {isDarkMode ? 'Mode Terang' : 'Mode Gelap'}
+             </span>
+        </button>
+    );
+};
 
 
 interface HeaderProps {
@@ -63,7 +107,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, toggleSide
         <div className="flex items-center justify-between h-full">
           {/* Logo */}
           <div onClick={() => setCurrentPage('home')}>
-             <Logo />
+             <AnimatedLogo />
           </div>
 
           {/* Desktop Navigation */}
@@ -95,6 +139,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, toggleSide
               ))}
             </nav>
             <div className="h-8 w-px bg-gray-200 dark:bg-gray-700 mx-2"></div>
+            <ThemeToggle />
             { user ? (
                  <button onClick={onLogout} className="group relative flex flex-col items-center justify-center px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-brand-secondary transition-colors text-xs">
                     <i className="fas fa-sign-out-alt text-xl"></i>

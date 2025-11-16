@@ -60,10 +60,9 @@ export interface RegistrationData {
     email: string;
     medicalHistory: string;
     emergencyContact: string;
-    // New optional fields for document links
-    kkUrl?: string;
-    photoUrl?: string;
-    parentPermitUrl?: string;
+    // New dynamic fields for document links and profile picture
+    documentLinks?: Record<string, string>;
+    profilePictureUrl?: string;
     // Main administrative status
     status: 'Belum Mendaftar' | 'Terkirim' | 'Lolos' | 'Gagal';
     submittedAt?: number;

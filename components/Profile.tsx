@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import type { User, RegistrationData } from '../types';
-import { getUserRegistration, setData, deleteUserRegistration, logoutUser } from '../services/firebase';
+import type { User, RegistrationData, FormField } from '../types';
+import { getUserRegistration, setData, deleteUserRegistration, logoutUser, getRegistrationFormFields } from '../services/firebase';
 
 interface ProfileProps {
     user: User;
@@ -11,16 +11,21 @@ interface ProfileProps {
 const Profile: React.FC<ProfileProps> = ({ user, showNotification, showConfirmation }) => {
     const [registration, setRegistration] = useState<RegistrationData | null>(null);
     const [formData, setFormData] = useState<Partial<RegistrationData>>({});
+    const [docFields, setDocFields] = useState<FormField[]>([]);
     const [loading, setLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
 
     const fetchData = useCallback(async () => {
         setLoading(true);
-        const data = await getUserRegistration(user.uid);
+        const [data, fieldsData] = await Promise.all([
+            getUserRegistration(user.uid),
+            getRegistrationFormFields()
+        ]);
         if (data) {
             setRegistration(data);
             setFormData(data);
         }
+        setDocFields(fieldsData);
         setLoading(false);
     }, [user.uid]);
     
@@ -28,6 +33,16 @@ const Profile: React.FC<ProfileProps> = ({ user, showNotification, showConfirmat
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleDocLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFormData({
+            ...formData,
+            documentLinks: {
+                ...formData.documentLinks,
+                [e.target.name]: e.target.value,
+            },
+        });
     };
 
     const handleSave = async (e: React.FormEvent) => {
@@ -84,8 +99,8 @@ const Profile: React.FC<ProfileProps> = ({ user, showNotification, showConfirmat
             <div className="max-w-4xl mx-auto">
                 <div className="text-center mb-8">
                      <div className="w-32 h-32 rounded-full bg-gray-200 dark:bg-gray-700 mx-auto mb-4 flex items-center justify-center overflow-hidden border-4 border-white dark:border-gray-600 shadow-lg">
-                        {formData.photoUrl ? (
-                            <img src={formData.photoUrl} alt="Foto Profil" className="w-full h-full object-cover" />
+                        {formData.profilePictureUrl ? (
+                            <img src={formData.profilePictureUrl} alt="Foto Profil" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                         ) : (
                             <i className="fas fa-user text-6xl text-gray-400 dark:text-gray-500"></i>
                         )}
@@ -133,21 +148,29 @@ const Profile: React.FC<ProfileProps> = ({ user, showNotification, showConfirmat
                         <input id="emergencyContact" name="emergencyContact" value={formData.emergencyContact || ''} onChange={handleChange} className={inputClass} required placeholder=" " />
                          <label htmlFor="emergencyContact" className={labelClass}>Kontak Darurat (Nama & No. HP)</label>
                     </div>
+                    
+                    <div className="relative input-group">
+                        <input id="profilePictureUrl" name="profilePictureUrl" type="url" value={formData.profilePictureUrl || ''} onChange={handleChange} className={inputClass} placeholder=" " />
+                        <label htmlFor="profilePictureUrl" className={labelClass}>Link Foto Profil (Opsional)</label>
+                    </div>
 
                     <h2 className="text-xl font-semibold text-brand-primary dark:text-white border-b dark:border-gray-700 pb-2 pt-4">Dokumen Pendukung</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="relative input-group">
-                            <input id="kkUrl" type="url" name="kkUrl" value={formData.kkUrl || ''} onChange={handleChange} className={inputClass} placeholder=" " required />
-                             <label htmlFor="kkUrl" className={labelClass}>Link Kartu Keluarga</label>
-                        </div>
-                         <div className="relative input-group">
-                            <input id="photoUrl" type="url" name="photoUrl" value={formData.photoUrl || ''} onChange={handleChange} className={inputClass} placeholder=" " required />
-                             <label htmlFor="photoUrl" className={labelClass}>Link Foto 4x6</label>
-                        </div>
-                         <div className="md:col-span-2 relative input-group">
-                            <input id="parentPermitUrl" type="url" name="parentPermitUrl" value={formData.parentPermitUrl || ''} onChange={handleChange} className={inputClass} placeholder=" " />
-                             <label htmlFor="parentPermitUrl" className={labelClass}>Link Surat Izin Orang Tua (Opsional)</label>
-                        </div>
+                        {docFields.map(field => (
+                             <div key={field.id} className="relative input-group md:col-span-2">
+                                <input 
+                                    id={field.id} 
+                                    type="url" 
+                                    name={field.id} 
+                                    value={formData.documentLinks?.[field.id] || ''}
+                                    onChange={handleDocLinkChange} 
+                                    className={inputClass} 
+                                    placeholder=" " 
+                                    required={field.required} 
+                                />
+                                 <label htmlFor={field.id} className={labelClass}>{field.label} {field.required && <span className="text-red-500">*</span>}</label>
+                            </div>
+                        ))}
                     </div>
 
                     <div className="flex flex-col sm:flex-row items-center justify-between pt-4 gap-4">

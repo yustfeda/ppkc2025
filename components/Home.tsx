@@ -93,21 +93,19 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage, user, onManagedButtonClick 
     return (
        <div className="bg-white dark:bg-brand-primary p-6 md:p-8 rounded-xl shadow-lg animate-float">
         <h1 className="text-3xl md:text-4xl font-bold text-brand-primary dark:text-gray-100 mb-4">
-          Purna Paskibra Kecamatan Cileles
+          Selamat Datang di Portal PPI Cileles
         </h1>
         <p className="text-sm text-gray-600 dark:text-gray-300 mb-6 max-w-xl mx-auto">
-          Selamat Datang di Sistem Seleksi Paskibra Kecamatan
-Aplikasi ini disiapkan untuk mendukung proses seleksi calon Pasukan Pengibar Bendera secara transparan, profesional, dan terstandar.
-Gunakan menu navigasi untuk melakukan pendaftaran, melihat pengumuman, atau memantau progres seleksi..
+          Platform informasi terpusat untuk seluruh tahapan seleksi, pengumuman penting, dan pendaftaran Calon Anggota Paskibra.
         </p>
-         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+         {!config?.registrationActive && config?.registrationComingSoonText && (
+            <p className="text-yellow-600 dark:text-yellow-400 text-xs font-semibold animate-pulse mb-2">
+                {config.registrationComingSoonText}
+            </p>
+        )}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             {config?.showRegistrationButton && (
-                <div className="flex flex-col items-center gap-2">
-                    {!config.registrationActive && config.registrationComingSoonText && (
-                        <p className="text-yellow-600 dark:text-yellow-400 text-xs font-semibold animate-pulse">
-                            {config.registrationComingSoonText}
-                        </p>
-                    )}
+                <>
                     {config.registrationActive ? (
                         <button
                             onClick={() => setCurrentPage('login')}
@@ -123,7 +121,7 @@ Gunakan menu navigasi untuk melakukan pendaftaran, melihat pengumuman, atau mema
                             <i className="far fa-clock text-yellow-600"></i> Pendaftaran Belum Dibuka
                         </button>
                     )}
-                </div>
+                </>
             )}
             {config?.loginActive && (
                  <button 
@@ -137,7 +135,7 @@ Gunakan menu navigasi untuk melakukan pendaftaran, melihat pengumuman, atau mema
             <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
                 <h3 className="text-md font-semibold text-gray-700 dark:text-gray-300 mb-4">{supportersSection.title || 'Didukung Oleh'}</h3>
                 {supportersSection.items.length > 0 ? (
-                    <div className="flex justify-center items-center gap-6 flex-wrap">
+                    <div className="flex justify-center items-center gap-4 flex-wrap">
                         {supportersSection.items.map(supporter => (
                              <div key={supporter.id} title={supporter.name} className="flex items-center justify-center h-20 w-32 transition-all duration-300">
                                {supporter.imageUrl ? (
@@ -189,7 +187,16 @@ Gunakan menu navigasi untuk melakukan pendaftaran, melihat pengumuman, atau mema
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                       {updates.slice(0, 3).map(update => (
                           <div key={update.id} className="bg-white dark:bg-brand-primary rounded-lg shadow-lg overflow-hidden flex flex-col interactive-card">
-                              {update.imageUrl && <img src={update.imageUrl} alt={update.title} className="w-full h-48 object-cover" />}
+                              {update.imageUrl && (
+                                <div className="w-full h-48 bg-gray-100 dark:bg-brand-dark flex justify-center items-center">
+                                    <img
+                                        src={update.imageUrl}
+                                        alt={update.title}
+                                        className="max-w-full max-h-full"
+                                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                    />
+                                </div>
+                              )}
                               <div className="p-6 flex flex-col flex-grow">
                                   <p className="text-xs text-gray-500 dark:text-gray-400">{update.date}</p>
                                   <h3 className="text-lg font-semibold text-brand-primary dark:text-white mt-2 mb-2">{update.title}</h3>

@@ -12,6 +12,12 @@ const App: React.FC = () => {
     const [fadeOutLoader, setFadeOutLoader] = useState(false);
 
     useEffect(() => {
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+
         const unsubscribe = onAuthChange((firebaseUser) => {
             setUser(firebaseUser as User | null);
 

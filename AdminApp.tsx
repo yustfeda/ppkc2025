@@ -71,12 +71,7 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
     }, []);
 
     const fetchAdminData = useCallback(() => {
-        getAdminConfig().then(config => {
-            setAdminConfig(config);
-             if (config) {
-                document.documentElement.classList.toggle('dark', config.theme === 'dark');
-            }
-        });
+        getAdminConfig().then(setAdminConfig);
         getRegistrations().then(regs => {
             const pendingCount = Object.values(regs).filter(r => r.status === 'Terkirim').length;
             setNotificationBadge(pendingCount);

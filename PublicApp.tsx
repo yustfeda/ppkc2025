@@ -149,12 +149,7 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
     }, [user, prevUser, showNotification]);
 
     useEffect(() => {
-        getAdminConfig().then(config => {
-            setAdminConfig(config);
-            if (config) {
-                document.documentElement.classList.toggle('dark', config.theme === 'dark');
-            }
-        });
+        getAdminConfig().then(setAdminConfig);
         getManagedButtons().then(setManagedButtons);
     }, []);
 

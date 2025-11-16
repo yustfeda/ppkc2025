@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getRegistrations, getSelectionStages, deleteUserRegistration, getManagedButtons, getAllFormSubmissions } from '../../services/firebase';
-import type { RegistrationData, SelectionStage, AdminPageProps, ManagedButton, FormSubmission } from '../../types';
+import { getRegistrations, getSelectionStages, deleteUserRegistration, getManagedButtons, getAllFormSubmissions, getRegistrationFormFields } from '../../services/firebase';
+import type { RegistrationData, SelectionStage, AdminPageProps, ManagedButton, FormSubmission, FormField } from '../../types';
 
 declare const jspdf: any;
 declare const XLSX: any;
@@ -8,6 +8,7 @@ declare const XLSX: any;
 const AdminRecap: React.FC<AdminPageProps> = ({ showNotification, showConfirmation }) => {
     const [registrations, setRegistrations] = useState<RegistrationData[]>([]);
     const [stages, setStages] = useState<SelectionStage[]>([]);
+    const [docFields, setDocFields] = useState<FormField[]>([]);
     const [selectedStage, setSelectedStage] = useState<string>('all');
     const [loading, setLoading] = useState(true);
     const [formSubmissions, setFormSubmissions] = useState<{[buttonId: string]: FormSubmission[]}>({});
@@ -19,10 +20,12 @@ const AdminRecap: React.FC<AdminPageProps> = ({ showNotification, showConfirmati
             getRegistrations(), 
             getSelectionStages(),
             getManagedButtons(),
-            getAllFormSubmissions()
-        ]).then(([regsData, stagesData, buttonsData, submissionsData]) => {
+            getAllFormSubmissions(),
+            getRegistrationFormFields()
+        ]).then(([regsData, stagesData, buttonsData, submissionsData, fieldsData]) => {
             setRegistrations(regsData ? Object.values(regsData) : []);
             setStages([{ id: 'administration', title: 'Lolos Administrasi', description: '', date: '' }, ...stagesData]);
+            setDocFields(fieldsData || []);
             
             const recapEnabledButtons = (buttonsData || []).filter(b => b.includeInRecap && b.formFields && b.formFields.length > 0);
             setRecapButtons(recapEnabledButtons);
@@ -76,23 +79,22 @@ const AdminRecap: React.FC<AdminPageProps> = ({ showNotification, showConfirmati
         doc.setFontSize(9);
         doc.text(`Filter Tahapan: ${currentStageTitle}`, 14, 22);
         
-        const head = [['No', 'Nama', 'TTL', 'Asal Satuan', 'Kontak Darurat', 'Link KK', 'Link Foto', 'Link Izin Ortu']];
+        const docFieldLabels = docFields.map(f => f.label);
+        const head = [['No', 'Nama', 'TTL', 'Asal Satuan', 'Kontak Darurat', ...docFieldLabels]];
         const body = filteredData.map((r, i) => [
             i + 1,
             r.fullName,
             `${r.birthPlace}, ${r.birthDate}`,
             r.originUnit,
             r.emergencyContact,
-            r.kkUrl || '-',
-            r.photoUrl || '-',
-            r.parentPermitUrl || '-'
+            ...docFields.map(field => r.documentLinks?.[field.id] || '-')
         ]);
 
         doc.autoTable({
             startY: 26,
             head: head,
             body: body,
-            styles: { fontSize: 7, cellPadding: 1.5 },
+            styles: { fontSize: 7, cellPadding: 1.5, overflow: 'linebreak' },
             headStyles: { fontSize: 8, fillColor: [11, 36, 71] },
         });
 
@@ -118,21 +120,24 @@ const AdminRecap: React.FC<AdminPageProps> = ({ showNotification, showConfirmati
     };
 
     const exportToExcel = () => {
-        const mainData = filteredData.map(r => ({
-            'Nama Lengkap': r.fullName,
-            'Tempat Lahir': r.birthPlace,
-            'Tanggal Lahir': r.birthDate,
-            'Jenis Kelamin': r.gender,
-            'Asal Satuan': r.originUnit,
-            'Email': r.email,
-            'Riwayat Penyakit': r.medicalHistory,
-            'Kontak Darurat': r.emergencyContact,
-            'Link KK': r.kkUrl,
-            'Link Foto': r.photoUrl,
-            'Link Izin Ortu': r.parentPermitUrl,
-            'Status Administrasi': r.status,
-            'Waktu Pendaftaran': r.submittedAt ? new Date(r.submittedAt).toLocaleString('id-ID') : '',
-        }));
+        const mainData = filteredData.map(r => {
+            const row: Record<string, any> = {
+                'Nama Lengkap': r.fullName,
+                'Tempat Lahir': r.birthPlace,
+                'Tanggal Lahir': r.birthDate,
+                'Jenis Kelamin': r.gender,
+                'Asal Satuan': r.originUnit,
+                'Email': r.email,
+                'Riwayat Penyakit': r.medicalHistory,
+                'Kontak Darurat': r.emergencyContact,
+                'Status Administrasi': r.status,
+                'Waktu Pendaftaran': r.submittedAt ? new Date(r.submittedAt).toLocaleString('id-ID') : '',
+            };
+            docFields.forEach(field => {
+                row[field.label] = r.documentLinks?.[field.id] || '-';
+            });
+            return row;
+        });
 
         const mainWorksheet = XLSX.utils.json_to_sheet(mainData);
         const workbook = XLSX.utils.book_new();
@@ -162,7 +167,7 @@ const AdminRecap: React.FC<AdminPageProps> = ({ showNotification, showConfirmati
     };
 
 
-    const tableHeaders = ["#", "Nama", "TTL", "Jenis Kelamin", "Asal Satuan", "Email", "Riwayat Penyakit", "Kontak Darurat", "Aksi"];
+    const tableHeaders = ["#", "Nama", "TTL", "Jenis Kelamin", "Asal Satuan", "Email", "Riwayat Penyakit", "Kontak Darurat", ...docFields.map(f => f.label), "Aksi"];
 
     return (
         <div className="bg-white dark:bg-brand-primary p-6 rounded-lg shadow-md animate-fade-in">
@@ -189,7 +194,7 @@ const AdminRecap: React.FC<AdminPageProps> = ({ showNotification, showConfirmati
                 <table className="w-full text-xs text-left">
                      <thead className="bg-gray-50 dark:bg-brand-dark">
                         <tr className="text-gray-800 dark:text-gray-200">
-                            {tableHeaders.map(header => <th key={header} className="p-2 font-semibold">{header}</th>)}
+                            {tableHeaders.map(header => <th key={header} className="p-2 font-semibold whitespace-nowrap">{header}</th>)}
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
@@ -198,13 +203,20 @@ const AdminRecap: React.FC<AdminPageProps> = ({ showNotification, showConfirmati
                         ) : filteredData.length > 0 ? filteredData.map((reg, index) => (
                             <tr key={reg.uid}>
                                 <td className="p-2">{index + 1}</td>
-                                <td className="p-2 font-medium">{reg.fullName}</td>
-                                <td className="p-2">{reg.birthPlace}, {reg.birthDate}</td>
+                                <td className="p-2 font-medium whitespace-nowrap">{reg.fullName}</td>
+                                <td className="p-2 whitespace-nowrap">{reg.birthPlace}, {reg.birthDate}</td>
                                 <td className="p-2">{reg.gender}</td>
                                 <td className="p-2">{reg.originUnit}</td>
                                 <td className="p-2">{reg.email}</td>
                                 <td className="p-2">{reg.medicalHistory || '-'}</td>
                                 <td className="p-2">{reg.emergencyContact}</td>
+                                {docFields.map(field => (
+                                    <td key={field.id} className="p-2 max-w-xs truncate">
+                                        <a href={reg.documentLinks?.[field.id]} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                                            {reg.documentLinks?.[field.id] || '-'}
+                                        </a>
+                                    </td>
+                                ))}
                                 <td className="p-2">
                                     <button onClick={() => handleDeleteWithConfirm(reg.uid)} className="text-gray-400 hover:text-red-500">
                                         <i className="fas fa-trash-alt"></i>

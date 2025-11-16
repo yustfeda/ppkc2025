@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import type { User, RegistrationData, PublicPage, SelectionStage, ConfirmationState } from '../types';
-import { setData, getUserRegistration, getSelectionStages, updateUserStageProgress } from '../services/firebase';
+import type { User, RegistrationData, PublicPage, SelectionStage, FormField } from '../types';
+import { setData, getUserRegistration, getSelectionStages, updateUserStageProgress, getRegistrationFormFields } from '../services/firebase';
 
 interface RegistrationProps {
     user: User;
@@ -11,7 +11,7 @@ interface RegistrationProps {
 }
 
 const Registration: React.FC<RegistrationProps> = ({ user, setCurrentPage, showNotification, showConfirmation, registrationActive }) => {
-    const [formData, setFormData] = useState<Omit<RegistrationData, 'status' | 'stageProgress' | 'submittedAt'>>({
+    const [formData, setFormData] = useState<Partial<RegistrationData>>({
         uid: user.uid,
         fullName: '',
         birthPlace: '',
@@ -21,12 +21,11 @@ const Registration: React.FC<RegistrationProps> = ({ user, setCurrentPage, showN
         email: user.email || '',
         medicalHistory: '',
         emergencyContact: '',
-        kkUrl: '',
-        photoUrl: '',
-        parentPermitUrl: ''
+        documentLinks: {}
     });
     const [registration, setRegistration] = useState<RegistrationData | null>(null);
     const [allStages, setAllStages] = useState<SelectionStage[]>([]);
+    const [docFields, setDocFields] = useState<FormField[]>([]);
     const [loading, setLoading] = useState(false);
     const [checkingStatus, setCheckingStatus] = useState(true);
     const [error, setError] = useState('');
@@ -34,12 +33,14 @@ const Registration: React.FC<RegistrationProps> = ({ user, setCurrentPage, showN
     const fetchData = React.useCallback(async () => {
         setCheckingStatus(true);
         try {
-            const [regData, stagesData] = await Promise.all([
+            const [regData, stagesData, fieldsData] = await Promise.all([
                 getUserRegistration(user.uid),
-                getSelectionStages()
+                getSelectionStages(),
+                getRegistrationFormFields()
             ]);
             setRegistration(regData);
             setAllStages(stagesData);
+            setDocFields(fieldsData);
         } catch (err) {
             console.error(err);
             showNotification('Gagal memuat data pendaftaran.', 'error');
@@ -55,6 +56,16 @@ const Registration: React.FC<RegistrationProps> = ({ user, setCurrentPage, showN
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
+    
+    const handleDocLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFormData({
+            ...formData,
+            documentLinks: {
+                ...formData.documentLinks,
+                [e.target.name]: e.target.value,
+            },
+        });
+    };
 
     const handleInitialSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -68,7 +79,7 @@ const Registration: React.FC<RegistrationProps> = ({ user, setCurrentPage, showN
                     status: 'Terkirim',
                     submittedAt: Date.now(),
                     stageProgress: {},
-                };
+                } as RegistrationData;
                 try {
                     await setData(`registrations/${user.uid}`, submissionData);
                     showNotification('Pendaftaran berhasil dikirim!', 'success');
@@ -218,21 +229,21 @@ const Registration: React.FC<RegistrationProps> = ({ user, setCurrentPage, showN
                     </div>
 
                     <div className="pt-4 border-t dark:border-gray-700 grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="relative input-group">
-                             <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 absolute -top-4">Upload ke G-Drive, lalu salin link.</p>
-                            <input id="kkUrl" type="url" name="kkUrl" onChange={handleChange} className={inputClass} placeholder=" " required />
-                             <label htmlFor="kkUrl" className={labelClass}>Link Kartu Keluarga <span className="text-red-500">*</span></label>
-                        </div>
-                         <div className="relative input-group">
-                             <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 absolute -top-4">Upload foto formal Anda ke G-Drive.</p>
-                            <input id="photoUrl" type="url" name="photoUrl" onChange={handleChange} className={inputClass} placeholder=" " required />
-                             <label htmlFor="photoUrl" className={labelClass}>Link Foto 4x6 BG Merah <span className="text-red-500">*</span></label>
-                        </div>
-                         <div className="md:col-span-2 relative input-group">
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 absolute -top-4">Format surat dapat diunduh di halaman pengumuman.</p>
-                            <input id="parentPermitUrl" type="url" name="parentPermitUrl" onChange={handleChange} className={inputClass} placeholder=" " />
-                             <label htmlFor="parentPermitUrl" className={labelClass}>Link Surat Izin Orang Tua (Opsional)</label>
-                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 md:col-span-2 -mb-2">Upload dokumen ke G-Drive, lalu salin link yang bisa diakses publik.</p>
+                        {docFields.map(field => (
+                             <div key={field.id} className="relative input-group md:col-span-2">
+                                <input 
+                                    id={field.id} 
+                                    type="url" 
+                                    name={field.id} 
+                                    onChange={handleDocLinkChange} 
+                                    className={inputClass} 
+                                    placeholder=" " 
+                                    required={field.required} 
+                                />
+                                 <label htmlFor={field.id} className={labelClass}>{field.label} {field.required && <span className="text-red-500">*</span>}</label>
+                            </div>
+                        ))}
                     </div>
 
                     {error && <p className="text-red-500 text-sm">{error}</p>}

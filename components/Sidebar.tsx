@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { PublicPage, User, ManagedButton } from '../types';
 
 interface NavItem {
@@ -17,6 +17,32 @@ const navItems: NavItem[] = [
   { page: 'profile', label: 'Profil', icon: 'fas fa-user-circle', roles: ['user'] },
   { page: 'contact', label: 'Kontak', icon: 'fas fa-address-book', roles: ['guest', 'user'] },
 ];
+
+const ThemeToggle: React.FC = () => {
+    const [isDarkMode, setIsDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
+
+    const toggleTheme = () => {
+        const newIsDark = !isDarkMode;
+        setIsDarkMode(newIsDark);
+        if (newIsDark) {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+        }
+    };
+
+    return (
+        <button
+          onClick={toggleTheme}
+          className="w-full text-left flex items-center p-3 rounded-lg my-1 transition-colors text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+        >
+          <i className={`text-lg w-8 ${isDarkMode ? 'fas fa-sun' : 'fas fa-moon'}`}></i>
+          <span className="ml-3 font-semibold">{isDarkMode ? 'Mode Terang' : 'Mode Gelap'}</span>
+        </button>
+    );
+};
 
 interface SidebarProps {
   isOpen: boolean;
@@ -110,6 +136,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPage, setCurrentPage, 
             </div>
           )}
           <div className="p-2 border-t dark:border-gray-700 mt-auto">
+            <ThemeToggle />
             { user ? (
                 <button onClick={handleLogout} className="w-full text-left flex items-center p-3 rounded-lg my-1 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 text-sm">
                     <i className="fas fa-sign-out-alt text-lg w-8"></i>
