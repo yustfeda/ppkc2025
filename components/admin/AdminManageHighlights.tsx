@@ -171,7 +171,7 @@ const AdminManageHighlights: React.FC<AdminPageProps> = ({ showNotification, sho
                 </div>
                  <div className="mt-6 flex gap-3">
                     <button onClick={handleAddSupporter} className="bg-green-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-green-700">Tambah Item</button>
-                    <button onClick={handleSaveSupporters} className="bg-brand-secondary text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-brand-accent">Simpan Perubahan "Didukung Oleh"</button>
+                    <button onClick={handleSaveSupporters} className="bg-brand-secondary text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-brand-accent">Simpan Perubahan</button>
                 </div>
             </div>
         </div>
