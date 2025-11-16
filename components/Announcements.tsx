@@ -6,13 +6,13 @@ const DocumentCard: React.FC<{ doc: AnnouncementDocument }> = ({ doc }) => {
     return (
         <div className="bg-brand-light dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md flex flex-col overflow-hidden transition-transform hover:scale-105 duration-300">
 
-            {/* FOTO FIT & MENYESUAIKAN CONTAINER */}
+            {/* FOTO FIT MENYESUAIKAN CONTAINER */}
             {doc.thumbnailUrl && (
-                <div className="relative w-full h-48 md:h-56 overflow-hidden bg-gray-200 dark:bg-gray-700">
+                <div className="relative w-full h-48 md:h-56 overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                     <img
                         src={doc.thumbnailUrl}
                         alt={doc.title}
-                        className="w-full h-full object-cover object-top"
+                        className="w-full h-full object-contain p-2"
                     />
                 </div>
             )}
@@ -23,7 +23,7 @@ const DocumentCard: React.FC<{ doc: AnnouncementDocument }> = ({ doc }) => {
                     {doc.title}
                 </h3>
             </div>
-            
+
             {/* DESKRIPSI */}
             <div className="p-4 flex-grow">
                 {doc.description && (
@@ -31,7 +31,7 @@ const DocumentCard: React.FC<{ doc: AnnouncementDocument }> = ({ doc }) => {
                         {doc.description}
                     </p>
                 )}
-                
+
                 {(!doc.thumbnailUrl && !doc.description) && (
                     <p className="text-sm text-gray-400 italic">
                         Tidak ada detail tambahan.
@@ -85,7 +85,7 @@ const Announcements: React.FC = () => {
             </div>
         );
     }
-    
+
     return (
         <div className="bg-gray-100 dark:bg-brand-dark min-h-screen py-10 px-4 sm:px-6 lg:px-8">
             <div className="max-w-7xl mx-auto">
