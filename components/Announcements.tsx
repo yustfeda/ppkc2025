@@ -6,7 +6,7 @@ const DocumentCard: React.FC<{ doc: AnnouncementDocument }> = ({ doc }) => {
     return (
         <div className="bg-brand-light dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md flex flex-col overflow-hidden transition-transform hover:scale-105 duration-300">
 
-            {/* FOTO FIT & TIDAK PECAH */}
+            {/* THUMBNAIL FIT - TIDAK TERPOTONG */}
             {doc.thumbnailUrl && (
                 <div className="relative w-full h-48 md:h-56 overflow-hidden flex items-center justify-center bg-gray-200 dark:bg-gray-700">
                     <img 
@@ -31,7 +31,7 @@ const DocumentCard: React.FC<{ doc: AnnouncementDocument }> = ({ doc }) => {
                         {doc.description}
                     </p>
                 )}
-                
+
                 {(!doc.thumbnailUrl && !doc.description) && (
                     <p className="text-sm text-gray-400 italic">
                         Tidak ada detail tambahan.
@@ -89,14 +89,13 @@ const Announcements: React.FC = () => {
     return (
         <div className="bg-gray-100 dark:bg-brand-dark min-h-screen py-10 px-4 sm:px-6 lg:px-8">
             <div className="max-w-7xl mx-auto">
-
                 <div className="text-center mb-12">
                     <h1 className="text-4xl font-bold text-brand-dark dark:text-gray-100">
                         Pengumuman
                     </h1>
                     <p className="text-lg text-gray-600 dark:text-gray-300 mt-2">
                         Informasi resmi terkait jadwal seleksi, latihan, perubahan data,
-                        dan pengumuman tahap setiap proses. Silakan cek secara berkala.
+                        dan pengumuman tahapan. Cek secara berkala untuk update terbaru.
                     </p>
                 </div>
 
