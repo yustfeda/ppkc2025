@@ -18,23 +18,23 @@ const App: React.FC = () => {
         }
 
         const unsubscribe = onAuthChange(async (firebaseUser) => {
-            // Selalu mulai proses pengecekan
+            // Setiap kali auth berubah, reset state dan mulai proses pengecekan.
+            // Ini mencegah render dengan state lama/salah.
+            setIsAdmin(false);
+            setUser(null);
             setIsCheckingAuth(true);
 
             if (firebaseUser) {
-                // Lakukan pengecekan admin *sebelum* mengatur state apa pun
+                // Ada pengguna, verifikasi apakah dia admin.
                 const isAdminUser = await checkAdminClaim(firebaseUser);
                 
-                // Sekarang perbarui state dengan nilai akhir yang benar secara bersamaan
-                setUser(firebaseUser as User | null);
+                // Setelah verifikasi selesai, atur state final yang benar.
+                setUser(firebaseUser as User);
                 setIsAdmin(isAdminUser);
-            } else {
-                // Tidak ada pengguna yang login, bersihkan semua state otentikasi
-                setUser(null);
-                setIsAdmin(false);
             }
             
-            // Semua pemeriksaan selesai, sembunyikan loader awal
+            // Pengecekan selesai, sembunyikan loader.
+            // React akan merender komponen yang tepat (AdminApp atau PublicApp) berdasarkan state final.
             setIsCheckingAuth(false);
         });
 
@@ -42,9 +42,9 @@ const App: React.FC = () => {
     }, []);
 
     const handleLogout = () => {
-        // onAuthChange akan menangani pembaruan state secara otomatis
         sessionStorage.removeItem('seenAdminWelcome');
         logoutUser();
+        // onAuthChange akan menangani pembaruan state secara otomatis setelah logout berhasil.
     };
 
     if (isCheckingAuth) {
@@ -55,10 +55,11 @@ const App: React.FC = () => {
         );
     }
 
-    if (isAdmin) {
+    if (user && isAdmin) {
         return <AdminApp onLogout={handleLogout} />;
     }
 
+    // Render PublicApp untuk pengguna non-admin yang sudah login atau untuk tamu (user === null)
     return <PublicApp user={user} onLogout={handleLogout} />;
 };
 
