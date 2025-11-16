@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { PublicPage } from '../types';
 import { registerUser, loginUser, logoutUser } from '../services/firebase';
 
@@ -10,11 +10,20 @@ interface AuthPageProps {
 }
 
 const AuthPage: React.FC<AuthPageProps> = ({ setCurrentPage, showNotification, loginActive, registrationActive }) => {
-    // Default to registration form if login is inactive but registration is active
-    const [isLogin, setIsLogin] = useState(loginActive || !registrationActive);
+    const isAdminLoginAttempt = sessionStorage.getItem('isAdminLoginAttempt') === 'true';
+
+    // Force login form for admin attempts
+    const [isLogin, setIsLogin] = useState(isAdminLoginAttempt || loginActive || !registrationActive);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        // Clean up the flag after the component has mounted and read it
+        if (isAdminLoginAttempt) {
+            sessionStorage.removeItem('isAdminLoginAttempt');
+        }
+    }, [isAdminLoginAttempt]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -52,6 +61,10 @@ const AuthPage: React.FC<AuthPageProps> = ({ setCurrentPage, showNotification, l
     };
 
     const renderToggleButton = () => {
+        if (isAdminLoginAttempt) {
+            return <div className="w-24 h-5"></div>; // Placeholder to hide toggle for admin
+        }
+
         const commonClasses = "inline-block align-baseline font-bold text-sm text-brand-secondary hover:text-brand-accent";
         if (isLogin) {
             if (registrationActive) {
@@ -84,10 +97,15 @@ const AuthPage: React.FC<AuthPageProps> = ({ setCurrentPage, showNotification, l
                 >
                     <i className="fas fa-times text-xl"></i>
                 </button>
-                <h2 className="text-2xl font-bold text-center text-brand-primary dark:text-white mb-6">
-                    {isLogin ? 'Masuk Akun' : 'Daftar Akun Baru'}
+                <h2 className="text-2xl font-bold text-center text-brand-primary dark:text-white mb-2">
+                    {isAdminLoginAttempt ? 'Login Admin' : (isLogin ? 'Masuk Akun' : 'Daftar Akun Baru')}
                 </h2>
-                <form onSubmit={handleSubmit} className="space-y-6">
+                {isAdminLoginAttempt && (
+                     <p className="text-center text-sm text-gray-500 dark:text-gray-400 mb-6">
+                        Silakan masuk untuk mengakses Panel Admin.
+                    </p>
+                )}
+                <form onSubmit={handleSubmit} className={`space-y-6 ${!isAdminLoginAttempt && 'mt-6'}`}>
                     <div className="relative input-group form-input-bg-light dark:form-input-bg-dark">
                         <input
                             id="email"

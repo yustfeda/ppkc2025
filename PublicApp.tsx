@@ -153,6 +153,7 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onLogout }) => {
 
     useEffect(() => {
         if (window.location.pathname === '/adminppkcsatu') {
+            sessionStorage.setItem('isAdminLoginAttempt', 'true');
             setCurrentPage('login');
             window.history.pushState({}, '', '/');
         }
