@@ -3,6 +3,7 @@ import type { User, RegistrationData, SelectionStage } from '../types';
 import { getUserRegistration, getSelectionStages } from '../services/firebase';
 
 declare const QRCode: any;
+declare const jspdf: any;
 
 interface StatusProps {
     user: User;
@@ -57,95 +58,81 @@ const Status: React.FC<StatusProps> = ({ user }) => {
         return 'pending'; // In case selection is not fully completed
     };
     
-    const handleDownloadProof = () => {
-        if (!registration) return;
-        const canvas = document.createElement('canvas');
-        canvas.width = 400;
-        canvas.height = 650; // Increased height for photo
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
+    const handleDownloadPdfProof = async () => {
+        if (!registration) {
+            alert('Data pendaftaran tidak ditemukan.');
+            return;
+        }
 
-        // Background
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // Header text
-        ctx.fillStyle = '#0B2447';
-        ctx.font = 'bold 20px Inter, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('BUKTI KELULUSAN SELEKSI', canvas.width / 2, 40);
-        ctx.font = '16px Inter, sans-serif';
-        ctx.fillText('Paskibra Kec. Cileles 2025', canvas.width / 2, 70);
+        try {
+            const { jsPDF } = jspdf;
+            const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
 
-        // This function will draw the rest of the content after the profile picture is loaded
-        const drawContent = () => {
-            // User Info (shifted down)
-            ctx.textAlign = 'left';
-            ctx.fillStyle = '#1A1A2E';
-            ctx.font = 'bold 14px Inter, sans-serif';
-            ctx.fillText('Nama', 30, 250);
-            ctx.font = '14px Inter, sans-serif';
-            ctx.fillText(`: ${registration.fullName}`, 120, 250);
-            
-            ctx.font = 'bold 14px Inter, sans-serif';
-            ctx.fillText('Asal Satuan', 30, 280);
-            ctx.font = '14px Inter, sans-serif';
-            ctx.fillText(`: ${registration.originUnit}`, 120, 280);
-            
-            // QR Code generation
-            const qrData = JSON.stringify({ uid: user.uid, name: registration.fullName });
-            QRCode.toDataURL(qrData, { width: 250, margin: 2 }, (err: any, url: string) => {
-                if (err) {
-                    console.error(err);
-                    return;
+            // --- Title ---
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(32);
+            doc.setTextColor('#FF8C00'); // Orange
+            doc.text('PPKC', 80, 25);
+            doc.setTextColor('#42A5F5'); // Blue
+            doc.text('2025', 115, 25);
+
+            // --- Subtitle ---
+            doc.setFontSize(18);
+            doc.setTextColor('#0B2447');
+            doc.text('BUKTI KELULUSAN SELEKSI', 105, 40, { align: 'center' });
+            doc.setDrawColor(200, 200, 200);
+            doc.line(30, 45, 180, 45); // line separator
+
+            // --- Profile Picture ---
+            if (profilePic) {
+                try {
+                    doc.addImage(profilePic, 'PNG', 30, 55, 40, 40);
+                    doc.setDrawColor(11, 36, 71);
+                    doc.setLineWidth(0.5);
+                    doc.rect(30, 55, 40, 40); // Border
+                } catch (e) {
+                    console.error("Could not add profile picture to PDF.", e);
                 }
-                const img = new Image();
-                img.onload = () => {
-                    // Draw QR code (shifted down)
-                    ctx.drawImage(img, (canvas.width - 250) / 2, 310, 250, 250);
-                    
-                    // Footer text (shifted down)
-                    ctx.textAlign = 'center';
-                    ctx.fillStyle = '#333';
-                    ctx.font = '12px Inter, sans-serif';
-                    ctx.fillText('Scan QR Code ini untuk verifikasi kehadiran.', canvas.width / 2, 590);
-                    
-                    // Trigger download
-                    const link = document.createElement('a');
-                    link.download = `bukti-lolos-${registration.fullName}.png`;
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
-                };
-                img.src = url;
+            }
+
+            // --- User Details with AutoTable ---
+            const detailsStartY = 55;
+            (doc as any).autoTable({
+                startY: detailsStartY,
+                margin: { left: 80 },
+                theme: 'plain',
+                styles: { fontSize: 11, cellPadding: 2 },
+                head: [],
+                body: [
+                    ['Nama Lengkap', `: ${registration.fullName}`],
+                    ['No. Peserta', `: ${registration.participantNumber || 'N/A'}`],
+                    ['Tanggal Lahir', `: ${registration.birthPlace}, ${new Date(registration.birthDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`],
+                    ['Asal Satuan', `: ${registration.originUnit}`],
+                ],
+                columnStyles: {
+                    0: { fontStyle: 'bold', cellWidth: 35 },
+                    1: { cellWidth: 'auto' },
+                }
             });
-        };
-        
-        // Load and draw profile picture if it exists
-        if (profilePic) {
-            const userImage = new Image();
-            userImage.crossOrigin = "anonymous";
-            userImage.onload = () => {
-                // Draw profile picture
-                const picSize = 120;
-                const x = (canvas.width - picSize) / 2;
-                const y = 100;
-                ctx.save();
-                ctx.beginPath();
-                ctx.arc(x + picSize / 2, y + picSize / 2, picSize / 2, 0, Math.PI * 2, true);
-                ctx.closePath();
-                ctx.clip();
-                ctx.drawImage(userImage, x, y, picSize, picSize);
-                ctx.restore();
-                drawContent();
-            };
-            userImage.onerror = () => {
-                drawContent();
-            };
-            userImage.src = profilePic;
-        } else {
-            drawContent();
+
+            // --- QR Code ---
+            const qrData = JSON.stringify({ uid: user.uid, name: registration.fullName, number: registration.participantNumber });
+            const qrCodeUrl = await QRCode.toDataURL(qrData, { width: 256, margin: 1 });
+            const qrY = (doc as any).lastAutoTable.finalY + 20 > 110 ? (doc as any).lastAutoTable.finalY + 20 : 110;
+            doc.addImage(qrCodeUrl, 'PNG', 75, qrY, 60, 60);
+
+            doc.setFontSize(10);
+            doc.setTextColor(150, 150, 150);
+            doc.text('Pindai QR Code ini untuk verifikasi kehadiran.', 105, qrY + 65, { align: 'center' });
+
+            doc.save(`bukti-lolos-${registration.participantNumber}-${registration.fullName}.pdf`);
+
+        } catch (error) {
+            console.error("Gagal membuat PDF:", error);
+            alert('Terjadi kesalahan saat membuat file PDF. Silakan coba lagi.');
         }
     };
+
 
     if (loading) {
         return (
@@ -187,6 +174,10 @@ const Status: React.FC<StatusProps> = ({ user }) => {
 
                 <div className="my-6 border-t border-b border-gray-200 dark:border-gray-700 py-4 space-y-2 text-sm">
                     <div className="flex justify-between">
+                        <span className="font-semibold text-gray-600 dark:text-gray-400">No. Peserta</span>
+                        <span className="text-gray-800 dark:text-white font-medium text-right">{registration.participantNumber || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
                         <span className="font-semibold text-gray-600 dark:text-gray-400">Asal Satuan</span>
                         <span className="text-gray-800 dark:text-white font-medium text-right">{registration.originUnit}</span>
                     </div>
@@ -206,7 +197,7 @@ const Status: React.FC<StatusProps> = ({ user }) => {
                 {isLolos && (
                     <div className="mt-8 text-center">
                         <button
-                            onClick={handleDownloadProof}
+                            onClick={handleDownloadPdfProof}
                             className="bg-brand-secondary text-white font-bold py-2 px-6 rounded-md hover:bg-brand-accent transition-colors"
                         >
                             <i className="fas fa-download mr-2"></i>Download Bukti Lolos
