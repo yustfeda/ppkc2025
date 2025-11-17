@@ -8,9 +8,10 @@ interface AuthPageProps {
     loginActive?: boolean;
     registrationActive?: boolean;
     initialIsLogin: boolean;
+    isAdminLoginAttempt?: boolean;
 }
 
-const AuthPage: React.FC<AuthPageProps> = ({ setCurrentPage, showNotification, loginActive, registrationActive, initialIsLogin }) => {
+const AuthPage: React.FC<AuthPageProps> = ({ setCurrentPage, showNotification, loginActive, registrationActive, initialIsLogin, isAdminLoginAttempt = false }) => {
     const [isLogin, setIsLogin] = useState(initialIsLogin);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -58,7 +59,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ setCurrentPage, showNotification, l
     const renderToggleButton = () => {
         const commonClasses = "inline-block align-baseline font-bold text-sm text-brand-secondary hover:text-brand-accent";
         if (isLogin) {
-            if (registrationActive) {
+            if (registrationActive && !isAdminLoginAttempt) {
                 return (
                     <button type="button" onClick={() => setIsLogin(false)} className={commonClasses}>
                         Buat Akun
@@ -89,7 +90,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ setCurrentPage, showNotification, l
                     <i className="fas fa-times text-xl"></i>
                 </button>
                 <h2 className="text-2xl font-bold text-center text-brand-primary dark:text-white mb-6">
-                    {isLogin ? 'Masuk Akun' : 'Daftar Akun Baru'}
+                    {isAdminLoginAttempt ? 'Admin Panel Login' : (isLogin ? 'Masuk Akun' : 'Daftar Akun Baru')}
                 </h2>
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="relative input-group form-input-bg-light dark:form-input-bg-dark">

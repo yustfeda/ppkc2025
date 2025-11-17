@@ -85,6 +85,7 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onLogout }) => {
     const [isSelectionFinished, setIsSelectionFinished] = useState(false);
     const [managedButtons, setManagedButtons] = useState<ManagedButton[]>([]);
     const [initialAuthIsLogin, setInitialAuthIsLogin] = useState(true);
+    const [isAdminLoginAttempt, setIsAdminLoginAttempt] = useState(false);
 
 
     const showNotification = useCallback((message: string, type: 'success' | 'error') => {
@@ -162,6 +163,7 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onLogout }) => {
 
     useEffect(() => {
         if (window.location.pathname === '/adminppkcsatu' && !user) {
+            setIsAdminLoginAttempt(true);
             setCurrentPage('login');
         }
     }, [user]);
@@ -233,7 +235,7 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onLogout }) => {
             case 'stages': return <SelectionStages user={user} setCurrentPage={navigate} />;
             case 'announcements': return <Announcements />;
             case 'contact': return <Contact />;
-            case 'login': return <AuthPage setCurrentPage={navigate} showNotification={showNotification} loginActive={adminConfig?.loginActive} registrationActive={adminConfig?.registrationActive} initialIsLogin={initialAuthIsLogin} />;
+            case 'login': return <AuthPage setCurrentPage={navigate} showNotification={showNotification} loginActive={adminConfig?.loginActive} registrationActive={adminConfig?.registrationActive} initialIsLogin={initialAuthIsLogin} isAdminLoginAttempt={isAdminLoginAttempt} />;
             case 'registration': return user ? <Registration user={user} setCurrentPage={navigate} showNotification={showNotification} showConfirmation={showConfirmation} registrationActive={adminConfig?.registrationActive} /> : <AuthPage setCurrentPage={navigate} showNotification={showNotification} loginActive={adminConfig?.loginActive} registrationActive={adminConfig?.registrationActive} initialIsLogin={initialAuthIsLogin} />;
             case 'profile': return user ? <Profile user={user} showNotification={showNotification} showConfirmation={showConfirmation} /> : <AuthPage setCurrentPage={navigate} showNotification={showNotification} loginActive={adminConfig?.loginActive} registrationActive={adminConfig?.registrationActive} initialIsLogin={initialAuthIsLogin}/>;
             case 'status': return user ? <Status user={user} /> : <AuthPage setCurrentPage={navigate} showNotification={showNotification} loginActive={adminConfig?.loginActive} registrationActive={adminConfig?.registrationActive} initialIsLogin={initialAuthIsLogin} />;

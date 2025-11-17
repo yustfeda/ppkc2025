@@ -5,8 +5,6 @@ import { onAuthChange, logoutUser } from './services/firebase';
 import PublicApp from './PublicApp';
 import AdminApp from './AdminApp';
 
-const ADMIN_UID = 'yMfKl5Wo7KRadLV4pDMQcHQKPsx2';
-
 const App: React.FC = () => {
     const [user, setUser] = useState<User | null>(null);
     const [isAdmin, setIsAdmin] = useState(false);
@@ -23,20 +21,31 @@ const App: React.FC = () => {
         const unsubscribe = onAuthChange((firebaseUser) => {
             if (firebaseUser) {
                 setUser(firebaseUser as User);
-                if (firebaseUser.uid === ADMIN_UID) {
-                    setIsAdmin(true);
-                } else {
-                    setIsAdmin(false);
-                }
+                // Force refresh the token to get the latest custom claims
+                // FIX: Cast `firebaseUser` to `any` to access `getIdTokenResult`, which exists on the underlying Firebase user object but not our simplified `User` type.
+                (firebaseUser as any).getIdTokenResult(true)
+                    .then((idTokenResult: any) => {
+                        // Check for admin custom claim
+                        if (idTokenResult.claims.admin) {
+                            setIsAdmin(true);
+                        } else {
+                            setIsAdmin(false);
+                        }
+                    })
+                    .catch((error: any) => {
+                        console.error("Error getting user claims:", error);
+                        setIsAdmin(false); // Default to non-admin on error
+                    })
+                    .finally(() => {
+                        setFadeOutLoader(true);
+                        setTimeout(() => setIsCheckingAuth(false), 300);
+                    });
             } else {
                 setUser(null);
                 setIsAdmin(false);
+                setFadeOutLoader(true);
+                setTimeout(() => setIsCheckingAuth(false), 300);
             }
-
-            // Start fade out process
-            setFadeOutLoader(true);
-            // Unmount loader after animation
-            setTimeout(() => setIsCheckingAuth(false), 300); 
         });
 
         return () => unsubscribe();
