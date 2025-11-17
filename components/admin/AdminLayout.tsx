@@ -15,6 +15,8 @@ interface AdminLayoutProps {
     hideConfirmation: () => void;
     showConfirmation: (message: string, onConfirm: () => void) => void;
     appVersion?: string;
+    messageBadge: number;
+    onMessageIconClick: () => void;
 }
 
 const ConfirmationModal: React.FC<{ confirmation: ConfirmationState; onCancel: () => void; }> = ({ confirmation, onCancel }) => {
@@ -48,7 +50,7 @@ const ConfirmationModal: React.FC<{ confirmation: ConfirmationState; onCancel: (
     );
 };
 
-const AdminLayout: React.FC<AdminLayoutProps> = ({ children, currentPage, setCurrentPage, onLogout, isSidebarOpen, toggleSidebar, notificationBadge, confirmation, hideConfirmation, showConfirmation, appVersion }) => {
+const AdminLayout: React.FC<AdminLayoutProps> = ({ children, currentPage, setCurrentPage, onLogout, isSidebarOpen, toggleSidebar, notificationBadge, confirmation, hideConfirmation, showConfirmation, appVersion, messageBadge, onMessageIconClick }) => {
     return (
         <div className="min-h-screen flex flex-col">
             <ConfirmationModal confirmation={confirmation} onCancel={hideConfirmation} />
@@ -60,12 +62,26 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, currentPage, setCur
                 toggleSidebar={toggleSidebar}
                 notificationBadge={notificationBadge}
                 showConfirmation={showConfirmation}
+                messageBadge={messageBadge}
+                onMessageIconClick={onMessageIconClick}
             />
             <main className="flex-1 p-4 sm:p-6 lg:p-8">
                 <div key={currentPage} className="animate-fade-in-up">
                     {children}
                 </div>
             </main>
+            {/* Floating Message Button */}
+             <button 
+                onClick={onMessageIconClick}
+                className="hidden lg:flex fixed left-6 bottom-6 bg-brand-secondary text-white w-14 h-14 rounded-full shadow-lg items-center justify-center z-50 hover:bg-brand-accent transform hover:scale-110 transition-all"
+                aria-label="Open Messages"
+                title="Buka Pesan"
+             >
+                <i className="fas fa-paper-plane text-xl"></i>
+                {messageBadge > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white text-xs">{messageBadge}</span>
+                )}
+            </button>
             <AdminFooter appVersion={appVersion} />
         </div>
     );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getRegistrations, getSelectionStages, getAttendanceData, setAttendanceStatus } from '../../services/firebase';
+import { getRegistrations, getSelectionStages, getDailyAttendanceData, setDailyAttendanceStatus } from '../../services/firebase';
 import type { RegistrationData, SelectionStage, AdminPageProps } from '../../types';
 
 declare const Html5QrcodeScanner: any;
@@ -8,6 +8,7 @@ declare const XLSX: any;
 
 interface Attendee extends RegistrationData {
     present: boolean;
+    timestamp?: number;
 }
 
 const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
@@ -15,6 +16,7 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
     const [loading, setLoading] = useState(true);
     const [scannerActive, setScannerActive] = useState(false);
     const [scanResult, setScanResult] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -22,7 +24,7 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
             const [regsData, stagesData, attendanceData] = await Promise.all([
                 getRegistrations(),
                 getSelectionStages(),
-                getAttendanceData()
+                getDailyAttendanceData(selectedDate)
             ]);
             
             const stages = stagesData || [];
@@ -35,7 +37,8 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
             const attendeeList: Attendee[] = passedUsers.map(user => ({
                 ...user,
                 present: attendanceData[user.uid]?.present || false,
-            }));
+                timestamp: attendanceData[user.uid]?.timestamp
+            })).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
             setAttendees(attendeeList);
         } catch (error) {
@@ -44,7 +47,7 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
         } finally {
             setLoading(false);
         }
-    }, [showNotification]);
+    }, [showNotification, selectedDate]);
 
     useEffect(() => {
         fetchData();
@@ -72,27 +75,19 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
                     return;
                 }
 
-                setAttendees(currentAttendees => {
-                    const userIndex = currentAttendees.findIndex(att => att.uid === uid);
-                    if (userIndex === -1) {
-                        setScanResult({ message: 'Peserta tidak ditemukan.', type: 'error' });
-                        return currentAttendees;
-                    }
-
-                    const userToUpdate = currentAttendees[userIndex];
-                    const newStatus = !userToUpdate.present;
-
-                    setAttendanceStatus(uid, newStatus).catch(err => {
-                        showNotification('Gagal update status di server.', 'error');
-                        setAttendees(currentAttendees);
-                    });
-                    
-                    setScanResult({ message: `Berhasil! ${userToUpdate.fullName} - ${newStatus ? 'Hadir' : 'Batal'}`, type: 'success' });
-                    
-                    const updatedAttendees = [...currentAttendees];
-                    updatedAttendees[userIndex] = { ...userToUpdate, present: newStatus };
-                    return updatedAttendees;
-                });
+                const userIndex = attendees.findIndex(att => att.uid === uid);
+                if (userIndex === -1) {
+                    setScanResult({ message: 'Peserta tidak ditemukan di daftar lolos.', type: 'error' });
+                    return;
+                }
+                
+                // Mark as present
+                await setDailyAttendanceStatus(selectedDate, uid, true);
+                const userToUpdate = attendees[userIndex];
+                setScanResult({ message: `Berhasil! ${userToUpdate.fullName} ditandai Hadir`, type: 'success' });
+                
+                // Optimistic UI update
+                fetchData();
 
             } catch (e) {
                 setScanResult({ message: 'Gagal memproses QR Code.', type: 'error' });
@@ -108,18 +103,19 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
                 qrCodeScanner.clear().catch((error: any) => console.error("Failed to clear scanner.", error));
             }
         };
-    }, [scannerActive, showNotification]);
+    }, [scannerActive, showNotification, selectedDate, attendees, fetchData]);
     
     const exportToPDF = () => {
         const doc = new jspdf.jsPDF();
-        doc.text("Daftar Hadir Peserta Lolos", 14, 16);
+        doc.text(`Daftar Hadir Peserta Lolos - ${selectedDate}`, 14, 16);
         
-        const head = [['No', 'Nama', 'Email', 'Status Kehadiran']];
+        const head = [['No', 'Nama', 'Email', 'Status Kehadiran', 'Waktu Hadir']];
         const body = attendees.map((att, i) => [
             i + 1,
             att.fullName,
             att.email,
-            att.present ? 'Hadir' : 'Nonaktif'
+            att.present ? 'Hadir' : 'Tidak Hadir',
+            att.timestamp ? new Date(att.timestamp).toLocaleString('id-ID') : '-'
         ]);
 
         doc.autoTable({
@@ -128,33 +124,38 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
             body: body,
             headStyles: { fillColor: [11, 36, 71] },
         });
-        doc.save(`Daftar Hadir.pdf`);
+        doc.save(`Daftar Hadir - ${selectedDate}.pdf`);
     };
 
     const exportToExcel = () => {
         const dataToExport = attendees.map(att => ({
             'Nama Lengkap': att.fullName,
             'Email': att.email,
-            'Status Kehadiran': att.present ? 'Hadir' : 'Nonaktif',
+            'Status Kehadiran': att.present ? 'Hadir' : 'Tidak Hadir',
+            'Waktu Kehadiran': att.timestamp ? new Date(att.timestamp).toLocaleString('id-ID') : '-'
         }));
 
         const worksheet = XLSX.utils.json_to_sheet(dataToExport);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Daftar Hadir");
-        XLSX.writeFile(workbook, `Daftar Hadir.xlsx`);
+        XLSX.writeFile(workbook, `Daftar Hadir - ${selectedDate}.xlsx`);
     };
 
     return (
         <div className="bg-white dark:bg-brand-primary p-6 rounded-lg shadow-md animate-fade-in">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-brand-primary dark:text-white">Daftar Hadir Peserta Lolos</h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Gunakan scanner untuk mencatat kehadiran atau unduh data.</p>
                 </div>
-                <div className="flex gap-2 mt-4 sm:mt-0">
-                    <button onClick={exportToPDF} className="bg-red-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-red-700"><i className="fas fa-file-pdf mr-2"></i>Unduh PDF</button>
-                    <button onClick={exportToExcel} className="bg-green-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-green-700"><i className="fas fa-file-excel mr-2"></i>Unduh Excel</button>
+                 <div className="flex items-center gap-2">
+                    <label htmlFor="attendance-date" className="text-sm font-medium dark:text-gray-300">Tanggal:</label>
+                    <input type="date" id="attendance-date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} className="p-2 border rounded-md text-sm bg-white dark:bg-brand-dark dark:border-gray-600 dark:text-white" />
                 </div>
+            </div>
+            <div className="flex flex-wrap gap-2 mb-6">
+                <button onClick={exportToPDF} className="bg-red-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-red-700"><i className="fas fa-file-pdf mr-2"></i>Unduh PDF Harian</button>
+                <button onClick={exportToExcel} className="bg-green-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-green-700"><i className="fas fa-file-excel mr-2"></i>Unduh Excel Harian</button>
             </div>
             
             <div className="mb-6 bg-gray-50 dark:bg-brand-dark p-4 rounded-lg">
@@ -192,8 +193,8 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
                         <tr className="text-gray-800 dark:text-gray-200">
                             <th className="p-3 font-semibold">#</th>
                             <th className="p-3 font-semibold">Nama</th>
-                            <th className="p-3 font-semibold">Email</th>
-                            <th className="p-3 font-semibold">Status Kehadiran</th>
+                            <th className="p-3 font-semibold">Status</th>
+                            <th className="p-3 font-semibold">Waktu Hadir</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
@@ -203,7 +204,6 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
                             <tr key={attendee.uid}>
                                 <td className="p-3">{index + 1}</td>
                                 <td className="p-3 font-medium">{attendee.fullName}</td>
-                                <td className="p-3">{attendee.email}</td>
                                 <td className="p-3">
                                     {attendee.present ? (
                                         <span className="px-2 py-1 rounded-full font-medium text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
@@ -211,9 +211,12 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
                                         </span>
                                     ) : (
                                         <span className="px-2 py-1 rounded-full font-medium text-xs bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
-                                            Nonaktif
+                                            Tidak Hadir
                                         </span>
                                     )}
+                                </td>
+                                 <td className="p-3 font-mono text-xs">
+                                    {attendee.timestamp ? new Date(attendee.timestamp).toLocaleString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', day: '2-digit', month: 'short' }) : '-'}
                                 </td>
                             </tr>
                         )) : (

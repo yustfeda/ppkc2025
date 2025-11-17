@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import type { PublicPage, User, Notification, ConfirmationState, ManagedButton, DynamicFormModalState, AdminConfig } from './types';
-import { getAdminConfig, getUserRegistration, getSelectionStages, getManagedButtons } from './services/firebase';
+import type { PublicPage, User, Notification, ConfirmationState, ManagedButton, DynamicFormModalState, AdminConfig, ChatThread } from './types';
+import { getAdminConfig, getUserRegistration, getSelectionStages, getManagedButtons, listenToUserChatThread, sendMessage, deleteMessage, markThreadAsRead, clearChatThread } from './services/firebase';
 
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -15,6 +15,7 @@ import Status from './components/Status';
 import Footer from './components/Footer';
 import AdminLoginModal from './components/AdminLoginModal';
 import DynamicFormModal from './components/DynamicFormModal';
+import MessagePopup from './components/shared/MessagePopup';
 
 const NotificationPopup: React.FC<{ notification: Notification, onClose: () => void }> = ({ notification, onClose }) => {
     useEffect(() => {
@@ -87,7 +88,9 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
     const [prevUser, setPrevUser] = useState<User | null>(user);
     const [isSelectionFinished, setIsSelectionFinished] = useState(false);
     const [managedButtons, setManagedButtons] = useState<ManagedButton[]>([]);
-
+    const [isMessageOpen, setIsMessageOpen] = useState(false);
+    const [chatThread, setChatThread] = useState<ChatThread | null>(null);
+    const [unreadMessages, setUnreadMessages] = useState(0);
 
     const showNotification = useCallback((message: string, type: 'success' | 'error') => {
         setNotification({ id: Date.now(), message, type });
@@ -101,6 +104,26 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
     }, []);
 
     const hideConfirmation = () => setConfirmation({ isOpen: false, message: '', onConfirm: () => {} });
+
+    useEffect(() => {
+        if (!user) {
+            setChatThread(null);
+            setUnreadMessages(0);
+            return;
+        }
+
+        const unsubscribe = listenToUserChatThread(user.uid, (thread) => {
+            setChatThread(thread);
+            if(thread?.unreadByUser) {
+                const count = Object.values(thread.messages).filter(m => m.sender === 'admin').length;
+                setUnreadMessages(count > 0 ? 1 : 0); // Simplified: show 1 if any unread
+            } else {
+                setUnreadMessages(0);
+            }
+        });
+
+        return () => unsubscribe();
+    }, [user]);
     
     useEffect(() => {
         if (!user) {
@@ -174,6 +197,16 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
      }, [user, showNotification]);
 
     const navigate = useCallback(async (page: PublicPage) => {
+        if (page === 'messages') {
+            if (user) {
+                setIsMessageOpen(true);
+                markThreadAsRead(user.uid, 'user');
+            } else {
+                showNotification('Anda harus masuk untuk mengakses pesan.', 'error');
+            }
+            return;
+        }
+
         if (page === 'login' && !adminConfig?.loginActive) {
             showNotification('Fitur login saat ini dinonaktifkan oleh admin.', 'error');
             return;
@@ -226,6 +259,26 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
         }
     };
 
+     const handleSendMessage = async (userId: string, text: string, isGlobal: boolean) => {
+        if (!user) return;
+        try {
+            await sendMessage(user.uid, user.email || 'N/A', text, 'user', false);
+        } catch (e: any) {
+            showNotification(e.message, 'error');
+            throw e; // re-throw to inform caller
+        }
+    };
+    
+    const handleDeleteMessage = async (userId: string, messageId: string) => {
+        await deleteMessage(userId, messageId);
+        showNotification("Pesan dihapus.", "success");
+    };
+
+    const handleClearThread = async (userId: string) => {
+        await clearChatThread(userId);
+        showNotification("Seluruh percakapan telah dihapus.", "success");
+    };
+
     const renderPage = () => {
         switch (currentPage) {
             case 'home': return <Home setCurrentPage={navigate} user={user} onManagedButtonClick={handleManagedButtonClick} />;
@@ -236,6 +289,7 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
             case 'registration': return user ? <Registration user={user} setCurrentPage={navigate} showNotification={showNotification} showConfirmation={showConfirmation} registrationActive={adminConfig?.registrationActive} /> : <AuthPage setCurrentPage={navigate} showNotification={showNotification} loginActive={adminConfig?.loginActive} registrationActive={adminConfig?.registrationActive} />;
             case 'profile': return user ? <Profile user={user} showNotification={showNotification} showConfirmation={showConfirmation} /> : <AuthPage setCurrentPage={navigate} showNotification={showNotification} loginActive={adminConfig?.loginActive} registrationActive={adminConfig?.registrationActive}/>;
             case 'status': return user ? <Status user={user} /> : <AuthPage setCurrentPage={navigate} showNotification={showNotification} loginActive={adminConfig?.loginActive} registrationActive={adminConfig?.registrationActive} />;
+            case 'messages': return null; // Handled by popup
             default: return <Home setCurrentPage={navigate} user={user} onManagedButtonClick={handleManagedButtonClick} />;
         }
     };
@@ -260,6 +314,19 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
                     showNotification={showNotification}
                 />
             )}
+             {user && (
+                <MessagePopup
+                    user={user}
+                    isAdmin={false}
+                    isOpen={isMessageOpen}
+                    onClose={() => setIsMessageOpen(false)}
+                    currentThread={chatThread}
+                    onSendMessage={handleSendMessage}
+                    onDeleteMessage={handleDeleteMessage}
+                    onClearThread={handleClearThread}
+                    showConfirmation={showConfirmation}
+                />
+            )}
             <Header 
                 currentPage={currentPage}
                 setCurrentPage={navigate}
@@ -271,6 +338,7 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
                 managedButtons={visibleButtons}
                 onManagedButtonClick={handleManagedButtonClick}
                 loginActive={adminConfig?.loginActive ?? true}
+                unreadMessages={unreadMessages}
             />
             <Sidebar
                 isOpen={isSidebarOpen}
@@ -283,6 +351,7 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
                 managedButtons={visibleButtons}
                 onManagedButtonClick={handleManagedButtonClick}
                 loginActive={adminConfig?.loginActive ?? true}
+                unreadMessages={unreadMessages}
             />
             <main className="flex-grow">
                 <div key={currentPage} className="animate-fade-in-up">

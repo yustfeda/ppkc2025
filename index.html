@@ -177,6 +177,44 @@
        .dark .form-input-bg-darkest .peer:not(:placeholder-shown) ~ .form-label {
          background-color: #111827; /* gray-900 */
       }
+
+      /* Custom scrollbar for chat */
+      .chat-messages::-webkit-scrollbar {
+        width: 6px;
+      }
+      .chat-messages::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .chat-messages::-webkit-scrollbar-thumb {
+        background-color: #576CBC; /* brand-accent */
+        border-radius: 20px;
+        border: 3px solid transparent;
+      }
+      .dark .chat-messages::-webkit-scrollbar-thumb {
+        background-color: #FFC107; /* brand-yellow */
+      }
+
+      /* Chat bubble styles */
+      .chat-bubble {
+        max-width: 80%;
+        padding: 0.5rem 1rem;
+        border-radius: 1.25rem;
+        word-wrap: break-word;
+      }
+      .chat-bubble-sent {
+        background-color: #1976D2; /* brand-secondary */
+        color: white;
+        border-bottom-right-radius: 0.25rem;
+      }
+      .chat-bubble-received {
+        background-color: #E5E7EB; /* gray-200 */
+        color: #1F2937; /* gray-800 */
+        border-bottom-left-radius: 0.25rem;
+      }
+      .dark .chat-bubble-received {
+        background-color: #374151; /* gray-700 */
+        color: #F3F4F6; /* gray-100 */
+      }
     </style>
     <script>
       tailwind.config = {

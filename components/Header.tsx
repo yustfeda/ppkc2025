@@ -13,6 +13,7 @@ const navItems: NavItem[] = [
   { page: 'home', label: 'Beranda', icon: 'fas fa-home', roles: ['guest', 'user'] },
   { page: 'stages', label: 'Tahapan Seleksi', icon: 'fas fa-list-ol', roles: ['guest', 'user'] },
   { page: 'announcements', label: 'Pengumuman', icon: 'fas fa-bullhorn', roles: ['guest', 'user'] },
+  { page: 'messages', label: 'Pesan', icon: 'fas fa-paper-plane', roles: ['user'] },
   { page: 'profile', label: 'Profil & Pendaftaran', icon: 'fas fa-user-circle', roles: ['user'] },
   { page: 'registration', label: 'Proses Seleksi', icon: 'fas fa-tasks', roles: ['user'] },
   { page: 'status', label: 'Status Kelulusan', icon: 'fas fa-award', roles: ['user'] },
@@ -57,9 +58,10 @@ interface HeaderProps {
   managedButtons: ManagedButton[];
   onManagedButtonClick: (button: ManagedButton) => void;
   loginActive: boolean;
+  unreadMessages: number;
 }
 
-const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, toggleSidebar, user, onLogout, isSidebarOpen, isSelectionFinished, managedButtons, onManagedButtonClick, loginActive }) => {
+const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, toggleSidebar, user, onLogout, isSidebarOpen, isSelectionFinished, managedButtons, onManagedButtonClick, loginActive, unreadMessages }) => {
   
   const getRole = (): 'user' | 'guest' => {
     return user ? 'user' : 'guest';
@@ -94,6 +96,9 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, toggleSide
                   className={`group relative flex flex-col items-center justify-center px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-brand-secondary transition-colors text-xs ${currentPage === item.page ? 'text-brand-secondary' : ''}`}
                 >
                   <i className={`${item.icon} text-xl`}></i>
+                  {item.page === 'messages' && unreadMessages > 0 && (
+                      <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white text-[10px]">{unreadMessages}</span>
+                  )}
                   <span className="absolute top-full mt-2 text-xs font-semibold bg-brand-dark text-white px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                     {item.label}
                   </span>

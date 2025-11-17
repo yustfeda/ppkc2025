@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { getRegistrations, getSelectionStages } from '../../services/firebase';
 import type { RegistrationData, SelectionStage } from '../../types';
 
@@ -28,15 +28,12 @@ const AdminDashboard: React.FC = () => {
         calculateStats();
     }, []);
 
-    const getFinalStats = () => {
+    const finalStats = useMemo(() => {
         const total = registrations.length;
         let passed = 0;
         let failed = 0;
         const male = registrations.filter(r => r.gender === 'Laki-laki').length;
         const female = registrations.filter(r => r.gender === 'Perempuan').length;
-        const schoolCount = selectedSchool === 'all' 
-            ? 0 
-            : registrations.filter(r => r.originUnit === selectedSchool).length;
 
         registrations.forEach(reg => {
             if (reg.status === 'Gagal') {
@@ -56,11 +53,54 @@ const AdminDashboard: React.FC = () => {
                 }
             }
         });
-        return { total, passed, failed, male, female, schoolCount };
-    };
-
-    const finalStats = getFinalStats();
+        return { total, passed, failed, male, female };
+    }, [registrations, stages]);
     
+     const filteredSchoolStats = useMemo(() => {
+        if (selectedSchool === 'all') return null;
+
+        const schoolRegistrations = registrations.filter(r => r.originUnit === selectedSchool);
+        const total = schoolRegistrations.length;
+        const male = schoolRegistrations.filter(r => r.gender === 'Laki-laki').length;
+        const female = schoolRegistrations.filter(r => r.gender === 'Perempuan').length;
+
+        let passed = 0;
+        let passedMale = 0;
+        let passedFemale = 0;
+        let failed = 0;
+        let failedMale = 0;
+        let failedFemale = 0;
+
+        schoolRegistrations.forEach(reg => {
+            let isFailed = false;
+            if (reg.status === 'Gagal') {
+                isFailed = true;
+            }
+            const hasFailedStage = Object.values(reg.stageProgress || {}).some((p: any) => p && p.status === 'gagal');
+            if (hasFailedStage) {
+                isFailed = true;
+            }
+
+            if (isFailed) {
+                failed++;
+                if (reg.gender === 'Laki-laki') failedMale++;
+                else failedFemale++;
+                return;
+            }
+
+            if (stages.length > 0) {
+                const lastStage = stages[stages.length - 1];
+                if (reg.stageProgress?.[lastStage.id]?.status === 'lolos') {
+                    passed++;
+                    if (reg.gender === 'Laki-laki') passedMale++;
+                    else passedFemale++;
+                }
+            }
+        });
+
+        return { total, male, female, passed, passedMale, passedFemale, failed, failedMale, failedFemale };
+    }, [selectedSchool, registrations, stages]);
+
     const barChartStats = [
         { label: 'Total Pendaftar', value: finalStats.total },
         { label: 'Lolos Administrasi', value: registrations.filter(r => r.status === 'Lolos').length },
@@ -109,21 +149,36 @@ const AdminDashboard: React.FC = () => {
 
                  <div className="bg-white dark:bg-brand-primary p-6 rounded-lg shadow-md">
                      <h2 className="text-lg font-semibold text-brand-primary dark:text-white mb-4">Statistik Asal Sekolah</h2>
-                     <div className="flex items-center gap-4 mb-4">
-                         <select 
-                            value={selectedSchool} 
-                            onChange={e => setSelectedSchool(e.target.value)}
-                            className="p-2 border rounded text-sm w-full sm:w-auto bg-white dark:bg-brand-dark dark:border-gray-600 dark:text-white"
-                        >
-                            <option value="all">Pilih Asal Sekolah</option>
-                            {uniqueSchools.map(school => (
-                                <option key={school} value={school}>{school}</option>
-                            ))}
-                        </select>
-                        {selectedSchool !== 'all' && (
-                            <div className="text-center">
-                                <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400">Pendaftar dari {selectedSchool}</h3>
-                                <p className="text-2xl font-bold text-brand-secondary dark:text-blue-400">{finalStats.schoolCount}</p>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                         <div>
+                            <select 
+                                value={selectedSchool} 
+                                onChange={e => setSelectedSchool(e.target.value)}
+                                className="p-2 border rounded text-sm w-full bg-white dark:bg-brand-dark dark:border-gray-600 dark:text-white"
+                            >
+                                <option value="all">Pilih Asal Sekolah</option>
+                                {uniqueSchools.map(school => (
+                                    <option key={school} value={school}>{school}</option>
+                                ))}
+                            </select>
+                         </div>
+                        {filteredSchoolStats && (
+                            <div className="bg-gray-50 dark:bg-brand-dark/50 p-4 rounded-md animate-fade-in">
+                               <h3 className="font-bold text-brand-primary dark:text-white text-base mb-3">Statistik: <span className="font-normal">{selectedSchool}</span></h3>
+                               <div className="space-y-2 text-sm">
+                                   <div className="flex justify-between items-center">
+                                       <span className="text-gray-600 dark:text-gray-300">Total Pendaftar:</span>
+                                       <span className="font-semibold text-brand-dark dark:text-white">{filteredSchoolStats.total} ({filteredSchoolStats.male} L, {filteredSchoolStats.female} P)</span>
+                                   </div>
+                                    <div className="flex justify-between items-center text-green-600 dark:text-green-400">
+                                       <span className="font-medium">Lolos Seleksi:</span>
+                                       <span className="font-semibold">{filteredSchoolStats.passed} ({filteredSchoolStats.passedMale} L, {filteredSchoolStats.passedFemale} P)</span>
+                                   </div>
+                                    <div className="flex justify-between items-center text-red-600 dark:text-red-400">
+                                       <span className="font-medium">Gagal Seleksi:</span>
+                                       <span className="font-semibold">{filteredSchoolStats.failed} ({filteredSchoolStats.failedMale} L, {filteredSchoolStats.failedFemale} P)</span>
+                                   </div>
+                               </div>
                             </div>
                         )}
                      </div>

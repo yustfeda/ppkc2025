@@ -106,6 +106,7 @@ const Status: React.FC<StatusProps> = ({ user }) => {
                 body: [
                     ['Nama Lengkap', `: ${registration.fullName}`],
                     ['No. Peserta', `: ${registration.participantNumber || 'N/A'}`],
+                    ['Jenis Kelamin', `: ${registration.gender}`],
                     ['Tanggal Lahir', `: ${registration.birthPlace}, ${new Date(registration.birthDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`],
                     ['Asal Satuan', `: ${registration.originUnit}`],
                 ],

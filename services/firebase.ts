@@ -1,4 +1,4 @@
-import type { SelectionStage, AnnouncementDocument, AdminConfig, RegistrationData, User, HomePageUpdate, ManagedButton, Supporter, SupportersSection, FormSubmission, FormField } from '../types';
+import type { SelectionStage, AnnouncementDocument, AdminConfig, RegistrationData, User, HomePageUpdate, ManagedButton, Supporter, SupportersSection, FormSubmission, FormField, ChatThread, Message } from '../types';
 
 declare const firebase: any;
 
@@ -101,7 +101,7 @@ export const getRegistrations = () => getData<{[uid: string]: RegistrationData}>
 export const getUserRegistration = (uid: string) => getData<RegistrationData | null>(`registrations/${uid}`);
 export const getManagedButtons = () => getData<ManagedButton[]>('managedButtons', MOCK_BUTTONS);
 export const getSupporters = () => getData<SupportersSection>('supporters', MOCK_SUPPORTERS_SECTION);
-export const getAttendanceData = () => getData<{[uid: string]: { present: boolean }}>('attendance', {});
+export const getDailyAttendanceData = (date: string) => getData<{[uid: string]: { present: boolean; timestamp: number }}>(`attendance/${date}`, {});
 export const getAllFormSubmissions = () => getData<{[buttonId: string]: {[submissionId: string]: FormSubmission}}>('formSubmissions', {});
 export const getRegistrationFormFields = () => getData<FormField[]>('registrationFormFields', MOCK_REG_FORM_FIELDS);
 
@@ -136,8 +136,12 @@ export const deleteUserRegistration = (uid: string): Promise<void> => {
     return database.ref(`registrations/${uid}`).remove();
 };
 
-export const setAttendanceStatus = async (uid: string, present: boolean): Promise<void> => {
-    return database.ref(`attendance/${uid}`).set({ present });
+export const setDailyAttendanceStatus = async (date: string, uid: string, present: boolean): Promise<void> => {
+    if (present) {
+        return database.ref(`attendance/${date}/${uid}`).set({ present, timestamp: Date.now() });
+    } else {
+        return database.ref(`attendance/${date}/${uid}`).remove();
+    }
 };
 
 export const resetAllRegistrations = (): Promise<void> => {
@@ -167,4 +171,115 @@ export const updateAdminPassword = (newPassword: string): Promise<void> => {
         return user.updatePassword(newPassword);
     }
     return Promise.reject(new Error("No user is currently signed in."));
+};
+
+// --- Messaging System ---
+const getToday = () => new Date().toISOString().split('T')[0];
+
+export const sendMessage = async (
+    userId: string,
+    userEmail: string,
+    text: string,
+    sender: 'user' | 'admin',
+    isGlobal: boolean = false
+): Promise<void> => {
+    // User daily limit check
+    if (sender === 'user') {
+        const today = getToday();
+        const limitRef = database.ref(`messageLimits/${userId}/${today}`);
+        const { committed } = await limitRef.transaction(currentCount => {
+            if (currentCount === null) return 1;
+            if (currentCount >= 5) return; // Abort
+            return currentCount + 1;
+        });
+        if (!committed) {
+            throw new Error("Message limit for today has been reached.");
+        }
+    }
+
+    const threadRef = database.ref(`chats/${userId}`);
+    const newMessageRef = threadRef.child('messages').push();
+    const message: Message = {
+        id: newMessageRef.key!,
+        text,
+        timestamp: Date.now(),
+        sender,
+        isGlobal,
+    };
+    
+    const metadataUpdate = {
+        userId,
+        userEmail,
+        lastMessageText: text,
+        lastMessageTimestamp: message.timestamp,
+        unreadByAdmin: sender === 'user',
+        unreadByUser: sender === 'admin' || isGlobal,
+    };
+
+    await newMessageRef.set(message);
+    await threadRef.child('metadata').update(metadataUpdate);
+
+    // If global, send to all registered users
+    if (isGlobal) {
+        const allRegs = await getRegistrations();
+        for (const reg of Object.values(allRegs)) {
+            if (reg.uid !== userId) { // Don't send to self again
+                const userThreadRef = database.ref(`chats/${reg.uid}`);
+                const userMsgRef = userThreadRef.child('messages').push();
+                const globalMessageForUser: Message = { ...message, id: userMsgRef.key! };
+                await userMsgRef.set(globalMessageForUser);
+                await userThreadRef.child('metadata').update({
+                    ...metadataUpdate,
+                    userId: reg.uid,
+                    userEmail: reg.email,
+                    unreadByUser: true
+                });
+            }
+        }
+    }
+};
+
+export const deleteMessage = (userId: string, messageId: string): Promise<void> => {
+    return database.ref(`chats/${userId}/messages/${messageId}`).remove();
+};
+
+export const clearChatThread = (userId: string): Promise<void> => {
+    return database.ref(`chats/${userId}/messages`).remove();
+};
+
+export const markThreadAsRead = (userId: string, reader: 'user' | 'admin'): Promise<void> => {
+    const keyToUpdate = reader === 'user' ? 'unreadByUser' : 'unreadByAdmin';
+    return database.ref(`chats/${userId}/metadata`).update({ [keyToUpdate]: false });
+};
+
+
+export const listenToUserChatThread = (userId: string, callback: (thread: ChatThread | null) => void): () => void => {
+    const threadRef = database.ref(`chats/${userId}`);
+    const listener = (snapshot: any) => {
+        if (snapshot.exists()) {
+            const data = snapshot.val();
+            const thread: ChatThread = {
+                ...data.metadata,
+                messages: data.messages || {}
+            };
+            callback(thread);
+        } else {
+            callback(null);
+        }
+    };
+    threadRef.on('value', listener);
+    return () => threadRef.off('value', listener);
+};
+
+export const listenToAllChatThreads = (callback: (threads: Record<string, ChatThread>) => void): () => void => {
+    const chatsRef = database.ref('chats');
+    const listener = (snapshot: any) => {
+        if (snapshot.exists()) {
+            callback(snapshot.val());
+        } else {
+            callback({});
+        }
+    };
+    chatsRef.on('value', listener);
+    return () => chatsRef.off('value', listener);
 };

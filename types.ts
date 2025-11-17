@@ -1,6 +1,6 @@
 export type PublicPage = 
   'home' | 'stages' | 'announcements' | 'contact' | 
-  'login' | 'registration' | 'profile' | 'status';
+  'login' | 'registration' | 'profile' | 'status' | 'messages';
 
 export type AdminPage =
   'dashboard' | 'profile' | 'users' | 'announcements' | 
@@ -147,4 +147,34 @@ export interface FormSubmission {
     userEmail: string;
     submittedAt: number;
     data: Record<string, string>;
+}
+
+// Messaging System Types
+export interface Message {
+  id: string;
+  text: string;
+  timestamp: number;
+  sender: 'admin' | 'user';
+  isGlobal?: boolean;
+}
+
+export interface ChatThread {
+  userId: string;
+  userEmail: string;
+  lastMessageText?: string;
+  lastMessageTimestamp?: number;
+  unreadByAdmin: boolean;
+  unreadByUser: boolean;
+  messages: Record<string, Message>;
+}
+
+// For flattened admin inbox view
+export interface InboxMessage extends Message {
+  userId: string;
+  userEmail: string;
+}
+
+export interface ReplyState {
+  isOpen: boolean;
+  messageToReplyTo: InboxMessage | null;
 }

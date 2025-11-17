@@ -12,6 +12,7 @@ const navItems: NavItem[] = [
   { page: 'home', label: 'Beranda', icon: 'fas fa-home', roles: ['guest', 'user'] },
   { page: 'stages', label: 'Tahapan Seleksi', icon: 'fas fa-list-ol', roles: ['guest', 'user'] },
   { page: 'announcements', label: 'Pengumuman', icon: 'fas fa-bullhorn', roles: ['guest', 'user'] },
+  { page: 'messages', label: 'Pesan', icon: 'fas fa-paper-plane', roles: ['user'] },
   { page: 'profile', label: 'Profil & Pendaftaran', icon: 'fas fa-user-circle', roles: ['user'] },
   { page: 'registration', label: 'Proses Seleksi', icon: 'fas fa-tasks', roles: ['user'] },
   { page: 'status', label: 'Status Kelulusan', icon: 'fas fa-award', roles: ['user'] },
@@ -55,9 +56,10 @@ interface SidebarProps {
   managedButtons: ManagedButton[];
   onManagedButtonClick: (button: ManagedButton) => void;
   loginActive: boolean;
+  unreadMessages: number;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPage, setCurrentPage, toggleSidebar, user, onLogout, isSelectionFinished, managedButtons, onManagedButtonClick, loginActive }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPage, setCurrentPage, toggleSidebar, user, onLogout, isSelectionFinished, managedButtons, onManagedButtonClick, loginActive, unreadMessages }) => {
   const handleNavigation = (page: PublicPage) => {
     setCurrentPage(page);
     toggleSidebar();
@@ -109,10 +111,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPage, setCurrentPage, 
               <li key={item.page}>
                 <button
                   onClick={() => handleNavigation(item.page)}
-                  className={`w-full text-left flex items-center p-3 rounded-lg my-1 transition-colors text-sm ${currentPage === item.page ? 'bg-blue-100 dark:bg-blue-900/50 text-brand-secondary dark:text-blue-300' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                  className={`relative w-full text-left flex items-center p-3 rounded-lg my-1 transition-colors text-sm ${currentPage === item.page ? 'bg-blue-100 dark:bg-blue-900/50 text-brand-secondary dark:text-blue-300' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
                 >
                   <i className={`${item.icon} text-lg w-8`}></i>
                   <span className="ml-3 font-semibold">{item.label}</span>
+                   {item.page === 'messages' && unreadMessages > 0 && (
+                        <span className="absolute right-3 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full">{unreadMessages}</span>
+                   )}
                 </button>
               </li>
             ))}

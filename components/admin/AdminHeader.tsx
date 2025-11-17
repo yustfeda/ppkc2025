@@ -66,9 +66,11 @@ interface AdminHeaderProps {
   toggleSidebar: () => void;
   notificationBadge?: number;
   showConfirmation: (message: string, onConfirm: () => void) => void;
+  messageBadge: number;
+  onMessageIconClick: () => void;
 }
 
-const AdminHeader: React.FC<AdminHeaderProps> = ({ currentPage, setCurrentPage, onLogout, isSidebarOpen, toggleSidebar, notificationBadge, showConfirmation }) => {
+const AdminHeader: React.FC<AdminHeaderProps> = ({ currentPage, setCurrentPage, onLogout, isSidebarOpen, toggleSidebar, notificationBadge, showConfirmation, messageBadge, onMessageIconClick }) => {
     const handleNavigation = (page: AdminPage) => {
         setCurrentPage(page);
         if (isSidebarOpen) {
@@ -76,6 +78,13 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ currentPage, setCurrentPage, 
         }
     };
     
+    const handleMessageClick = () => {
+        onMessageIconClick();
+        if (isSidebarOpen) {
+            toggleSidebar();
+        }
+    }
+
     const confirmLogout = () => {
         showConfirmation('Anda yakin ingin keluar dari Admin Panel?', onLogout);
     }
@@ -161,6 +170,18 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ currentPage, setCurrentPage, 
         </div>
         <nav className="p-2 flex flex-col h-[calc(100%-4.5rem)]">
           <ul className="flex-grow">
+             <li>
+                <button
+                  onClick={handleMessageClick}
+                  className="relative w-full text-left flex items-center p-3 rounded-md my-1 transition-colors text-sm font-medium hover:bg-brand-secondary/30"
+                >
+                  <i className="fas fa-paper-plane text-lg w-8 text-center"></i>
+                  <span className="ml-3 font-semibold">Pesan</span>
+                   {messageBadge > 0 && (
+                      <span className="absolute right-3 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full">{messageBadge}</span>
+                   )}
+                </button>
+              </li>
             {adminNavItems.map(item => (
               <li key={item.page}>
                 <button
