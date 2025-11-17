@@ -201,45 +201,50 @@ export const sendMessage = async (
         }
     }
 
-    const threadRef = database.ref(`chats/${userId}`);
-    const newMessageRef = threadRef.child('messages').push();
-    const message: Message = {
-        id: newMessageRef.key!,
+    const message: Omit<Message, 'id'> = {
         text,
         timestamp: Date.now(),
         sender,
         isGlobal,
     };
-    
-    const metadataUpdate = {
-        userId,
-        userEmail,
-        lastMessageText: text,
-        lastMessageTimestamp: message.timestamp,
-        unreadByAdmin: sender === 'user',
-        unreadByUser: sender === 'admin' || isGlobal,
-    };
 
-    await newMessageRef.set(message);
-    await threadRef.child('metadata').update(metadataUpdate);
-
-    // If global, send to all registered users
-    if (isGlobal) {
+    // If global message from admin, broadcast to all registered users
+    if (isGlobal && sender === 'admin') {
         const allRegs = await getRegistrations();
         for (const reg of Object.values(allRegs)) {
-            if (reg.uid !== userId) { // Don't send to self again
-                const userThreadRef = database.ref(`chats/${reg.uid}`);
-                const userMsgRef = userThreadRef.child('messages').push();
-                const globalMessageForUser: Message = { ...message, id: userMsgRef.key! };
-                await userMsgRef.set(globalMessageForUser);
-                await userThreadRef.child('metadata').update({
-                    ...metadataUpdate,
-                    userId: reg.uid,
-                    userEmail: reg.email,
-                    unreadByUser: true
-                });
-            }
+            const userThreadRef = database.ref(`chats/${reg.uid}`);
+            const userMsgRef = userThreadRef.child('messages').push();
+            const globalMessageForUser: Message = { ...message, id: userMsgRef.key! };
+            
+            const metadataUpdate = {
+                userId: reg.uid,
+                userEmail: reg.email,
+                lastMessageText: text,
+                lastMessageTimestamp: message.timestamp,
+                unreadByAdmin: false, // It's from admin
+                unreadByUser: true, // User needs to read it
+            };
+
+            await userMsgRef.set(globalMessageForUser);
+            await userThreadRef.child('metadata').update(metadataUpdate);
         }
+    } else {
+        // This is a personal message (either user->admin or admin->user)
+        const threadRef = database.ref(`chats/${userId}`);
+        const newMessageRef = threadRef.child('messages').push();
+        const finalMessage: Message = { ...message, id: newMessageRef.key! };
+        
+        const metadataUpdate = {
+            userId,
+            userEmail,
+            lastMessageText: text,
+            lastMessageTimestamp: message.timestamp,
+            unreadByAdmin: sender === 'user',
+            unreadByUser: sender === 'admin',
+        };
+
+        await newMessageRef.set(finalMessage);
+        await threadRef.child('metadata').update(metadataUpdate);
     }
 };
 

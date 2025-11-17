@@ -7,8 +7,8 @@ declare const jspdf: any;
 declare const XLSX: any;
 
 interface Attendee extends RegistrationData {
-    present: boolean;
-    timestamp?: number;
+    presentCount: number;
+    lastTimestamp?: number;
 }
 
 const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
@@ -17,14 +17,14 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
     const [scannerActive, setScannerActive] = useState(false);
     const [scanResult, setScanResult] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [viewType, setViewType] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            const [regsData, stagesData, attendanceData] = await Promise.all([
+            const [regsData, stagesData] = await Promise.all([
                 getRegistrations(),
-                getSelectionStages(),
-                getDailyAttendanceData(selectedDate)
+                getSelectionStages()
             ]);
             
             const stages = stagesData || [];
@@ -33,12 +33,55 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
             const passedUsers = Object.values(regsData).filter(reg => 
                 lastStage && reg.stageProgress?.[lastStage.id]?.status === 'lolos'
             );
+            
+            const date = new Date(selectedDate + 'T00:00:00Z');
+            let datesToFetch: string[] = [];
+            if (viewType === 'daily') {
+                datesToFetch.push(selectedDate);
+            } else if (viewType === 'weekly') {
+                const dayOfWeek = date.getUTCDay();
+                const startOfWeek = new Date(date);
+                startOfWeek.setUTCDate(date.getUTCDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1)); // Monday as start of week
+                for (let i = 0; i < 7; i++) {
+                    const d = new Date(startOfWeek);
+                    d.setUTCDate(startOfWeek.getUTCDate() + i);
+                    datesToFetch.push(d.toISOString().split('T')[0]);
+                }
+            } else { // monthly
+                const year = date.getUTCFullYear();
+                const month = date.getUTCMonth();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                for (let i = 1; i <= daysInMonth; i++) {
+                     const d = new Date(Date.UTC(year, month, i));
+                     datesToFetch.push(d.toISOString().split('T')[0]);
+                }
+            }
+            
+            const attendancePromises = datesToFetch.map(d => getDailyAttendanceData(d));
+            const allAttendanceData = await Promise.all(attendancePromises);
+
+            const aggregatedAttendance: { [uid: string]: { count: number; lastTimestamp?: number } } = {};
+            
+            allAttendanceData.forEach(dailyData => {
+                for (const uid in dailyData) {
+                    if (dailyData[uid].present) {
+                        if (!aggregatedAttendance[uid]) {
+                            aggregatedAttendance[uid] = { count: 0, lastTimestamp: 0 };
+                        }
+                        aggregatedAttendance[uid].count++;
+                        if (dailyData[uid].timestamp > (aggregatedAttendance[uid].lastTimestamp || 0)) {
+                           aggregatedAttendance[uid].lastTimestamp = dailyData[uid].timestamp;
+                        }
+                    }
+                }
+            });
 
             const attendeeList: Attendee[] = passedUsers.map(user => ({
                 ...user,
-                present: attendanceData[user.uid]?.present || false,
-                timestamp: attendanceData[user.uid]?.timestamp
-            })).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                presentCount: aggregatedAttendance[user.uid]?.count || 0,
+                lastTimestamp: aggregatedAttendance[user.uid]?.lastTimestamp
+            })).sort((a, b) => (b.lastTimestamp || 0) - (a.lastTimestamp || 0));
+
 
             setAttendees(attendeeList);
         } catch (error) {
@@ -47,7 +90,7 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
         } finally {
             setLoading(false);
         }
-    }, [showNotification, selectedDate]);
+    }, [showNotification, selectedDate, viewType]);
 
     useEffect(() => {
         fetchData();
@@ -75,18 +118,17 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
                     return;
                 }
 
-                const userIndex = attendees.findIndex(att => att.uid === uid);
-                if (userIndex === -1) {
+                const userExists = attendees.some(att => att.uid === uid);
+                if (!userExists) {
                     setScanResult({ message: 'Peserta tidak ditemukan di daftar lolos.', type: 'error' });
                     return;
                 }
                 
                 // Mark as present
                 await setDailyAttendanceStatus(selectedDate, uid, true);
-                const userToUpdate = attendees[userIndex];
-                setScanResult({ message: `Berhasil! ${userToUpdate.fullName} ditandai Hadir`, type: 'success' });
+                const userToUpdate = attendees.find(att => att.uid === uid);
+                setScanResult({ message: `Berhasil! ${userToUpdate?.fullName || ''} ditandai Hadir`, type: 'success' });
                 
-                // Optimistic UI update
                 fetchData();
 
             } catch (e) {
@@ -107,15 +149,16 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
     
     const exportToPDF = () => {
         const doc = new jspdf.jsPDF();
-        doc.text(`Daftar Hadir Peserta Lolos - ${selectedDate}`, 14, 16);
+        const viewName = viewType.charAt(0).toUpperCase() + viewType.slice(1);
+        doc.text(`Daftar Hadir Peserta (${viewName}) - ${selectedDate}`, 14, 16);
         
-        const head = [['No', 'Nama', 'Email', 'Status Kehadiran', 'Waktu Hadir']];
+        const head = [['No', 'Nama', 'Email', 'Total Kehadiran', 'Terakhir Hadir']];
         const body = attendees.map((att, i) => [
             i + 1,
             att.fullName,
             att.email,
-            att.present ? 'Hadir' : 'Tidak Hadir',
-            att.timestamp ? new Date(att.timestamp).toLocaleString('id-ID') : '-'
+            `${att.presentCount} hari`,
+            att.lastTimestamp ? new Date(att.lastTimestamp).toLocaleString('id-ID') : '-'
         ]);
 
         doc.autoTable({
@@ -124,21 +167,22 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
             body: body,
             headStyles: { fillColor: [11, 36, 71] },
         });
-        doc.save(`Daftar Hadir - ${selectedDate}.pdf`);
+        doc.save(`Daftar Hadir ${viewName} - ${selectedDate}.pdf`);
     };
 
     const exportToExcel = () => {
         const dataToExport = attendees.map(att => ({
             'Nama Lengkap': att.fullName,
             'Email': att.email,
-            'Status Kehadiran': att.present ? 'Hadir' : 'Tidak Hadir',
-            'Waktu Kehadiran': att.timestamp ? new Date(att.timestamp).toLocaleString('id-ID') : '-'
+            'Total Kehadiran (hari)': att.presentCount,
+            'Terakhir Hadir': att.lastTimestamp ? new Date(att.lastTimestamp).toLocaleString('id-ID') : '-'
         }));
 
         const worksheet = XLSX.utils.json_to_sheet(dataToExport);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Daftar Hadir");
-        XLSX.writeFile(workbook, `Daftar Hadir - ${selectedDate}.xlsx`);
+        const viewName = viewType.charAt(0).toUpperCase() + viewType.slice(1);
+        XLSX.writeFile(workbook, `Daftar Hadir ${viewName} - ${selectedDate}.xlsx`);
     };
 
     return (
@@ -148,44 +192,51 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
                     <h1 className="text-2xl font-bold text-brand-primary dark:text-white">Daftar Hadir Peserta Lolos</h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Gunakan scanner untuk mencatat kehadiran atau unduh data.</p>
                 </div>
-                 <div className="flex items-center gap-2">
-                    <label htmlFor="attendance-date" className="text-sm font-medium dark:text-gray-300">Tanggal:</label>
+                 <div className="flex items-center gap-2 flex-wrap">
+                     <select value={viewType} onChange={e => setViewType(e.target.value as any)} className="p-2 border rounded-md text-sm bg-white dark:bg-brand-dark dark:border-gray-600 dark:text-white">
+                        <option value="daily">Harian</option>
+                        <option value="weekly">Mingguan</option>
+                        <option value="monthly">Bulanan</option>
+                    </select>
                     <input type="date" id="attendance-date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} className="p-2 border rounded-md text-sm bg-white dark:bg-brand-dark dark:border-gray-600 dark:text-white" />
                 </div>
             </div>
             <div className="flex flex-wrap gap-2 mb-6">
-                <button onClick={exportToPDF} className="bg-red-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-red-700"><i className="fas fa-file-pdf mr-2"></i>Unduh PDF Harian</button>
-                <button onClick={exportToExcel} className="bg-green-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-green-700"><i className="fas fa-file-excel mr-2"></i>Unduh Excel Harian</button>
+                <button onClick={exportToPDF} className="bg-red-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-red-700"><i className="fas fa-file-pdf mr-2"></i>Unduh PDF</button>
+                <button onClick={exportToExcel} className="bg-green-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-green-700"><i className="fas fa-file-excel mr-2"></i>Unduh Excel</button>
             </div>
             
-            <div className="mb-6 bg-gray-50 dark:bg-brand-dark p-4 rounded-lg">
-                {!scannerActive ? (
-                    <button 
-                        onClick={() => setScannerActive(true)}
-                        className="bg-brand-secondary text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-brand-accent"
-                    >
-                        <i className="fas fa-qrcode mr-2"></i>Mulai Scan Kehadiran
-                    </button>
-                ) : (
-                    <div className="relative">
-                        <div id="qr-reader" style={{ width: '100%' }}></div>
-                        {scanResult && (
-                             <div className={`absolute inset-0 flex items-center justify-center p-4 transition-opacity duration-300 bg-black/70 rounded-md`}>
-                                <div className={`text-center p-4 rounded-lg ${scanResult.type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white shadow-lg`}>
-                                    <i className={`fas ${scanResult.type === 'success' ? 'fa-check-circle' : 'fa-times-circle'} text-3xl mb-2`}></i>
-                                    <p className="font-bold">{scanResult.message}</p>
-                                </div>
-                            </div>
-                        )}
+            {viewType === 'daily' && (
+                <div className="mb-6 bg-gray-50 dark:bg-brand-dark p-4 rounded-lg">
+                    {!scannerActive ? (
                         <button 
-                            onClick={() => setScannerActive(false)}
-                            className="mt-4 bg-red-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-red-700"
+                            onClick={() => setScannerActive(true)}
+                            className="bg-brand-secondary text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-brand-accent"
                         >
-                            Tutup Scanner
+                            <i className="fas fa-qrcode mr-2"></i>Mulai Scan Kehadiran
                         </button>
-                    </div>
-                )}
-            </div>
+                    ) : (
+                        <div className="relative">
+                            <div id="qr-reader" style={{ width: '100%' }}></div>
+                            {scanResult && (
+                                <div className={`absolute inset-0 flex items-center justify-center p-4 transition-opacity duration-300 bg-black/70 rounded-md`}>
+                                    <div className={`text-center p-4 rounded-lg ${scanResult.type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white shadow-lg`}>
+                                        <i className={`fas ${scanResult.type === 'success' ? 'fa-check-circle' : 'fa-times-circle'} text-3xl mb-2`}></i>
+                                        <p className="font-bold">{scanResult.message}</p>
+                                    </div>
+                                </div>
+                            )}
+                            <button 
+                                onClick={() => setScannerActive(false)}
+                                className="mt-4 bg-red-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-red-700"
+                            >
+                                Tutup Scanner
+                            </button>
+                        </div>
+                    )}
+                </div>
+            )}
+
 
             <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
@@ -193,8 +244,8 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
                         <tr className="text-gray-800 dark:text-gray-200">
                             <th className="p-3 font-semibold">#</th>
                             <th className="p-3 font-semibold">Nama</th>
-                            <th className="p-3 font-semibold">Status</th>
-                            <th className="p-3 font-semibold">Waktu Hadir</th>
+                            <th className="p-3 font-semibold">Total Hadir</th>
+                            <th className="p-3 font-semibold">Terakhir Hadir</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
@@ -205,18 +256,18 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
                                 <td className="p-3">{index + 1}</td>
                                 <td className="p-3 font-medium">{attendee.fullName}</td>
                                 <td className="p-3">
-                                    {attendee.present ? (
+                                    {attendee.presentCount > 0 ? (
                                         <span className="px-2 py-1 rounded-full font-medium text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
-                                            <i className="fas fa-check-circle mr-1"></i>Hadir
+                                            Hadir {attendee.presentCount} kali
                                         </span>
                                     ) : (
                                         <span className="px-2 py-1 rounded-full font-medium text-xs bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
-                                            Tidak Hadir
+                                            Tidak Pernah Hadir
                                         </span>
                                     )}
                                 </td>
                                  <td className="p-3 font-mono text-xs">
-                                    {attendee.timestamp ? new Date(attendee.timestamp).toLocaleString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', day: '2-digit', month: 'short' }) : '-'}
+                                    {attendee.lastTimestamp ? new Date(attendee.lastTimestamp).toLocaleString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', day: '2-digit', month: 'short' }) : '-'}
                                 </td>
                             </tr>
                         )) : (
