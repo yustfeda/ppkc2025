@@ -101,7 +101,6 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
             sessionStorage.setItem('seenAdminWelcome', 'true');
         }
         const unsubscribeAuth = onAuthChange(setCurrentUser);
-        // FIX: The transformation logic is now handled by listenToAllChatThreads, simplifying the component.
         const unsubscribeChats = listenToAllChatThreads((threads) => {
             setChatThreads(threads);
             const unreadCount = Object.values(threads).filter(t => t.unreadByAdmin).length;
@@ -144,6 +143,24 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
         onLogout();
     }
 
+    const selectedThread = selectedThreadId ? chatThreads[selectedThreadId] : null;
+    let threadForPopup = selectedThread;
+
+    // If a user is selected to start a new chat but no thread exists, create a placeholder.
+    // This fixes the bug where the message input was disabled for new conversations.
+    if (selectedThreadId && !selectedThread) {
+        const registration = allRegistrations.find(r => r.uid === selectedThreadId);
+        if (registration) {
+            threadForPopup = {
+                userId: registration.uid,
+                userEmail: registration.email,
+                messages: {},
+                unreadByAdmin: false,
+                unreadByUser: false,
+            };
+        }
+    }
+
     const renderPage = () => {
         const pageProps: AdminPageProps = { showNotification, showConfirmation, user: currentUser };
         switch (currentPage) {
@@ -175,7 +192,7 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
                     onClose={() => setIsMessagePopupOpen(false)}
                     threads={chatThreads}
                     allRegistrations={allRegistrations}
-                    currentThread={selectedThreadId ? chatThreads[selectedThreadId] : null}
+                    currentThread={threadForPopup}
                     onSelectThread={handleSelectThread}
                     onSendMessage={handleSendMessage}
                     onDeleteMessage={handleDeleteMessage}
