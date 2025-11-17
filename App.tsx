@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { User } from './types';
-import { onAuthChange, logoutUser } from './services/firebase';
+import { onAuthChange, logoutUser, setAuthPersistence } from './services/firebase';
 
 import PublicApp from './PublicApp';
 import AdminApp from './AdminApp';
@@ -17,26 +17,32 @@ const App: React.FC = () => {
         } else {
             document.documentElement.classList.remove('dark')
         }
+        
+        setAuthPersistence().then(() => {
+            const unsubscribe = onAuthChange((firebaseUser) => {
+                setUser(firebaseUser as User | null);
 
-        const unsubscribe = onAuthChange((firebaseUser) => {
-            setUser(firebaseUser as User | null);
+                const adminStatus = sessionStorage.getItem('isAdmin') === 'true';
+                
+                if (!firebaseUser) {
+                    sessionStorage.removeItem('isAdmin');
+                    setIsAdmin(false);
+                } else {
+                    setIsAdmin(adminStatus);
+                }
 
-            const adminStatus = sessionStorage.getItem('isAdmin') === 'true';
-            
-            if (!firebaseUser) {
-                sessionStorage.removeItem('isAdmin');
-                setIsAdmin(false);
-            } else {
-                setIsAdmin(adminStatus);
-            }
+                // Start fade out process
+                setFadeOutLoader(true);
+                // Unmount loader after animation
+                setTimeout(() => setIsCheckingAuth(false), 300); 
+            });
 
-            // Start fade out process
-            setFadeOutLoader(true);
-            // Unmount loader after animation
-            setTimeout(() => setIsCheckingAuth(false), 300); 
+             return () => unsubscribe();
+        }).catch(error => {
+            console.error("Auth persistence error:", error);
+            setIsCheckingAuth(false);
         });
 
-        return () => unsubscribe();
     }, []);
 
     const handleSetAdmin = () => {
@@ -47,6 +53,8 @@ const App: React.FC = () => {
     const handleLogout = () => {
         sessionStorage.removeItem('isAdmin');
         sessionStorage.removeItem('seenAdminWelcome');
+        sessionStorage.removeItem('currentPage');
+        sessionStorage.removeItem('adminCurrentPage');
         setIsAdmin(false);
         logoutUser();
     };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import type { AdminPage, AdminPageProps, Notification, User, RegistrationData, ConfirmationState, AdminConfig, ChatThread, ReplyState, InboxMessage } from './types';
+import type { AdminPage, AdminPageProps, Notification, User, RegistrationData, ConfirmationState, AdminConfig, ChatThread } from './types';
 import { getAdminConfig, getRegistrations, onAuthChange, listenToAllChatThreads, sendMessage, deleteMessage, markThreadAsRead, clearChatThread } from './services/firebase';
 
 import AdminLayout from './components/admin/AdminLayout';
@@ -15,9 +15,6 @@ import AdminManageHighlights from './components/admin/AdminManageHighlights';
 import AdminAttendance from './components/admin/AdminAttendance';
 import AdminManageButtons from './components/admin/AdminManageButtons';
 import MessagePopup from './components/shared/MessagePopup';
-import AdminMessageHub from './components/admin/AdminMessageHub';
-import AdminInboxPopup from './components/admin/AdminInboxPopup';
-import AdminReplyPopup from './components/admin/AdminReplyPopup';
 
 interface AdminAppProps {
     onLogout: () => void;
@@ -48,7 +45,7 @@ const NotificationPopup: React.FC<{ notification: Notification, onClose: () => v
 };
 
 const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
-    const [currentPage, setCurrentPage] = useState<AdminPage>('dashboard');
+    const [currentPage, setCurrentPage] = useState<AdminPage>(() => (sessionStorage.getItem('adminCurrentPage') as AdminPage) || 'dashboard');
     const [adminConfig, setAdminConfig] = useState<AdminConfig | null>(null);
     const [showAdminWelcome, setShowAdminWelcome] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -56,12 +53,10 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
     const [confirmation, setConfirmation] = useState<ConfirmationState>({ isOpen: false, message: '', onConfirm: () => {} });
     const [notificationBadge, setNotificationBadge] = useState(0);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
+    const [allRegistrations, setAllRegistrations] = useState<RegistrationData[]>([]);
     
     // Messaging States
-    const [isMessageHubOpen, setIsMessageHubOpen] = useState(false);
     const [isMessagePopupOpen, setIsMessagePopupOpen] = useState(false);
-    const [isInboxOpen, setIsInboxOpen] = useState(false);
-    const [replyState, setReplyState] = useState<ReplyState>({ isOpen: false, messageToReplyTo: null });
     const [chatThreads, setChatThreads] = useState<Record<string, ChatThread>>({});
     const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
     const [messageBadge, setMessageBadge] = useState(0);
@@ -82,11 +77,18 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
     const toggleSidebar = useCallback(() => {
         setIsSidebarOpen(prev => !prev);
     }, []);
+    
+    useEffect(() => {
+        sessionStorage.setItem('adminCurrentPage', currentPage);
+    }, [currentPage]);
+
 
     const fetchAdminData = useCallback(() => {
         getAdminConfig().then(setAdminConfig);
         getRegistrations().then(regs => {
-            const pendingCount = Object.values(regs).filter(r => r.status === 'Terkirim').length;
+            const regsArray = Object.values(regs);
+            setAllRegistrations(regsArray);
+            const pendingCount = regsArray.filter(r => r.status === 'Terkirim').length;
             setNotificationBadge(pendingCount);
         });
     }, []);
@@ -99,6 +101,7 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
             sessionStorage.setItem('seenAdminWelcome', 'true');
         }
         const unsubscribeAuth = onAuthChange(setCurrentUser);
+        // FIX: The transformation logic is now handled by listenToAllChatThreads, simplifying the component.
         const unsubscribeChats = listenToAllChatThreads((threads) => {
             setChatThreads(threads);
             const unreadCount = Object.values(threads).filter(t => t.unreadByAdmin).length;
@@ -118,18 +121,14 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
 
     const handleSendMessage = async (targetUserId: string, text: string, isGlobal: boolean) => {
         if (!currentUser) return;
-        const targetUserEmail = chatThreads[targetUserId]?.userEmail || 'Global';
+        const targetUser = allRegistrations.find(r => r.uid === targetUserId);
+        const targetUserEmail = targetUser?.email || 'Global';
         await sendMessage(targetUserId, targetUserEmail, text, 'admin', isGlobal);
+        if (isGlobal) {
+            showNotification('Pesan global berhasil dikirim ke semua pengguna.', 'success');
+        }
     };
     
-    const handleReplySend = async (text: string) => {
-        if (!replyState.messageToReplyTo || !currentUser) return;
-        const { userId, userEmail } = replyState.messageToReplyTo;
-        await sendMessage(userId, userEmail, text, 'admin', false);
-        setReplyState({ isOpen: false, messageToReplyTo: null });
-        showNotification(`Balasan terkirim ke ${userEmail}`, 'success');
-    };
-
     const handleDeleteMessage = async (targetUserId: string, messageId: string) => {
         await deleteMessage(targetUserId, messageId);
         showNotification("Pesan dihapus.", "success");
@@ -144,21 +143,6 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
         sessionStorage.setItem('adminLoggedOut', 'true');
         onLogout();
     }
-    
-    const openChat = (userId: string | null = null) => {
-        setIsMessageHubOpen(false);
-        setIsInboxOpen(false);
-        if (userId) {
-            handleSelectThread(userId);
-        }
-        setIsMessagePopupOpen(true);
-    };
-
-    const openInbox = () => {
-        setIsMessageHubOpen(false);
-        setIsMessagePopupOpen(false);
-        setIsInboxOpen(true);
-    };
 
     const renderPage = () => {
         const pageProps: AdminPageProps = { showNotification, showConfirmation, user: currentUser };
@@ -182,46 +166,24 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
             {notification && <NotificationPopup notification={notification} onClose={() => setNotification(null)} />}
             {showAdminWelcome && <AdminWelcomePopup onClose={() => setShowAdminWelcome(false)} notificationCount={notificationBadge} />}
             
-            {/* Messaging Modals */}
-            {isMessageHubOpen && (
-                <AdminMessageHub
-                    onClose={() => setIsMessageHubOpen(false)}
-                    onOpenChat={() => openChat()}
-                    onOpenInbox={openInbox}
-                />
-            )}
-            {isInboxOpen && (
-                <AdminInboxPopup
-                    isOpen={isInboxOpen}
-                    onClose={() => setIsInboxOpen(false)}
+            {/* Messaging Modal */}
+            {isMessagePopupOpen && (
+                 <MessagePopup
+                    user={currentUser}
+                    isAdmin={true}
+                    isOpen={isMessagePopupOpen}
+                    onClose={() => setIsMessagePopupOpen(false)}
                     threads={chatThreads}
-                    onReply={(message) => setReplyState({ isOpen: true, messageToReplyTo: message })}
+                    allRegistrations={allRegistrations}
+                    currentThread={selectedThreadId ? chatThreads[selectedThreadId] : null}
+                    onSelectThread={handleSelectThread}
+                    onSendMessage={handleSendMessage}
                     onDeleteMessage={handleDeleteMessage}
+                    onClearThread={handleClearThread}
                     showConfirmation={showConfirmation}
-                    onOpenConversation={(userId) => openChat(userId)}
                 />
             )}
-            {replyState.isOpen && (
-                <AdminReplyPopup
-                    onClose={() => setReplyState({ isOpen: false, messageToReplyTo: null })}
-                    onSend={handleReplySend}
-                    messageToReplyTo={replyState.messageToReplyTo}
-                />
-            )}
-            <MessagePopup
-                user={currentUser}
-                isAdmin={true}
-                isOpen={isMessagePopupOpen}
-                onClose={() => setIsMessagePopupOpen(false)}
-                threads={chatThreads}
-                currentThread={selectedThreadId ? chatThreads[selectedThreadId] : null}
-                onSelectThread={handleSelectThread}
-                onSendMessage={handleSendMessage}
-                onDeleteMessage={handleDeleteMessage}
-                onClearThread={handleClearThread}
-                showConfirmation={showConfirmation}
-            />
-
+           
             <AdminLayout 
                 currentPage={currentPage} 
                 setCurrentPage={setCurrentPage} 
@@ -234,7 +196,7 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
                 showConfirmation={showConfirmation}
                 appVersion={adminConfig?.appVersion}
                 messageBadge={messageBadge}
-                onMessageIconClick={() => setIsMessageHubOpen(true)}
+                onMessageIconClick={() => setIsMessagePopupOpen(true)}
             >
                 {renderPage()}
             </AdminLayout>

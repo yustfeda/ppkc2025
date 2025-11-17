@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import type { User, ChatThread, Message } from '../../types';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import type { User, ChatThread, Message, RegistrationData } from '../../types';
 
 interface MessagePopupProps {
     user: User | null;
@@ -7,6 +7,7 @@ interface MessagePopupProps {
     isOpen: boolean;
     onClose: () => void;
     threads?: Record<string, ChatThread>;
+    allRegistrations?: RegistrationData[];
     currentThread?: ChatThread | null;
     onSendMessage: (targetUserId: string, text: string, isGlobal: boolean) => Promise<void>;
     onDeleteMessage: (targetUserId: string, messageId: string) => void;
@@ -15,23 +16,26 @@ interface MessagePopupProps {
     showConfirmation: (message: string, onConfirm: () => void) => void;
 }
 
-const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onClose, threads, currentThread, onSendMessage, onDeleteMessage, onClearThread, onSelectThread, showConfirmation }) => {
+const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onClose, threads, allRegistrations = [], currentThread, onSendMessage, onDeleteMessage, onClearThread, onSelectThread, showConfirmation }) => {
     const [isClosing, setIsClosing] = useState(false);
     const [newMessage, setNewMessage] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const [activeTab, setActiveTab] = useState<'users' | 'global'>('users');
+    const [adminTab, setAdminTab] = useState<'inbox' | 'broadcast'>('inbox');
     const [userTab, setUserTab] = useState<'conversation' | 'inbox'>('conversation');
 
     useEffect(() => {
         if (isOpen) {
+            setIsClosing(false); // Reset closing state when opening
             messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
         }
-    }, [isOpen, currentThread?.messages, userTab]);
+    }, [isOpen, currentThread?.messages, userTab, adminTab]);
     
     useEffect(() => {
-      // When opening as user, default to conversation tab
       if (isOpen && !isAdmin) {
         setUserTab('conversation');
+      }
+      if (isOpen && isAdmin) {
+        setAdminTab('inbox');
       }
     }, [isOpen, isAdmin]);
 
@@ -47,8 +51,10 @@ const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onCl
         if (!newMessage.trim() || !user) return;
         
         let targetUserId: string | null = null;
+        const isGlobal = isAdmin && adminTab === 'broadcast';
+
         if (isAdmin) {
-             if (activeTab === 'global') {
+             if (isGlobal) {
                 targetUserId = user.uid; // Use admin UID as a placeholder for global send
              } else {
                 targetUserId = currentThread?.userId || null;
@@ -57,13 +63,13 @@ const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onCl
             targetUserId = user.uid;
         }
 
-        if (!targetUserId) {
+        if (!targetUserId && !isGlobal) {
             console.error("No target user to send message to.");
             return;
         }
 
         try {
-            await onSendMessage(targetUserId, newMessage, isAdmin && activeTab === 'global');
+            await onSendMessage(targetUserId!, newMessage, isGlobal);
             setNewMessage('');
         } catch (error: any) {
             alert(error.message); // Show limit error
@@ -87,14 +93,36 @@ const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onCl
             () => onClearThread(targetUserId)
         );
     };
-    
-    const sortedMessages = currentThread ? Object.values(currentThread.messages).sort((a: Message, b: Message) => a.timestamp - b.timestamp) : [];
-    const sortedThreads = threads ? Object.values(threads).sort((a: ChatThread, b: ChatThread) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0)) : [];
-    // FIX: Explicitly type `msg` to resolve TypeScript error where `msg` was inferred as `unknown`.
-    const inboxMessages = sortedMessages.filter((msg: Message) => msg.sender === 'admin');
 
-    const canReply = !isAdmin && !sortedMessages.some((m: Message) => m.isGlobal);
+    const handleNewMessageUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const selectedUserId = e.target.value;
+        if (selectedUserId && onSelectThread) {
+            onSelectThread(selectedUserId);
+        }
+    }
     
+    const allSortedMessages = currentThread ? Object.values(currentThread.messages).sort((a: Message, b: Message) => a.timestamp - b.timestamp) : [];
+    
+    const threadsWithNames = useMemo(() => {
+        return threads ? Object.values(threads).map((thread: ChatThread) => {
+            const regData = allRegistrations.find(r => r.uid === thread.userId);
+            return {
+                ...thread,
+                userName: regData?.fullName || thread.userEmail
+            };
+        }).sort((a, b) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0)) : [];
+    }, [threads, allRegistrations]);
+
+    // User-side message filtering
+    const inboxMessages = allSortedMessages.filter((msg: Message) => msg.sender === 'admin');
+    const conversationMessages = allSortedMessages.filter((msg: Message) => !msg.isGlobal);
+
+    const messagesToDisplay = isAdmin 
+        ? allSortedMessages 
+        : (userTab === 'inbox' ? inboxMessages : conversationMessages);
+
+    const currentThreadName = allRegistrations.find(r => r.uid === currentThread?.userId)?.fullName || currentThread?.userEmail;
+
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[1000] p-4" onClick={handleClose}>
             <div 
@@ -104,7 +132,7 @@ const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onCl
                 <header className="flex-shrink-0 p-4 border-b dark:border-gray-700 flex justify-between items-center">
                     <div>
                         <h3 className="text-lg font-semibold text-brand-dark dark:text-white">
-                            {isAdmin ? `Pesan Admin: ${currentThread?.userEmail || 'Pilih Percakapan'}` : 'Pesan ke Admin'}
+                            {isAdmin ? `Pesan Admin: ${currentThreadName || 'Pilih Percakapan'}` : 'Pesan ke Admin'}
                         </h3>
                         {((!isAdmin && currentThread) || (isAdmin && currentThread)) && (
                             <button onClick={handleClearConversation} className="text-xs text-red-500 hover:underline">
@@ -122,21 +150,33 @@ const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onCl
                         <aside className="w-1/3 border-r dark:border-gray-700 flex flex-col">
                             <div className="p-2 border-b dark:border-gray-700">
                                 <div className="flex bg-gray-200 dark:bg-gray-900 rounded-md p-1">
-                                    <button onClick={() => setActiveTab('users')} className={`flex-1 text-sm p-1 rounded-md ${activeTab === 'users' ? 'bg-white dark:bg-gray-700 shadow' : ''}`}>Users</button>
-                                    <button onClick={() => setActiveTab('global')} className={`flex-1 text-sm p-1 rounded-md ${activeTab === 'global' ? 'bg-white dark:bg-gray-700 shadow' : ''}`}>Global</button>
+                                    <button onClick={() => setAdminTab('inbox')} className={`flex-1 text-sm p-1 rounded-md ${adminTab === 'inbox' ? 'bg-white dark:bg-gray-700 shadow' : ''}`}>Kotak Masuk</button>
+                                    <button onClick={() => setAdminTab('broadcast')} className={`flex-1 text-sm p-1 rounded-md ${adminTab === 'broadcast' ? 'bg-white dark:bg-gray-700 shadow' : ''}`}>Broadcast</button>
                                 </div>
                             </div>
-                            <div className="flex-grow overflow-y-auto">
-                                {activeTab === 'users' && sortedThreads.map((thread: ChatThread) => (
-                                    <div key={thread.userId} onClick={() => onSelectThread?.(thread.userId)} className={`p-3 border-b dark:border-gray-700 cursor-pointer ${currentThread?.userId === thread.userId ? 'bg-blue-100 dark:bg-blue-900/50' : 'hover:bg-gray-100 dark:hover:bg-gray-800/50'}`}>
-                                        <div className="flex justify-between items-center">
-                                            <p className="font-semibold text-sm truncate dark:text-gray-200">{thread.userEmail}</p>
-                                            {thread.unreadByAdmin && <span className="w-2.5 h-2.5 bg-blue-500 rounded-full flex-shrink-0 ml-2"></span>}
+                            {adminTab === 'inbox' && (
+                                <>
+                                 <div className="p-2">
+                                     <select onChange={handleNewMessageUserChange} className="w-full p-2 text-sm border rounded-md bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white" value="">
+                                         <option value="" disabled>Pesan Baru ke:</option>
+                                         {allRegistrations.map(reg => (
+                                             <option key={reg.uid} value={reg.uid}>{reg.fullName} ({reg.email})</option>
+                                         ))}
+                                     </select>
+                                 </div>
+                                <div className="flex-grow overflow-y-auto">
+                                    {threadsWithNames.map((thread) => (
+                                        <div key={thread.userId} onClick={() => onSelectThread?.(thread.userId)} className={`p-3 border-b dark:border-gray-700 cursor-pointer ${currentThread?.userId === thread.userId ? 'bg-blue-100 dark:bg-blue-900/50' : 'hover:bg-gray-100 dark:hover:bg-gray-800/50'}`}>
+                                            <div className="flex justify-between items-center">
+                                                <p className="font-semibold text-sm truncate dark:text-gray-200">{thread.userName}</p>
+                                                {thread.unreadByAdmin && <span className="w-2.5 h-2.5 bg-blue-500 rounded-full flex-shrink-0 ml-2"></span>}
+                                            </div>
+                                            <p className="text-xs text-gray-500 truncate dark:text-gray-400">{thread.lastMessageText}</p>
                                         </div>
-                                        <p className="text-xs text-gray-500 truncate dark:text-gray-400">{thread.lastMessageText}</p>
-                                    </div>
-                                ))}
-                            </div>
+                                    ))}
+                                </div>
+                                </>
+                            )}
                         </aside>
                     )}
                     
@@ -150,38 +190,44 @@ const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onCl
                             </div>
                         )}
                          <div className="chat-messages flex-grow p-4 space-y-4 overflow-y-auto">
-                           {(userTab === 'inbox' && !isAdmin ? inboxMessages : sortedMessages).map((msg: Message) => (
-                                <div key={msg.id} className={`flex items-end gap-2 group ${msg.sender === (isAdmin ? 'admin' : 'user') ? 'justify-end' : 'justify-start'}`}>
-                                    {msg.sender === (isAdmin ? 'admin' : 'user') && <button onClick={() => handleDelete(msg)} className="text-gray-400 hover:text-red-500 text-xs opacity-0 group-hover:opacity-100"><i className="fas fa-trash"></i></button>}
-                                    <div className={`relative chat-bubble ${msg.sender === (isAdmin ? 'admin' : 'user') ? 'chat-bubble-sent' : 'chat-bubble-received'}`}>
-                                        {msg.isGlobal && <span className="font-bold text-xs block text-yellow-300">[PENGUMUMAN GLOBAL]</span>}
-                                        <p>{msg.text}</p>
+                           {(adminTab === 'broadcast' && isAdmin) ? (
+                             <div className="text-center p-4 text-gray-500">
+                                <i className="fas fa-bullhorn text-3xl mb-2"></i>
+                                <p className="font-semibold">Mode Pesan Global</p>
+                                <p className="text-xs">Pesan yang Anda kirim di sini akan diterima oleh semua pengguna terdaftar.</p>
+                            </div>
+                           ) : (
+                                <>
+                                {messagesToDisplay.map((msg: Message) => (
+                                    <div key={msg.id} className={`flex items-end gap-2 group ${msg.sender === (isAdmin ? 'admin' : 'user') ? 'justify-end' : 'justify-start'}`}>
+                                        {msg.sender === (isAdmin ? 'admin' : 'user') && <button onClick={() => handleDelete(msg)} className="text-gray-400 hover:text-red-500 text-xs opacity-0 group-hover:opacity-100"><i className="fas fa-trash"></i></button>}
+                                        <div className={`relative chat-bubble ${msg.sender === (isAdmin ? 'admin' : 'user') ? 'chat-bubble-sent' : 'chat-bubble-received'}`}>
+                                            {msg.isGlobal && <span className="font-bold text-xs block text-yellow-300">[PENGUMUMAN GLOBAL]</span>}
+                                            <p>{msg.text}</p>
+                                        </div>
+                                        {msg.sender !== (isAdmin ? 'admin' : 'user') && <button onClick={() => handleDelete(msg)} className="text-gray-400 hover:text-red-500 text-xs opacity-0 group-hover:opacity-100"><i className="fas fa-trash"></i></button>}
                                     </div>
-                                    {msg.sender !== (isAdmin ? 'admin' : 'user') && <button onClick={() => handleDelete(msg)} className="text-gray-400 hover:text-red-500 text-xs opacity-0 group-hover:opacity-100"><i className="fas fa-trash"></i></button>}
-                                </div>
-                            ))}
+                                ))}
+                                </>
+                           )}
                             <div ref={messagesEndRef} />
                         </div>
 
-                         {((isAdmin && (!currentThread || activeTab === 'global')) || (!isAdmin && userTab === 'conversation' && canReply)) && (
+                         {((isAdmin) || (!isAdmin && userTab === 'conversation')) && (
                             <form onSubmit={handleSendMessage} className="flex-shrink-0 p-4 border-t dark:border-gray-700 flex items-center gap-3 bg-white dark:bg-gray-900">
                                 <input
                                     type="text"
                                     value={newMessage}
                                     onChange={(e) => setNewMessage(e.target.value)}
-                                    placeholder={isAdmin && activeTab === 'global' ? "Kirim pesan global..." : "Ketik pesan..."}
+                                    placeholder={isAdmin && adminTab === 'broadcast' ? "Kirim pesan global..." : "Ketik pesan..."}
                                     className="flex-grow p-2 border rounded-full text-sm bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-                                    disabled={isAdmin && activeTab === 'users' && !currentThread}
+                                    disabled={isAdmin && adminTab === 'inbox' && !currentThread}
                                 />
-                                <button type="submit" className="bg-brand-secondary text-white rounded-full w-9 h-9 flex items-center justify-center flex-shrink-0 disabled:bg-gray-400" disabled={isAdmin && activeTab === 'users' && !currentThread}>
+                                <button type="submit" className="bg-brand-secondary text-white rounded-full w-9 h-9 flex items-center justify-center flex-shrink-0 disabled:bg-gray-400" disabled={isAdmin && adminTab === 'inbox' && !currentThread}>
                                     <i className="fas fa-paper-plane"></i>
                                 </button>
                             </form>
                          )}
-                         {!isAdmin && userTab === 'conversation' && !canReply && (
-                              <div className="flex-shrink-0 p-2 text-center text-xs text-gray-500 bg-gray-100 dark:bg-gray-900">Anda tidak bisa membalas pengumuman global.</div>
-                         )}
-
                     </main>
                 </div>
             </div>

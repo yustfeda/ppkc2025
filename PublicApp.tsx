@@ -78,14 +78,13 @@ interface PublicAppProps {
 }
 
 const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => {
-    const [currentPage, setCurrentPage] = useState<PublicPage>('home');
+    const [currentPage, setCurrentPage] = useState<PublicPage>(() => (sessionStorage.getItem('currentPage') as PublicPage) || 'home');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
     const [notification, setNotification] = useState<Notification | null>(null);
     const [confirmation, setConfirmation] = useState<ConfirmationState>({ isOpen: false, message: '', onConfirm: () => {} });
     const [dynamicFormState, setDynamicFormState] = useState<DynamicFormModalState>({ isOpen: false, button: null });
     const [adminConfig, setAdminConfig] = useState<AdminConfig | null>(null);
-    const [prevUser, setPrevUser] = useState<User | null>(user);
     const [isSelectionFinished, setIsSelectionFinished] = useState(false);
     const [managedButtons, setManagedButtons] = useState<ManagedButton[]>([]);
     const [isMessageOpen, setIsMessageOpen] = useState(false);
@@ -105,6 +104,10 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
 
     const hideConfirmation = () => setConfirmation({ isOpen: false, message: '', onConfirm: () => {} });
 
+    useEffect(() => {
+        sessionStorage.setItem('currentPage', currentPage);
+    }, [currentPage]);
+    
     useEffect(() => {
         if (!user) {
             setChatThread(null);
@@ -165,11 +168,7 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
             showNotification('Anda telah logout dari halaman admin.', 'success');
             sessionStorage.removeItem('adminLoggedOut');
         } 
-        else if (prevUser && !user) {
-            showNotification('Anda berhasil logout.', 'success');
-        }
-        setPrevUser(user);
-    }, [user, prevUser, showNotification]);
+    }, [showNotification]);
 
     useEffect(() => {
         getAdminConfig().then(setAdminConfig);
@@ -314,7 +313,7 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
                     showNotification={showNotification}
                 />
             )}
-             {user && (
+             {user && isMessageOpen && (
                 <MessagePopup
                     user={user}
                     isAdmin={false}

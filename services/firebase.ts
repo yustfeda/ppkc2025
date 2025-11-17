@@ -149,6 +149,10 @@ export const resetAllRegistrations = (): Promise<void> => {
 };
 
 // Auth Functions
+export const setAuthPersistence = (): Promise<void> => {
+    return auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
+}
+
 export const onAuthChange = (callback: (user: User | null) => void) => {
     return auth.onAuthStateChanged(callback);
 };
@@ -275,7 +279,19 @@ export const listenToAllChatThreads = (callback: (threads: Record<string, ChatTh
     const chatsRef = database.ref('chats');
     const listener = (snapshot: any) => {
         if (snapshot.exists()) {
-            callback(snapshot.val());
+            // FIX: Transform raw Firebase data into the ChatThread type.
+            const rawThreads = snapshot.val();
+            const transformedThreads: Record<string, ChatThread> = {};
+            for (const userId in rawThreads) {
+                const rawThread = rawThreads[userId];
+                if (rawThread.metadata) {
+                    transformedThreads[userId] = {
+                        ...rawThread.metadata,
+                        messages: rawThread.messages || {}
+                    };
+                }
+            }
+            callback(transformedThreads);
         } else {
             callback({});
         }
