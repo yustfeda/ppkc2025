@@ -11,36 +11,20 @@ interface RegistrationProps {
 }
 
 const Registration: React.FC<RegistrationProps> = ({ user, setCurrentPage, showNotification, showConfirmation, registrationActive }) => {
-    const [formData, setFormData] = useState<Partial<RegistrationData>>({
-        uid: user.uid,
-        fullName: '',
-        birthPlace: '',
-        birthDate: '',
-        gender: 'Laki-laki',
-        originUnit: '',
-        email: user.email || '',
-        medicalHistory: '',
-        emergencyContact: '',
-        documentLinks: {}
-    });
     const [registration, setRegistration] = useState<RegistrationData | null>(null);
     const [allStages, setAllStages] = useState<SelectionStage[]>([]);
-    const [docFields, setDocFields] = useState<FormField[]>([]);
     const [loading, setLoading] = useState(false);
     const [checkingStatus, setCheckingStatus] = useState(true);
-    const [error, setError] = useState('');
 
     const fetchData = React.useCallback(async () => {
         setCheckingStatus(true);
         try {
-            const [regData, stagesData, fieldsData] = await Promise.all([
+            const [regData, stagesData] = await Promise.all([
                 getUserRegistration(user.uid),
                 getSelectionStages(),
-                getRegistrationFormFields()
             ]);
             setRegistration(regData);
             setAllStages(stagesData);
-            setDocFields(fieldsData);
         } catch (err) {
             console.error(err);
             showNotification('Gagal memuat data pendaftaran.', 'error');
@@ -52,47 +36,6 @@ const Registration: React.FC<RegistrationProps> = ({ user, setCurrentPage, showN
     useEffect(() => {
         fetchData();
     }, [fetchData]);
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
-    
-    const handleDocLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData({
-            ...formData,
-            documentLinks: {
-                ...formData.documentLinks,
-                [e.target.name]: e.target.value,
-            },
-        });
-    };
-
-    const handleInitialSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        showConfirmation(
-            "Silahkan periksa inputan terlebih dahulu, pastikan data yang dimasukan benar. Yakin ingin submit?",
-            async () => {
-                setLoading(true);
-                setError('');
-                const submissionData: RegistrationData = {
-                    ...formData,
-                    status: 'Terkirim',
-                    submittedAt: Date.now(),
-                    stageProgress: {},
-                } as RegistrationData;
-                try {
-                    await setData(`registrations/${user.uid}`, submissionData);
-                    showNotification('Pendaftaran berhasil dikirim!', 'success');
-                    setRegistration(submissionData);
-                } catch (err) {
-                    setError('Gagal mengirim pendaftaran. Silakan coba lagi.');
-                    console.error(err);
-                } finally {
-                    setLoading(false);
-                }
-            }
-        );
-    };
 
     const handleStageSubmit = async (e: React.FormEvent, stageId: string) => {
         e.preventDefault();
@@ -141,9 +84,6 @@ const Registration: React.FC<RegistrationProps> = ({ user, setCurrentPage, showN
         )
     };
     
-    const inputClass = "peer form-input block w-full border-gray-300 dark:border-gray-600 bg-white dark:bg-brand-dark rounded-md shadow-sm p-3 text-sm dark:text-white focus:ring-brand-accent focus:border-brand-accent";
-    const labelClass = "form-label text-sm text-gray-500 dark:text-gray-400";
-    
     const isSelectionFinished = () => {
         if (!registration) return false;
         if (registration.status === 'Gagal') return true;
@@ -167,6 +107,25 @@ const Registration: React.FC<RegistrationProps> = ({ user, setCurrentPage, showN
                 />
             );
         }
+        
+        if (!registration) {
+            return (
+                <StatusCard 
+                    status="Info" 
+                    title="Lengkapi Profil Anda Terlebih Dahulu" 
+                    message="Untuk memulai proses seleksi, Anda harus melengkapi data diri di halaman Profil & Pendaftaran terlebih dahulu."
+                >
+                    <div className="text-center mt-4">
+                        <button 
+                            onClick={() => setCurrentPage('profile')} 
+                            className="bg-brand-secondary text-white font-bold py-2 px-6 rounded-md hover:bg-brand-accent"
+                        >
+                            Ke Halaman Profil & Pendaftaran
+                        </button>
+                    </div>
+                </StatusCard>
+            );
+        }
 
         if (isSelectionFinished()) {
             return (
@@ -184,76 +143,6 @@ const Registration: React.FC<RegistrationProps> = ({ user, setCurrentPage, showN
                         </button>
                     </div>
                 </StatusCard>
-            );
-        }
-
-        if (!registration) {
-             return (
-                <form onSubmit={handleInitialSubmit} className="bg-white dark:bg-brand-primary p-6 rounded-lg shadow-md space-y-6 animate-fade-in">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="relative input-group">
-                            <input id="fullName" name="fullName" onChange={handleChange} className={inputClass} required placeholder=" " />
-                            <label htmlFor="fullName" className={labelClass}>Nama Lengkap</label>
-                        </div>
-                        <div className="relative input-group">
-                            <input id="originUnit" name="originUnit" onChange={handleChange} className={inputClass} required placeholder=" " />
-                             <label htmlFor="originUnit" className={labelClass}>Asal Satuan</label>
-                        </div>
-                         <div className="relative input-group">
-                            <input id="birthPlace" name="birthPlace" onChange={handleChange} className={inputClass} required placeholder=" " />
-                             <label htmlFor="birthPlace" className={labelClass}>Tempat Lahir</label>
-                        </div>
-                         <div className="relative input-group">
-                            <input id="birthDate" type="date" name="birthDate" onChange={handleChange} className={inputClass} required placeholder=" " />
-                             <label htmlFor="birthDate" className={labelClass}>Tanggal Lahir</label>
-                        </div>
-                        <div className="relative input-group">
-                            <select id="gender" name="gender" onChange={handleChange} className={inputClass}>
-                                <option>Laki-laki</option>
-                                <option>Perempuan</option>
-                            </select>
-                             <label htmlFor="gender" className={labelClass}>Jenis Kelamin</label>
-                        </div>
-                        <div className="relative input-group">
-                             <input id="email" type="email" name="email" value={formData.email} onChange={handleChange} className={`${inputClass} bg-gray-100 dark:bg-gray-700 cursor-not-allowed`} required readOnly placeholder=" " />
-                             <label htmlFor="email" className={labelClass}>Email</label>
-                        </div>
-                    </div>
-                     <div className="relative input-group">
-                        <textarea id="medicalHistory" name="medicalHistory" onChange={handleChange} className={inputClass} rows={2} placeholder=" "></textarea>
-                         <label htmlFor="medicalHistory" className={labelClass}>Riwayat Penyakit (jika ada)</label>
-                    </div>
-                     <div className="relative input-group">
-                        <input id="emergencyContact" name="emergencyContact" onChange={handleChange} className={inputClass} required placeholder=" " />
-                         <label htmlFor="emergencyContact" className={labelClass}>Kontak Darurat (Nama & No. HP)</label>
-                    </div>
-
-                    <div className="pt-4 border-t dark:border-gray-700 grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <p className="text-xs text-gray-500 dark:text-gray-400 md:col-span-2 -mb-2">Upload dokumen ke G-Drive, lalu salin link yang bisa diakses publik.</p>
-                        {docFields.map(field => (
-                             <div key={field.id} className="relative input-group md:col-span-2">
-                                <input 
-                                    id={field.id} 
-                                    type="url" 
-                                    name={field.id} 
-                                    onChange={handleDocLinkChange} 
-                                    className={inputClass} 
-                                    placeholder=" " 
-                                    required={field.required} 
-                                />
-                                 <label htmlFor={field.id} className={labelClass}>{field.label} {field.required && <span className="text-red-500">*</span>}</label>
-                            </div>
-                        ))}
-                    </div>
-
-                    {error && <p className="text-red-500 text-sm">{error}</p>}
-
-                    <div className="text-right pt-2">
-                        <button type="submit" disabled={loading} className="bg-brand-secondary text-white font-bold py-2 px-6 rounded-md hover:bg-brand-accent disabled:bg-gray-400">
-                            {loading ? 'Mengirim...' : 'Kirim Pendaftaran'}
-                        </button>
-                    </div>
-                </form>
             );
         }
 
@@ -319,7 +208,7 @@ const Registration: React.FC<RegistrationProps> = ({ user, setCurrentPage, showN
     return (
         <div className="bg-brand-light dark:bg-brand-dark min-h-screen">
             <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-                <h1 className="text-2xl font-bold text-brand-primary dark:text-white mb-6">Pendaftaran & Status Seleksi</h1>
+                <h1 className="text-2xl font-bold text-brand-primary dark:text-white mb-6">Proses Seleksi</h1>
                 {renderContent()}
             </div>
         </div>

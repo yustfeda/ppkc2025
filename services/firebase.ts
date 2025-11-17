@@ -167,14 +167,3 @@ export const updateAdminPassword = (newPassword: string): Promise<void> => {
     }
     return Promise.reject(new Error("No user is currently signed in."));
 };
-
-export const checkAdminClaim = async (user: any): Promise<boolean> => {
-    if (!user) return false;
-    try {
-        const idTokenResult = await user.getIdTokenResult(true); // Force refresh
-        return idTokenResult.claims.admin === true;
-    } catch (error) {
-        console.error("Error checking admin claim:", error);
-        return false;
-    }
-};

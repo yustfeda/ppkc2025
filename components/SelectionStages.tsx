@@ -12,17 +12,79 @@ const StageDetailPopup: React.FC<{ stage: SelectionStage; status: StageStatus; o
         setTimeout(() => onClose(), 300);
     };
 
-    const getPopupContent = () => {
+    const getPopupContent = (): {
+        isInfo: boolean;
+        icon: string;
+        color: string;
+        title: string;
+        message: string;
+        formTitle?: string;
+        formDescription?: string;
+        formViewUrl?: string;
+        formDownloadUrl?: string;
+    } | null => {
+        const infoViewContent = { 
+            isInfo: true,
+            icon: 'fa-solid fa-circle-info', 
+            color: 'text-blue-500', 
+            title: stage.title, 
+            message: stage.description,
+            formTitle: stage.formTitle,
+            formDescription: stage.formDescription,
+            formViewUrl: stage.formViewUrl,
+            formDownloadUrl: stage.formDownloadUrl
+        };
+
+        if (!status || status === 'default' || status === 'locked') {
+            return infoViewContent;
+        }
+
         switch(status) {
-            case 'pending': return { icon: 'fa-solid fa-hourglass-half', color: 'text-yellow-500', title: 'Sedang Ditinjau', message: 'Pendaftaran Anda untuk tahap ini telah kami terima dan sedang dalam proses peninjauan oleh tim panitia. Mohon tunggu informasi selanjutnya.'};
-            case 'lolos': return { icon: 'fa-solid fa-circle-check', color: 'text-green-500', title: 'Selamat!', message: `Anda dinyatakan lolos tahap "${stage.title}". Anda dapat melanjutkan ke tahapan seleksi berikutnya.`};
-            case 'gagal': return { icon: 'fa-solid fa-circle-xmark', color: 'text-red-500', title: 'Mohon Maaf', message: `Anda dinyatakan gagal tahap "${stage.title}". Terima kasih atas partisipasi Anda. Tetap semangat!`};
-            default: return null;
+            case 'pending': return { isInfo: false, icon: 'fa-solid fa-hourglass-half', color: 'text-yellow-500', title: 'Sedang Ditinjau', message: 'Pendaftaran Anda untuk tahap ini telah kami terima dan sedang dalam proses peninjauan oleh tim panitia. Mohon tunggu informasi selanjutnya.'};
+            case 'lolos': return { isInfo: false, icon: 'fa-solid fa-circle-check', color: 'text-green-500', title: 'Selamat!', message: `Anda dinyatakan lolos tahap "${stage.title}". Anda dapat melanjutkan ke tahapan seleksi berikutnya.`};
+            case 'gagal': return { isInfo: false, icon: 'fa-solid fa-circle-xmark', color: 'text-red-500', title: 'Mohon Maaf', message: `Anda dinyatakan gagal tahap "${stage.title}". Terima kasih atas partisipasi Anda. Tetap semangat!`};
+            default: return infoViewContent;
         }
     };
     const content = getPopupContent();
 
     if (!content) return null;
+    
+    if (content.isInfo) {
+        return (
+            <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4" onClick={handleClose}>
+                <div 
+                    className={`bg-brand-light dark:bg-brand-primary rounded-lg shadow-xl p-6 w-full max-w-lg text-left ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'}`}
+                    onClick={e => e.stopPropagation()}
+                >
+                     <div className="flex items-start gap-4">
+                        <i className={`${content.icon} ${content.color} text-3xl mt-1`}></i>
+                        <div>
+                            <h3 className={`text-xl font-bold text-brand-primary dark:text-white mb-2`}>{content.title}</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">{content.message}</p>
+                        </div>
+                     </div>
+
+                     {(content.formTitle || content.formDescription) && (
+                        <div className="mt-4 pt-4 border-t dark:border-gray-700">
+                             {content.formTitle && <h4 className="font-semibold text-brand-dark dark:text-white">{content.formTitle}</h4>}
+                             {content.formDescription && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{content.formDescription}</p>}
+                             {(content.formViewUrl || content.formDownloadUrl) && (
+                                <div className="flex gap-4 mt-3">
+                                    {content.formViewUrl && content.formViewUrl !== '#' && <a href={content.formViewUrl} target="_blank" rel="noopener noreferrer" className="button bg-brand-secondary text-white px-4 py-2 text-xs rounded-md">Lihat Form</a>}
+                                    {content.formDownloadUrl && content.formDownloadUrl !== '#' && <a href={content.formDownloadUrl} download className="button bg-gray-600 text-white px-4 py-2 text-xs rounded-md">Unduh Form</a>}
+                                </div>
+                             )}
+                        </div>
+                     )}
+
+                     <div className="text-right mt-6">
+                        <button onClick={handleClose} className="bg-brand-secondary text-white font-bold py-2 px-6 rounded-md hover:bg-brand-accent">Tutup</button>
+                     </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4" onClick={handleClose}>
@@ -74,14 +136,13 @@ const StageCard: React.FC<{ stage: SelectionStage, progressStatus: StageStatus, 
     const statusInfo = getStatusInfo();
     const isLocked = progressStatus === 'locked';
     const isCompleted = progressStatus === 'lolos' || progressStatus === 'gagal';
-    const isClickable = !isLocked && progressStatus !== 'default';
 
     return (
         <div 
-            onClick={isClickable ? onClick : undefined} 
-            className={`p-4 rounded-lg shadow-md border-l-4 flex gap-4 items-start interactive-card 
+            onClick={onClick} 
+            className={`p-4 rounded-lg shadow-md border-l-4 flex gap-4 items-start interactive-card cursor-pointer 
                 ${isCompleted ? (progressStatus === 'lolos' ? 'border-green-500' : 'border-red-500') : (progressStatus === 'pending' ? 'border-yellow-500' : 'border-gray-300 dark:border-gray-600')} 
-                ${statusInfo.bgColor} ${isLocked ? 'opacity-60' : (isClickable ? 'cursor-pointer' : '')}`}
+                ${statusInfo.bgColor} ${isLocked ? 'opacity-60' : ''}`}
         >
             <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-2xl ${statusInfo.textColor}`}>
                 <i className={statusInfo.icon}></i>
@@ -171,7 +232,7 @@ const SelectionStages: React.FC<SelectionStagesProps> = ({ user, setCurrentPage 
                 <div className="text-center mb-10">
                     <h1 className="text-3xl font-bold text-brand-primary dark:text-gray-100">Tahapan Seleksi</h1>
                     <p className="text-base text-gray-600 dark:text-gray-300 mt-2">
-                        {user ? 'Lacak kemajuan Anda melalui setiap tahapan. Klik pada tahapan untuk melihat detail status.' : 'Ikuti setiap proses seleksi dengan semangat dan sportifitas.'}
+                        {user ? 'Lacak kemajuan Anda melalui setiap tahapan. Klik pada tahapan untuk melihat detail status.' : 'Ikuti setiap proses seleksi dengan semangat dan sportifitas. Klik untuk detail.'}
                     </p>
                 </div>
                 <div className="max-w-2xl mx-auto space-y-4">

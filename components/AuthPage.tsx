@@ -3,25 +3,22 @@ import type { PublicPage } from '../types';
 import { registerUser, loginUser, logoutUser } from '../services/firebase';
 
 interface AuthPageProps {
-    setCurrentPage: (page: PublicPage | 'close') => void;
+    setCurrentPage: (page: PublicPage) => void;
     showNotification: (message: string, type: 'success' | 'error') => void;
     loginActive?: boolean;
     registrationActive?: boolean;
-    isAdminLoginAttempt?: boolean;
+    initialIsLogin: boolean;
 }
 
-const AuthPage: React.FC<AuthPageProps> = ({ 
-    setCurrentPage, 
-    showNotification, 
-    loginActive, 
-    registrationActive, 
-    isAdminLoginAttempt = false 
-}) => {
-    // Force login form for admin attempts
-    const [isLogin, setIsLogin] = useState(isAdminLoginAttempt || loginActive || !registrationActive);
+const AuthPage: React.FC<AuthPageProps> = ({ setCurrentPage, showNotification, loginActive, registrationActive, initialIsLogin }) => {
+    const [isLogin, setIsLogin] = useState(initialIsLogin);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    
+    useEffect(() => {
+        setIsLogin(initialIsLogin);
+    }, [initialIsLogin]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -29,8 +26,8 @@ const AuthPage: React.FC<AuthPageProps> = ({
         try {
             if (isLogin) {
                 await loginUser(email, password);
-                // Navigasi sekarang sepenuhnya ditangani oleh onAuthChange di App.tsx
-                // Modal akan ditutup oleh komponen induk setelah state user berubah.
+                sessionStorage.setItem('justLoggedIn', 'true');
+                // Navigation will be handled by onAuthChange in App.tsx
             } else {
                 await registerUser(email, password);
                 await logoutUser(); // Ensure user is logged out after registration
@@ -59,10 +56,6 @@ const AuthPage: React.FC<AuthPageProps> = ({
     };
 
     const renderToggleButton = () => {
-        if (isAdminLoginAttempt) {
-            return <div className="w-24 h-5"></div>; // Placeholder to hide toggle for admin
-        }
-
         const commonClasses = "inline-block align-baseline font-bold text-sm text-brand-secondary hover:text-brand-accent";
         if (isLogin) {
             if (registrationActive) {
@@ -86,7 +79,7 @@ const AuthPage: React.FC<AuthPageProps> = ({
 
 
     return (
-        <div className="min-h-[calc(100vh-5rem)] flex items-center justify-center bg-brand-light dark:bg-brand-dark p-4 sm:bg-transparent sm:dark:bg-transparent">
+        <div className="min-h-[calc(100vh-5rem)] flex items-center justify-center bg-brand-light dark:bg-brand-dark p-4">
             <div className="relative w-full max-w-md bg-white dark:bg-brand-primary p-8 rounded-xl shadow-lg interactive-card">
                  <button
                     onClick={() => setCurrentPage('home')}
@@ -95,15 +88,10 @@ const AuthPage: React.FC<AuthPageProps> = ({
                 >
                     <i className="fas fa-times text-xl"></i>
                 </button>
-                <h2 className="text-2xl font-bold text-center text-brand-primary dark:text-white mb-2">
-                    {isAdminLoginAttempt ? 'Login Admin' : (isLogin ? 'Masuk Akun' : 'Daftar Akun Baru')}
+                <h2 className="text-2xl font-bold text-center text-brand-primary dark:text-white mb-6">
+                    {isLogin ? 'Masuk Akun' : 'Daftar Akun Baru'}
                 </h2>
-                {isAdminLoginAttempt && (
-                     <p className="text-center text-sm text-gray-500 dark:text-gray-400 mb-6">
-                        Silakan masuk untuk mengakses Panel Admin.
-                    </p>
-                )}
-                <form onSubmit={handleSubmit} className={`space-y-6 ${!isAdminLoginAttempt && 'mt-6'}`}>
+                <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="relative input-group form-input-bg-light dark:form-input-bg-dark">
                         <input
                             id="email"

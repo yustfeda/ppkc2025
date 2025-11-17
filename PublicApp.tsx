@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import type { PublicPage, User, Notification, ConfirmationState, ManagedButton, DynamicFormModalState, AdminConfig } from './types';
 import { getAdminConfig, getUserRegistration, getSelectionStages, getManagedButtons } from './services/firebase';
 
@@ -81,10 +81,10 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onLogout }) => {
     const [confirmation, setConfirmation] = useState<ConfirmationState>({ isOpen: false, message: '', onConfirm: () => {} });
     const [dynamicFormState, setDynamicFormState] = useState<DynamicFormModalState>({ isOpen: false, button: null });
     const [adminConfig, setAdminConfig] = useState<AdminConfig | null>(null);
+    const [prevUser, setPrevUser] = useState<User | null>(user);
     const [isSelectionFinished, setIsSelectionFinished] = useState(false);
     const [managedButtons, setManagedButtons] = useState<ManagedButton[]>([]);
-    const [showAdminLoginModal, setShowAdminLoginModal] = useState(false);
-    const prevUserRef = useRef<User | null>(user);
+    const [initialAuthIsLogin, setInitialAuthIsLogin] = useState(true);
 
 
     const showNotification = useCallback((message: string, type: 'success' | 'error') => {
@@ -100,6 +100,15 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onLogout }) => {
 
     const hideConfirmation = () => setConfirmation({ isOpen: false, message: '', onConfirm: () => {} });
     
+    const navigateToAuth = (isLogin: boolean) => {
+        if (!adminConfig?.loginActive) {
+            showNotification('Fitur login saat ini dinonaktifkan oleh admin.', 'error');
+            return;
+        }
+        setInitialAuthIsLogin(isLogin);
+        setCurrentPage('login');
+    };
+
     useEffect(() => {
         if (!user) {
             setIsSelectionFinished(false);
@@ -136,26 +145,15 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onLogout }) => {
     }, [user]);
 
     useEffect(() => {
-        const previousUser = prevUserRef.current;
-
-        // Case 1: Admin logout message (special case)
         if (sessionStorage.getItem('adminLoggedOut') === 'true') {
             showNotification('Anda telah logout dari halaman admin.', 'success');
             sessionStorage.removeItem('adminLoggedOut');
         } 
-        // Case 2: Regular user login
-        else if (!previousUser && user) {
-            showNotification(`Selamat datang, ${user.displayName || user.email}!`, 'success');
-        }
-        // Case 3: Regular user logout
-        else if (previousUser && !user) {
+        else if (prevUser && !user) {
             showNotification('Anda berhasil logout.', 'success');
         }
-
-        // Update the ref for the next render cycle
-        prevUserRef.current = user;
-    }, [user, showNotification]);
-
+        setPrevUser(user);
+    }, [user, prevUser, showNotification]);
 
     useEffect(() => {
         getAdminConfig().then(setAdminConfig);
@@ -163,13 +161,19 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onLogout }) => {
     }, []);
 
     useEffect(() => {
-        if (window.location.pathname.endsWith('/adminppkcsatu')) {
-            setShowAdminLoginModal(true);
-            window.history.replaceState({}, document.title, window.location.pathname.replace('/adminppkcsatu', ''));
+        if (window.location.pathname === '/adminppkcsatu' && !user) {
+            setCurrentPage('login');
         }
-    }, []);
-
+    }, [user]);
     
+     useEffect(() => {
+        if(user && sessionStorage.getItem('justLoggedIn') === 'true'){
+            showNotification(`Selamat datang, ${user.displayName || user.email}!`, 'success');
+            setCurrentPage('home');
+            sessionStorage.removeItem('justLoggedIn');
+        }
+     }, [user, showNotification]);
+
     const navigate = useCallback(async (page: PublicPage) => {
         if (page === 'login' && !adminConfig?.loginActive) {
             showNotification('Fitur login saat ini dinonaktifkan oleh admin.', 'error');
@@ -183,7 +187,7 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onLogout }) => {
         const userPages: PublicPage[] = ['registration', 'profile', 'status'];
         if (!user && userPages.includes(page)) {
             if (adminConfig?.loginActive) {
-                setCurrentPage('login');
+                navigateToAuth(true);
             } else {
                 showNotification('Anda harus masuk untuk mengakses halaman ini.', 'error');
             }
@@ -229,10 +233,10 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onLogout }) => {
             case 'stages': return <SelectionStages user={user} setCurrentPage={navigate} />;
             case 'announcements': return <Announcements />;
             case 'contact': return <Contact />;
-            case 'login': return <AuthPage setCurrentPage={navigate} showNotification={showNotification} loginActive={adminConfig?.loginActive} registrationActive={adminConfig?.registrationActive} />;
-            case 'registration': return user ? <Registration user={user} setCurrentPage={navigate} showNotification={showNotification} showConfirmation={showConfirmation} registrationActive={adminConfig?.registrationActive} /> : <AuthPage setCurrentPage={navigate} showNotification={showNotification} loginActive={adminConfig?.loginActive} registrationActive={adminConfig?.registrationActive} />;
-            case 'profile': return user ? <Profile user={user} showNotification={showNotification} showConfirmation={showConfirmation} /> : <AuthPage setCurrentPage={navigate} showNotification={showNotification} loginActive={adminConfig?.loginActive} registrationActive={adminConfig?.registrationActive}/>;
-            case 'status': return user ? <Status user={user} /> : <AuthPage setCurrentPage={navigate} showNotification={showNotification} loginActive={adminConfig?.loginActive} registrationActive={adminConfig?.registrationActive} />;
+            case 'login': return <AuthPage setCurrentPage={navigate} showNotification={showNotification} loginActive={adminConfig?.loginActive} registrationActive={adminConfig?.registrationActive} initialIsLogin={initialAuthIsLogin} />;
+            case 'registration': return user ? <Registration user={user} setCurrentPage={navigate} showNotification={showNotification} showConfirmation={showConfirmation} registrationActive={adminConfig?.registrationActive} /> : <AuthPage setCurrentPage={navigate} showNotification={showNotification} loginActive={adminConfig?.loginActive} registrationActive={adminConfig?.registrationActive} initialIsLogin={initialAuthIsLogin} />;
+            case 'profile': return user ? <Profile user={user} showNotification={showNotification} showConfirmation={showConfirmation} /> : <AuthPage setCurrentPage={navigate} showNotification={showNotification} loginActive={adminConfig?.loginActive} registrationActive={adminConfig?.registrationActive} initialIsLogin={initialAuthIsLogin}/>;
+            case 'status': return user ? <Status user={user} /> : <AuthPage setCurrentPage={navigate} showNotification={showNotification} loginActive={adminConfig?.loginActive} registrationActive={adminConfig?.registrationActive} initialIsLogin={initialAuthIsLogin} />;
             default: return <Home setCurrentPage={navigate} user={user} onManagedButtonClick={handleManagedButtonClick} />;
         }
     };
@@ -257,19 +261,6 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onLogout }) => {
                     showNotification={showNotification}
                 />
             )}
-            
-            {showAdminLoginModal && (
-                <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
-                    <AuthPage 
-                        setCurrentPage={() => setShowAdminLoginModal(false)}
-                        showNotification={showNotification}
-                        isAdminLoginAttempt={true}
-                        loginActive={true}
-                        registrationActive={false}
-                    />
-                </div>
-            )}
-
             <Header 
                 currentPage={currentPage}
                 setCurrentPage={navigate}
@@ -281,6 +272,7 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onLogout }) => {
                 managedButtons={visibleButtons}
                 onManagedButtonClick={handleManagedButtonClick}
                 loginActive={adminConfig?.loginActive ?? true}
+                navigateToAuth={navigateToAuth}
             />
             <Sidebar
                 isOpen={isSidebarOpen}
@@ -293,6 +285,7 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onLogout }) => {
                 managedButtons={visibleButtons}
                 onManagedButtonClick={handleManagedButtonClick}
                 loginActive={adminConfig?.loginActive ?? true}
+                navigateToAuth={navigateToAuth}
             />
             <main className="flex-grow">
                 <div key={currentPage} className="animate-fade-in-up">

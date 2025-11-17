@@ -4,7 +4,7 @@ export type PublicPage =
 
 export type AdminPage =
   'dashboard' | 'profile' | 'users' | 'announcements' | 
-  'rekap' | 'stages' | 'settings' | 'highlights' | 'attendance' | 'buttons';
+  'rekap' | 'stages' | 'settings' | 'attendance' | 'buttons';
 
 export interface SelectionStage {
   id: string;

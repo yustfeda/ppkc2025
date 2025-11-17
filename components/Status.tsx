@@ -12,6 +12,7 @@ const Status: React.FC<StatusProps> = ({ user }) => {
     const [registration, setRegistration] = useState<RegistrationData | null>(null);
     const [allStages, setAllStages] = useState<SelectionStage[]>([]);
     const [loading, setLoading] = useState(true);
+    const [profilePic, setProfilePic] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -23,6 +24,13 @@ const Status: React.FC<StatusProps> = ({ user }) => {
                 ]);
                 setRegistration(regData);
                 setAllStages(stagesData);
+                
+                const storedPic = localStorage.getItem(`profilePic_${user.uid}`);
+                if (storedPic) {
+                    setProfilePic(storedPic);
+                } else if (regData?.profilePictureUrl) {
+                    setProfilePic(regData.profilePictureUrl);
+                }
             } catch (err) {
                 console.error(err);
             } finally {
@@ -133,19 +141,20 @@ const Status: React.FC<StatusProps> = ({ user }) => {
             <div className="w-full max-w-lg bg-white dark:bg-brand-primary rounded-xl shadow-2xl p-8 animate-fade-in">
                 <div className="text-center">
                     <div className="w-24 h-24 rounded-full bg-gray-200 dark:bg-gray-700 mx-auto mb-4 flex items-center justify-center overflow-hidden border-4 border-white dark:border-gray-600 shadow-lg">
-                        <i className="fas fa-user text-5xl text-gray-400 dark:text-gray-500"></i>
+                         {profilePic ? (
+                            <img src={profilePic} alt="Foto Profil" className="w-full h-full object-cover" />
+                        ) : (
+                            <i className="fas fa-user text-5xl text-gray-400 dark:text-gray-500"></i>
+                        )}
                     </div>
                     
                     <h1 className={`text-2xl font-bold uppercase ${isLolos ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                        {isLolos ? `SELAMAT ${registration.fullName}, ANDA LOLOS!` : `MOHON MAAF ${registration.fullName}, ANDA TIDAK LOLOS!`}
+                        {isLolos ? `SELAMAT, ANDA LOLOS!` : `MOHON MAAF, ANDA GAGAL!`}
                     </h1>
+                     <p className="text-lg text-gray-800 dark:text-white font-medium">{registration.fullName}</p>
                 </div>
 
                 <div className="my-6 border-t border-b border-gray-200 dark:border-gray-700 py-4 space-y-2 text-sm">
-                    <div className="flex justify-between">
-                        <span className="font-semibold text-gray-600 dark:text-gray-400">Nama</span>
-                        <span className="text-gray-800 dark:text-white font-medium text-right">{registration.fullName}</span>
-                    </div>
                     <div className="flex justify-between">
                         <span className="font-semibold text-gray-600 dark:text-gray-400">Asal Satuan</span>
                         <span className="text-gray-800 dark:text-white font-medium text-right">{registration.originUnit}</span>

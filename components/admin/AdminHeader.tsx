@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import type { AdminPage } from '../../types';
+import AnimatedLogo from '../AnimatedLogo';
 
 type AdminNavItem = { page: AdminPage; label: string; icon: string; };
 
 const adminNavItems: AdminNavItem[] = [
   { page: 'dashboard', label: 'Dashboard', icon: 'fas fa-tachometer-alt' },
-  { page: 'highlights', label: 'Kelola Highlight', icon: 'fas fa-star' },
   { page: 'users', label: 'Kelola User', icon: 'fas fa-users-cog' },
   { page: 'stages', label: 'Kelola Tahapan', icon: 'fas fa-tasks' },
   { page: 'buttons', label: 'Kelola Tombol', icon: 'fas fa-plus-square' },
@@ -84,16 +84,9 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ currentPage, setCurrentPage, 
       <header className="bg-brand-primary text-white shadow-lg sticky top-0 z-50 h-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
           <div className="flex items-center justify-between h-full">
-            {/* Logo - Now acts as a logout button */}
-            <div onClick={() => setCurrentPage('dashboard')} className="flex items-center cursor-pointer" title="Go to Dashboard">
-              <h1 className="text-lg font-bold flex items-center gap-4">
-                  <span className="text-white">Admin Panel</span>
-                  <span className="text-gray-400 text-sm">|</span>
-                  <span className="text-xl">
-                    <span className="text-orange-500">PPKC</span>
-                    <span className="text-brand-logo-blue">2025</span>
-                  </span>
-              </h1>
+             <div onClick={() => setCurrentPage('dashboard')} className="flex items-center cursor-pointer" title="Go to Dashboard">
+                <AnimatedLogo />
+                <span className="text-lg font-bold ml-3 hidden sm:inline">Admin Panel</span>
             </div>
 
             {/* Desktop Navigation */}

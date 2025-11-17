@@ -118,6 +118,14 @@
           animation: roll-and-settle-5 2.5s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
       }
       
+      @keyframes fade-in-out-reappear {
+        0%, 100% { opacity: 0; transform: scale(0.9); }
+        10%, 90% { opacity: 1; transform: scale(1); }
+      }
+      .animate-logo-gif {
+        animation: fade-in-out-reappear 8s ease-in-out infinite;
+      }
+      
        /* Floating Label Form Styles */
       .input-group {
         position: relative;
@@ -177,6 +185,15 @@
        .dark .form-input-bg-darkest .peer:not(:placeholder-shown) ~ .form-label {
          background-color: #111827; /* gray-900 */
       }
+      
+      /* Auth Dropdown */
+      .auth-dropdown {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        margin-top: 0.5rem;
+        transform-origin: top right;
+      }
     </style>
     <script>
       tailwind.config = {
@@ -231,5 +248,28 @@
     <!-- QR Code Generation & Scanning -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <!-- Anti-DevTools Script -->
+    <script>
+      (function() {
+        // Disable right-click context menu
+        window.addEventListener('contextmenu', e => {
+          e.preventDefault();
+        });
+
+        // Redirect if dev tools are opened (using debugger trick)
+        function detect() {
+          const start = new Date().getTime();
+          debugger;
+          const end = new Date().getTime();
+          if (end - start > 100) {
+            window.location.href = 'error.html';
+          }
+        }
+
+        if(window.location.pathname.indexOf('error.html') === -1) {
+          setInterval(detect, 1000);
+        }
+      })();
+    </script>
   </body>
 </html>

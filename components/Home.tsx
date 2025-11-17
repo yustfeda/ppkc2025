@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import type { PublicPage, AdminConfig, HomePageUpdate, User, RegistrationData, SelectionStage, ManagedButton, SupportersSection } from '../types';
-import { getAdminConfig, getHomeUpdates, getUserRegistration, getSelectionStages, getSupporters } from '../services/firebase';
+import type { PublicPage, AdminConfig, AnnouncementDocument, User, RegistrationData, SelectionStage, ManagedButton, SupportersSection } from '../types';
+import { getAdminConfig, getAnnouncements, getUserRegistration, getSelectionStages, getSupporters } from '../services/firebase';
 
 interface HomeProps {
   setCurrentPage: (page: PublicPage) => void;
@@ -10,7 +10,7 @@ interface HomeProps {
 
 const Home: React.FC<HomeProps> = ({ setCurrentPage, user, onManagedButtonClick }) => {
   const [config, setConfig] = useState<AdminConfig | null>(null);
-  const [updates, setUpdates] = useState<HomePageUpdate[]>([]);
+  const [announcements, setAnnouncements] = useState<AnnouncementDocument[]>([]);
   const [supportersSection, setSupportersSection] = useState<SupportersSection | null>(null);
   const [registration, setRegistration] = useState<RegistrationData | null>(null);
   const [stages, setStages] = useState<SelectionStage[]>([]);
@@ -18,13 +18,13 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage, user, onManagedButtonClick 
 
   useEffect(() => {
     setLoading(true);
-    const promises: any[] = [getAdminConfig(), getHomeUpdates(), getSelectionStages(), getSupporters()];
+    const promises: any[] = [getAdminConfig(), getAnnouncements(), getSelectionStages(), getSupporters()];
     if (user) {
         promises.push(getUserRegistration(user.uid));
     }
-    Promise.all(promises).then(([configData, updatesData, stagesData, supportersData, regData]) => {
+    Promise.all(promises).then(([configData, announcementsData, stagesData, supportersData, regData]) => {
       setConfig(configData);
-      setUpdates(updatesData);
+      setAnnouncements(announcementsData);
       setStages(stagesData || []);
       setSupportersSection(supportersData || { title: 'Didukung Oleh', items: [] });
       if (user && regData) {
@@ -126,7 +126,7 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage, user, onManagedButtonClick 
             {config?.loginActive && (
                  <button 
                     onClick={() => setCurrentPage('login')}
-                    className="bg-gray-200 dark:bg-gray-700 text-brand-primary dark:text-gray-200 font-bold py-2 px-6 rounded-lg text-sm hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors w-full sm:w-auto">
+                    className="bg-brand-secondary text-white dark:bg-brand-light dark:text-brand-primary font-bold py-2 px-6 rounded-lg text-sm hover:bg-brand-accent dark:hover:bg-gray-200 transition-colors w-full sm:w-auto">
                     Masuk
                 </button>
             )}
@@ -139,7 +139,7 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage, user, onManagedButtonClick 
                         {supportersSection.items.map(supporter => (
                              <div key={supporter.id} title={supporter.name} className="flex items-center justify-center h-20 w-32 transition-all duration-300">
                                {supporter.imageUrl ? (
-                                   <img src={supporter.imageUrl} alt={supporter.name} className="max-h-full max-w-full object-contain rounded-md" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                   <img src={supporter.imageUrl} alt={supporter.name} className="max-h-full max-w-full object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                                ) : supporter.icon ? (
                                    <i className={`${supporter.icon} text-4xl text-gray-700 dark:text-gray-200 p-4 rounded-lg`}></i>
                                ) : (
@@ -177,7 +177,7 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage, user, onManagedButtonClick 
       <div className={`flex flex-col items-center justify-center ${user ? 'py-12' : 'min-h-[calc(100vh-5rem)]'} text-center p-4`}>
         <WelcomeSection />
       </div>
-      {updates.length > 0 && (
+      {announcements.length > 0 && (
           <div className="py-12 bg-brand-light dark:bg-brand-dark">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                   <div className="text-center mb-10">
@@ -185,22 +185,21 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage, user, onManagedButtonClick 
                       <p className="text-base text-gray-600 dark:text-gray-300 mt-2">Informasi dan highlight kegiatan terkini.</p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                      {updates.slice(0, 3).map(update => (
-                          <div key={update.id} className="bg-white dark:bg-brand-primary rounded-lg shadow-lg overflow-hidden flex flex-col interactive-card">
-                              {update.imageUrl && (
-                                <div className="w-full h-48 bg-gray-100 dark:bg-brand-dark flex justify-center items-center">
+                      {announcements.slice(0, 3).map(announcement => (
+                          <div key={announcement.id} className="bg-white dark:bg-brand-primary rounded-lg shadow-lg overflow-hidden flex flex-col interactive-card">
+                              {announcement.thumbnailUrl && (
+                                <div className="aspect-[16/9] w-full">
                                     <img
-                                        src={update.imageUrl}
-                                        alt={update.title}
-                                        className="max-w-full max-h-full"
+                                        src={announcement.thumbnailUrl}
+                                        alt={announcement.title}
+                                        className="w-full h-full object-cover"
                                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                                     />
                                 </div>
                               )}
                               <div className="p-6 flex flex-col flex-grow">
-                                  <p className="text-xs text-gray-500 dark:text-gray-400">{update.date}</p>
-                                  <h3 className="text-lg font-semibold text-brand-primary dark:text-white mt-2 mb-2">{update.title}</h3>
-                                  <p className="text-sm text-gray-600 dark:text-gray-300 flex-grow">{update.content}</p>
+                                  <h3 className="text-lg font-semibold text-brand-primary dark:text-white mt-2 mb-2">{announcement.title}</h3>
+                                  <p className="text-sm text-gray-600 dark:text-gray-300 flex-grow">{announcement.description}</p>
                               </div>
                           </div>
                       ))}
