@@ -43,7 +43,7 @@ const AdminDashboard: React.FC = () => {
                 failed++;
                 return;
             }
-            const hasFailedStage = Object.values(reg.stageProgress || {}).some((p: any) => p.status === 'gagal');
+            const hasFailedStage = Object.values(reg.stageProgress || {}).some((p: any) => p && p.status === 'gagal');
             if (hasFailedStage) {
                 failed++;
                 return;

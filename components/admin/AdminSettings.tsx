@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAdminConfigRealtime, setData, resetAllRegistrations, getRegistrationFormFieldsRealtime } from '../../services/firebase';
+import { getAdminConfig, setData, resetAllRegistrations, getRegistrationFormFields } from '../../services/firebase';
 import type { AdminConfig, AdminPageProps, FormField } from '../../types';
 
 interface AdminSettingsProps extends AdminPageProps {
@@ -14,8 +14,8 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ onThemeChange, showNotifi
     useEffect(() => {
         setLoading(true);
         Promise.all([
-            getAdminConfigRealtime(),
-            getRegistrationFormFieldsRealtime()
+            getAdminConfig(),
+            getRegistrationFormFields()
         ]).then(([configData, fieldsData]) => {
             setConfig(configData);
             setDocFields(fieldsData);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAnnouncementsRealtime, setData } from '../../services/firebase';
+import { getAnnouncements, setData } from '../../services/firebase';
 import type { AnnouncementDocument, AdminPageProps } from '../../types';
 
 const AdminManageAnnouncements: React.FC<AdminPageProps> = ({ showNotification, showConfirmation }) => {
@@ -8,7 +8,7 @@ const AdminManageAnnouncements: React.FC<AdminPageProps> = ({ showNotification, 
 
     useEffect(() => {
         setLoading(true);
-        getAnnouncementsRealtime().then(data => {
+        getAnnouncements().then(data => {
             setAnnouncements(data || []);
             setLoading(false);
         });

@@ -120,7 +120,7 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
                 setIsSelectionFinished(true);
                 return;
             }
-            const hasFailedStage = Object.values(regData.stageProgress || {}).some((p: any) => p.status === 'gagal');
+            const hasFailedStage = Object.values(regData.stageProgress || {}).some((p: any) => p && p.status === 'gagal');
             if (hasFailedStage) {
                 setIsSelectionFinished(true);
                 return;

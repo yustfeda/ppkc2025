@@ -157,7 +157,7 @@ const Status: React.FC<StatusProps> = ({ user }) => {
                 const picSize = 120;
                 const x = (400 - picSize) / 2;
                 const y = 120;
-                doc.addImage(userImage, 'JPEG', x, y, picSize, picSize);
+                doc.addImage(userImage, x, y, picSize, picSize);
                 drawContent();
             };
             userImage.onerror = () => {
