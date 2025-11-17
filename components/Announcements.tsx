@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getAnnouncements } from '../services/firebase';
 import type { AnnouncementDocument } from '../types';
 
-const DocumentCard: React.FC<{ doc: AnnouncementDocument }> = ({ doc }) => {
+const DocumentCard: React.FC<{ doc: AnnouncementDocument; showNotification: (message: string, type: 'success' | 'error') => void; }> = ({ doc, showNotification }) => {
     
     const convertGoogleDriveLink = (url: string) => {
         const regex = /https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/;
@@ -12,25 +12,12 @@ const DocumentCard: React.FC<{ doc: AnnouncementDocument }> = ({ doc }) => {
         }
         return url;
     };
+    
+    const handleDownloadClick = () => {
+        showNotification('Download Anda telah dimulai...', 'success');
+    };
 
     const downloadUrl = doc.fileUrl ? convertGoogleDriveLink(doc.fileUrl) : '#';
-
-    const handleDownload = (e: React.MouseEvent<HTMLAnchorElement>) => {
-        if (downloadUrl.startsWith('https://drive.google.com/uc?export=download')) {
-            e.preventDefault();
-            
-            const oldIframe = document.getElementById('gdrive-downloader');
-            if (oldIframe) {
-                oldIframe.remove();
-            }
-
-            const iframe = document.createElement('iframe');
-            iframe.id = 'gdrive-downloader';
-            iframe.style.display = 'none';
-            iframe.src = downloadUrl;
-            document.body.appendChild(iframe);
-        }
-    };
 
     return (
         <div className="bg-brand-light dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md flex flex-col overflow-hidden transition-transform hover:scale-105 duration-300">
@@ -62,7 +49,7 @@ const DocumentCard: React.FC<{ doc: AnnouncementDocument }> = ({ doc }) => {
                      <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="flex-1 text-center bg-brand-secondary text-white px-4 py-2 rounded-md font-semibold hover:bg-blue-700 transition-colors text-sm">
                         <i className="fas fa-external-link-alt mr-2"></i>Buka
                     </a>
-                     <a href={downloadUrl} onClick={handleDownload} download className="flex-1 text-center bg-gray-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-gray-800 transition-colors text-sm">
+                     <a href={downloadUrl} target="_blank" rel="noopener noreferrer" onClick={handleDownloadClick} className="flex-1 text-center bg-gray-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-gray-800 transition-colors text-sm">
                         <i className="fas fa-download mr-2"></i>Download
                     </a>
                 </div>
@@ -71,7 +58,7 @@ const DocumentCard: React.FC<{ doc: AnnouncementDocument }> = ({ doc }) => {
     );
 };
 
-const Announcements: React.FC = () => {
+const Announcements: React.FC<{ showNotification: (message: string, type: 'success' | 'error') => void; }> = ({ showNotification }) => {
     const [documents, setDocuments] = useState<AnnouncementDocument[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -102,7 +89,7 @@ const Announcements: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {documents.map(doc => (
-                        <DocumentCard key={doc.id} doc={doc} />
+                        <DocumentCard key={doc.id} doc={doc} showNotification={showNotification} />
                     ))}
                 </div>
             </div>

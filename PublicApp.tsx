@@ -229,8 +229,8 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
     const renderPage = () => {
         switch (currentPage) {
             case 'home': return <Home setCurrentPage={navigate} user={user} onManagedButtonClick={handleManagedButtonClick} />;
-            case 'stages': return <SelectionStages user={user} setCurrentPage={navigate} />;
-            case 'announcements': return <Announcements />;
+            case 'stages': return <SelectionStages user={user} setCurrentPage={navigate} showNotification={showNotification} />;
+            case 'announcements': return <Announcements showNotification={showNotification} />;
             case 'contact': return <Contact />;
             case 'login': return <AuthPage setCurrentPage={navigate} showNotification={showNotification} loginActive={adminConfig?.loginActive} registrationActive={adminConfig?.registrationActive} />;
             case 'registration': return user ? <Registration user={user} setCurrentPage={navigate} showNotification={showNotification} showConfirmation={showConfirmation} registrationActive={adminConfig?.registrationActive} /> : <AuthPage setCurrentPage={navigate} showNotification={showNotification} loginActive={adminConfig?.loginActive} registrationActive={adminConfig?.registrationActive} />;

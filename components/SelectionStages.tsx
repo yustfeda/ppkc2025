@@ -4,12 +4,30 @@ import type { SelectionStage, User, RegistrationData, PublicPage } from '../type
 
 type StageStatus = 'lolos' | 'gagal' | 'pending' | 'locked' | 'default';
 
-const StageDetailPopup: React.FC<{ stage: SelectionStage; status: StageStatus; onClose: () => void }> = ({ stage, status, onClose }) => {
+const StageDetailPopup: React.FC<{ 
+    stage: SelectionStage; 
+    status: StageStatus; 
+    onClose: () => void;
+    showNotification: (message: string, type: 'success' | 'error') => void;
+}> = ({ stage, status, onClose, showNotification }) => {
     const [isClosing, setIsClosing] = useState(false);
 
     const handleClose = () => {
         setIsClosing(true);
         setTimeout(() => onClose(), 300);
+    };
+
+    const convertGoogleDriveLink = (url: string) => {
+        const regex = /https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/;
+        const match = url.match(regex);
+        if (match && match[1]) {
+            return `https://drive.google.com/uc?export=download&id=${match[1]}`;
+        }
+        return url;
+    };
+    
+    const handleDownloadClick = () => {
+        showNotification('Download Anda telah dimulai...', 'success');
     };
 
     const getPopupContent = (): {
@@ -72,6 +90,7 @@ const StageDetailPopup: React.FC<{ stage: SelectionStage; status: StageStatus; o
     if (!content) return null;
     
     if (content.isInfo) {
+        const downloadUrl = content.formDownloadUrl ? convertGoogleDriveLink(content.formDownloadUrl) : '#';
         return (
             <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4" onClick={handleClose}>
                 <div 
@@ -93,7 +112,7 @@ const StageDetailPopup: React.FC<{ stage: SelectionStage; status: StageStatus; o
                              {(content.formViewUrl || content.formDownloadUrl) && (
                                 <div className="flex gap-4 mt-3">
                                     {content.formViewUrl && content.formViewUrl !== '#' && <a href={content.formViewUrl} target="_blank" rel="noopener noreferrer" className="button bg-brand-secondary text-white px-4 py-2 text-xs rounded-md">Lihat Form</a>}
-                                    {content.formDownloadUrl && content.formDownloadUrl !== '#' && <a href={content.formDownloadUrl} download className="button bg-gray-600 text-white px-4 py-2 text-xs rounded-md">Unduh Form</a>}
+                                    {content.formDownloadUrl && content.formDownloadUrl !== '#' && <a href={downloadUrl} target="_blank" rel="noopener noreferrer" onClick={handleDownloadClick} className="button bg-gray-600 text-white px-4 py-2 text-xs rounded-md">Unduh Form</a>}
                                 </div>
                              )}
                         </div>
@@ -110,7 +129,7 @@ const StageDetailPopup: React.FC<{ stage: SelectionStage; status: StageStatus; o
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4" onClick={handleClose}>
             <div 
-                className={`bg-brand-light dark:bg-brand-primary rounded-lg shadow-xl p-6 w-full max-w-sm text-center ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'}`}
+                className={`bg-brand-light dark:bg-brand-primary rounded-lg shadow-xl p-6 w-full max-w-sm text-center ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-out-scale'}`}
                 onClick={e => e.stopPropagation()}
             >
                  <i className={`${content.icon} ${content.color} text-4xl mb-4`}></i>
@@ -180,9 +199,10 @@ const StageCard: React.FC<{ stage: SelectionStage, progressStatus: StageStatus, 
 interface SelectionStagesProps {
     user: User | null;
     setCurrentPage: (page: PublicPage) => void;
+    showNotification: (message: string, type: 'success' | 'error') => void;
 }
 
-const SelectionStages: React.FC<SelectionStagesProps> = ({ user, setCurrentPage }) => {
+const SelectionStages: React.FC<SelectionStagesProps> = ({ user, setCurrentPage, showNotification }) => {
     const [stages, setStages] = useState<SelectionStage[]>([]);
     const [registration, setRegistration] = useState<RegistrationData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -248,7 +268,7 @@ const SelectionStages: React.FC<SelectionStagesProps> = ({ user, setCurrentPage 
     
     return (
         <div className="bg-brand-light dark:bg-brand-dark min-h-screen py-8 px-4 sm:px-6 lg:px-8">
-            {popupStage && <StageDetailPopup stage={popupStage} status={getStageProgress(popupStage, stages.findIndex(s => s.id === popupStage.id))} onClose={() => setPopupStage(null)} />}
+            {popupStage && <StageDetailPopup stage={popupStage} status={getStageProgress(popupStage, stages.findIndex(s => s.id === popupStage.id))} onClose={() => setPopupStage(null)} showNotification={showNotification} />}
             <div className="max-w-7xl mx-auto">
                 <div className="text-center mb-10">
                     <h1 className="text-3xl font-bold text-brand-primary dark:text-gray-100">Tahapan Seleksi</h1>
