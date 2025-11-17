@@ -5,8 +5,6 @@ import { onAuthChange, logoutUser } from './services/firebase';
 import PublicApp from './PublicApp';
 import AdminApp from './AdminApp';
 
-const ADMIN_UID = 'yMfKl5Wo7KRadLV4pDMQcHQKPsx2';
-
 const App: React.FC = () => {
     const [user, setUser] = useState<User | null>(null);
     const [isAdmin, setIsAdmin] = useState(false);
@@ -21,16 +19,15 @@ const App: React.FC = () => {
         }
 
         const unsubscribe = onAuthChange((firebaseUser) => {
-            if (firebaseUser) {
-                setUser(firebaseUser as User);
-                if (firebaseUser.uid === ADMIN_UID) {
-                    setIsAdmin(true);
-                } else {
-                    setIsAdmin(false);
-                }
-            } else {
-                setUser(null);
+            setUser(firebaseUser as User | null);
+
+            const adminStatus = sessionStorage.getItem('isAdmin') === 'true';
+            
+            if (!firebaseUser) {
+                sessionStorage.removeItem('isAdmin');
                 setIsAdmin(false);
+            } else {
+                setIsAdmin(adminStatus);
             }
 
             // Start fade out process
@@ -42,7 +39,13 @@ const App: React.FC = () => {
         return () => unsubscribe();
     }, []);
 
+    const handleSetAdmin = () => {
+        setIsAdmin(true);
+        sessionStorage.setItem('isAdmin', 'true');
+    };
+
     const handleLogout = () => {
+        sessionStorage.removeItem('isAdmin');
         sessionStorage.removeItem('seenAdminWelcome');
         setIsAdmin(false);
         logoutUser();
@@ -60,7 +63,7 @@ const App: React.FC = () => {
         return <AdminApp onLogout={handleLogout} />;
     }
 
-    return <PublicApp user={user} onLogout={handleLogout} />;
+    return <PublicApp user={user} onSetAdmin={handleSetAdmin} onLogout={handleLogout} />;
 };
 
 export default App;

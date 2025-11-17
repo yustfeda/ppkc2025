@@ -71,22 +71,47 @@ const MOCK_REG_FORM_FIELDS: FormField[] = [
 
 // Data Fetching
 export const getData = async <T>(path: string, mockData?: T): Promise<T> => {
+    const cacheKey = `firebase_cache::${path}`;
+
     try {
         const snapshot = await database.ref(path).once('value');
         const data = snapshot.val();
+        
         if (data !== null) {
-            // Firebase returns arrays as objects with indices as keys. Convert back to array.
+            try {
+                localStorage.setItem(cacheKey, JSON.stringify(data));
+            } catch (e) {
+                console.warn(`[Cache] Failed to write to localStorage for ${path}:`, e);
+            }
+
             if (mockData && Array.isArray(mockData) && typeof data === 'object') {
                 return Object.values(data).filter(item => item !== null) as T;
             }
             return data;
         }
+        
         if (mockData !== undefined) {
-          await database.ref(path).set(mockData);
+            await database.ref(path).set(mockData);
+             try {
+                localStorage.setItem(cacheKey, JSON.stringify(mockData));
+            } catch (e) {
+                console.warn(`[Cache] Failed to write mock data to localStorage for ${path}:`, e);
+            }
         }
         return mockData as T;
     } catch (error) {
-        console.error(`Error fetching ${path}, returning mock data:`, error);
+        console.warn(`[Firebase] Fetch failed for ${path}. Attempting to serve from cache.`, error);
+        try {
+            const cachedData = localStorage.getItem(cacheKey);
+            if (cachedData) {
+                console.log(`[Cache] Serving ${path} from localStorage.`);
+                return JSON.parse(cachedData) as T;
+            }
+        } catch (e) {
+            console.error(`[Cache] Failed to read or parse from localStorage for ${path}:`, e);
+        }
+
+        console.log(`[Firebase] Serving mock data for ${path} as a final fallback.`);
         return mockData as T;
     }
 };

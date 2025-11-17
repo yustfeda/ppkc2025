@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import type { PublicPage } from '../types';
 import { registerUser, loginUser, logoutUser } from '../services/firebase';
 
@@ -7,37 +7,32 @@ interface AuthPageProps {
     showNotification: (message: string, type: 'success' | 'error') => void;
     loginActive?: boolean;
     registrationActive?: boolean;
-    initialIsLogin: boolean;
 }
 
-const AuthPage: React.FC<AuthPageProps> = ({ setCurrentPage, showNotification, loginActive, registrationActive, initialIsLogin }) => {
-    const [isLogin, setIsLogin] = useState(initialIsLogin);
+const AuthPage: React.FC<AuthPageProps> = ({ setCurrentPage, showNotification, loginActive, registrationActive }) => {
+    const [mode, setMode] = useState<'choice' | 'login' | 'register'>('choice');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
-    
-    useEffect(() => {
-        setIsLogin(initialIsLogin);
-    }, [initialIsLogin]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         try {
-            if (isLogin) {
+            if (mode === 'login') {
                 await loginUser(email, password);
                 sessionStorage.setItem('justLoggedIn', 'true');
                 // Navigation will be handled by onAuthChange in App.tsx
-            } else {
+            } else { // mode === 'register'
                 await registerUser(email, password);
                 await logoutUser(); // Ensure user is logged out after registration
                 showNotification('Registrasi berhasil! Silakan login untuk masuk.', 'success');
-                setIsLogin(true); // Switch to login form
+                setMode('login'); // Switch to login form
                 setEmail('');
                 setPassword('');
             }
         } catch (err: any) {
-             if (isLogin) {
+             if (mode === 'login') {
                 if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
                      showNotification('Akun tidak tersedia atau password salah.', 'error');
                 } else {
@@ -55,32 +50,54 @@ const AuthPage: React.FC<AuthPageProps> = ({ setCurrentPage, showNotification, l
         }
     };
 
-    const renderToggleButton = () => {
-        const commonClasses = "inline-block align-baseline font-bold text-sm text-brand-secondary hover:text-brand-accent";
-        if (isLogin) {
-            if (registrationActive) {
-                return (
-                    <button type="button" onClick={() => setIsLogin(false)} className={commonClasses}>
-                        Buat Akun
+    if (mode === 'choice') {
+        return (
+            <div className="min-h-[calc(100vh-5rem)] flex items-center justify-center bg-brand-light dark:bg-brand-dark p-4">
+                <div className="relative w-full max-w-md bg-white dark:bg-brand-primary p-8 rounded-xl shadow-lg interactive-card animate-fade-in">
+                     <button
+                        onClick={() => setCurrentPage('home')}
+                        className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                        aria-label="Tutup"
+                    >
+                        <i className="fas fa-times text-xl"></i>
                     </button>
-                );
-            }
-        } else { // isRegister
-            if (loginActive) {
-                return (
-                    <button type="button" onClick={() => setIsLogin(true)} className={commonClasses}>
-                        Sudah Punya Akun?
-                    </button>
-                );
-            }
-        }
-        return <div className="w-24 h-5"></div>; // Placeholder to prevent layout shift
-    };
-
+                    <h2 className="text-2xl font-bold text-center text-brand-primary dark:text-white mb-6">
+                        Selamat Datang
+                    </h2>
+                    <p className="text-center text-gray-600 dark:text-gray-300 mb-8">Silakan pilih opsi untuk melanjutkan.</p>
+                    <div className="space-y-4">
+                        {registrationActive && (
+                            <button
+                                onClick={() => setMode('register')}
+                                className="w-full bg-brand-secondary hover:bg-brand-accent text-white font-bold py-3 px-4 rounded focus:outline-none focus:shadow-outline"
+                            >
+                                Daftar Akun Baru
+                            </button>
+                        )}
+                        {loginActive && (
+                            <button
+                                onClick={() => setMode('login')}
+                                className="w-full bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-brand-primary dark:text-gray-200 font-bold py-3 px-4 rounded focus:outline-none focus:shadow-outline"
+                            >
+                                Masuk dengan Akun
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-[calc(100vh-5rem)] flex items-center justify-center bg-brand-light dark:bg-brand-dark p-4">
-            <div className="relative w-full max-w-md bg-white dark:bg-brand-primary p-8 rounded-xl shadow-lg interactive-card">
+            <div className="relative w-full max-w-md bg-white dark:bg-brand-primary p-8 rounded-xl shadow-lg interactive-card animate-fade-in-up">
+                 <button
+                    onClick={() => setMode('choice')}
+                    className="absolute top-4 left-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                    aria-label="Kembali"
+                >
+                    <i className="fas fa-arrow-left text-xl"></i>
+                </button>
                  <button
                     onClick={() => setCurrentPage('home')}
                     className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
@@ -89,7 +106,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ setCurrentPage, showNotification, l
                     <i className="fas fa-times text-xl"></i>
                 </button>
                 <h2 className="text-2xl font-bold text-center text-brand-primary dark:text-white mb-6">
-                    {isLogin ? 'Masuk Akun' : 'Daftar Akun Baru'}
+                    {mode === 'login' ? 'Masuk Akun' : 'Daftar Akun Baru'}
                 </h2>
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="relative input-group form-input-bg-light dark:form-input-bg-dark">
@@ -120,15 +137,14 @@ const AuthPage: React.FC<AuthPageProps> = ({ setCurrentPage, showNotification, l
                             Password
                         </label>
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-end">
                         <button
                             type="submit"
                             disabled={loading}
                             className="bg-brand-secondary hover:bg-brand-accent text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:bg-gray-400"
                         >
-                            {loading ? <i className="fas fa-spinner fa-spin"></i> : (isLogin ? 'Masuk' : 'Daftar')}
+                            {loading ? <i className="fas fa-spinner fa-spin"></i> : (mode === 'login' ? 'Masuk' : 'Daftar')}
                         </button>
-                        {renderToggleButton()}
                     </div>
                 </form>
             </div>

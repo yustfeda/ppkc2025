@@ -61,7 +61,7 @@ const Status: React.FC<StatusProps> = ({ user }) => {
         if (!registration) return;
         const canvas = document.createElement('canvas');
         canvas.width = 400;
-        canvas.height = 550;
+        canvas.height = 650; // Increased height for photo
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
@@ -69,6 +69,7 @@ const Status: React.FC<StatusProps> = ({ user }) => {
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
+        // Header text
         ctx.fillStyle = '#0B2447';
         ctx.font = 'bold 20px Inter, sans-serif';
         ctx.textAlign = 'center';
@@ -76,44 +77,74 @@ const Status: React.FC<StatusProps> = ({ user }) => {
         ctx.font = '16px Inter, sans-serif';
         ctx.fillText('Paskibra Kec. Cileles 2025', canvas.width / 2, 70);
 
-        // User Info
-        ctx.textAlign = 'left';
-        ctx.fillStyle = '#1A1A2E';
-        ctx.font = 'bold 14px Inter, sans-serif';
-        ctx.fillText('Nama', 30, 110);
-        ctx.font = '14px Inter, sans-serif';
-        ctx.fillText(`: ${registration.fullName}`, 120, 110);
+        // This function will draw the rest of the content after the profile picture is loaded
+        const drawContent = () => {
+            // User Info (shifted down)
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#1A1A2E';
+            ctx.font = 'bold 14px Inter, sans-serif';
+            ctx.fillText('Nama', 30, 250);
+            ctx.font = '14px Inter, sans-serif';
+            ctx.fillText(`: ${registration.fullName}`, 120, 250);
+            
+            ctx.font = 'bold 14px Inter, sans-serif';
+            ctx.fillText('Asal Satuan', 30, 280);
+            ctx.font = '14px Inter, sans-serif';
+            ctx.fillText(`: ${registration.originUnit}`, 120, 280);
+            
+            // QR Code generation
+            const qrData = JSON.stringify({ uid: user.uid, name: registration.fullName });
+            QRCode.toDataURL(qrData, { width: 250, margin: 2 }, (err: any, url: string) => {
+                if (err) {
+                    console.error(err);
+                    return;
+                }
+                const img = new Image();
+                img.onload = () => {
+                    // Draw QR code (shifted down)
+                    ctx.drawImage(img, (canvas.width - 250) / 2, 310, 250, 250);
+                    
+                    // Footer text (shifted down)
+                    ctx.textAlign = 'center';
+                    ctx.fillStyle = '#333';
+                    ctx.font = '12px Inter, sans-serif';
+                    ctx.fillText('Scan QR Code ini untuk verifikasi kehadiran.', canvas.width / 2, 590);
+                    
+                    // Trigger download
+                    const link = document.createElement('a');
+                    link.download = `bukti-lolos-${registration.fullName}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                };
+                img.src = url;
+            });
+        };
         
-        ctx.font = 'bold 14px Inter, sans-serif';
-        ctx.fillText('Asal Satuan', 30, 140);
-        ctx.font = '14px Inter, sans-serif';
-        ctx.fillText(`: ${registration.originUnit}`, 120, 140);
-        
-        // QR Code
-        const qrData = JSON.stringify({ uid: user.uid, name: registration.fullName });
-        QRCode.toDataURL(qrData, { width: 250, margin: 2 }, (err: any, url: string) => {
-            if (err) {
-                console.error(err);
-                return;
-            }
-            const img = new Image();
-            img.onload = () => {
-                ctx.drawImage(img, (canvas.width - 250) / 2, 180, 250, 250);
-                
-                // Footer text
-                ctx.textAlign = 'center';
-                ctx.fillStyle = '#333';
-                ctx.font = '12px Inter, sans-serif';
-                ctx.fillText('Scan QR Code ini untuk verifikasi kehadiran.', canvas.width / 2, 460);
-                
-                // Trigger download
-                const link = document.createElement('a');
-                link.download = `bukti-lolos-${registration.fullName}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
+        // Load and draw profile picture if it exists
+        if (profilePic) {
+            const userImage = new Image();
+            userImage.crossOrigin = "anonymous";
+            userImage.onload = () => {
+                // Draw profile picture
+                const picSize = 120;
+                const x = (canvas.width - picSize) / 2;
+                const y = 100;
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(x + picSize / 2, y + picSize / 2, picSize / 2, 0, Math.PI * 2, true);
+                ctx.closePath();
+                ctx.clip();
+                ctx.drawImage(userImage, x, y, picSize, picSize);
+                ctx.restore();
+                drawContent();
             };
-            img.src = url;
-        });
+            userImage.onerror = () => {
+                drawContent();
+            };
+            userImage.src = profilePic;
+        } else {
+            drawContent();
+        }
     };
 
     if (loading) {

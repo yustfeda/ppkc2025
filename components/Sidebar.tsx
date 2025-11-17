@@ -55,10 +55,9 @@ interface SidebarProps {
   managedButtons: ManagedButton[];
   onManagedButtonClick: (button: ManagedButton) => void;
   loginActive: boolean;
-  navigateToAuth: (isLogin: boolean) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPage, setCurrentPage, toggleSidebar, user, onLogout, isSelectionFinished, managedButtons, onManagedButtonClick, loginActive, navigateToAuth }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPage, setCurrentPage, toggleSidebar, user, onLogout, isSelectionFinished, managedButtons, onManagedButtonClick, loginActive }) => {
   const handleNavigation = (page: PublicPage) => {
     setCurrentPage(page);
     toggleSidebar();
@@ -73,11 +72,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPage, setCurrentPage, 
     onLogout();
     toggleSidebar();
   }
-
-  const handleAuthNavigation = (isLogin: boolean) => {
-    navigateToAuth(isLogin);
-    toggleSidebar();
-  };
   
   const getRole = (): 'user' | 'guest' => {
     return user ? 'user' : 'guest';
@@ -151,16 +145,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPage, setCurrentPage, 
             ) : (
                 <>
                 {loginActive && (
-                  <>
-                    <button onClick={() => handleAuthNavigation(true)} className="w-full text-left flex items-center p-3 rounded-lg my-1 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 text-sm">
-                        <i className="fas fa-sign-in-alt text-lg w-8"></i>
-                        <span className="ml-3 font-semibold">Masuk Akun</span>
-                    </button>
-                     <button onClick={() => handleAuthNavigation(false)} className="w-full text-left flex items-center p-3 rounded-lg my-1 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 text-sm">
-                        <i className="fas fa-user-plus text-lg w-8"></i>
-                        <span className="ml-3 font-semibold">Buat Akun</span>
-                    </button>
-                  </>
+                  <button onClick={() => handleNavigation('login')} className="w-full text-left flex items-center p-3 rounded-lg my-1 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 text-sm">
+                      <i className="fas fa-sign-in-alt text-lg w-8"></i>
+                      <span className="ml-3 font-semibold">Daftar / Masuk</span>
+                  </button>
                 )}
                 </>
             )}

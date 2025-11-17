@@ -11,6 +11,7 @@ import AdminManageStages from './components/admin/AdminManageStages';
 import AdminSettings from './components/admin/AdminSettings';
 import AdminWelcomePopup from './components/admin/AdminWelcomePopup';
 import AdminManageAnnouncements from './components/admin/AdminManageAnnouncements';
+import AdminManageHighlights from './components/admin/AdminManageHighlights';
 import AdminAttendance from './components/admin/AdminAttendance';
 import AdminManageButtons from './components/admin/AdminManageButtons';
 
@@ -104,6 +105,7 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
             case 'stages': return <AdminManageStages {...pageProps} />;
             case 'announcements': return <AdminManageAnnouncements {...pageProps} />;
             case 'settings': return <AdminSettings onThemeChange={fetchAdminData} {...pageProps} />;
+            case 'highlights': return <AdminManageHighlights {...pageProps} />;
             case 'attendance': return <AdminAttendance {...pageProps} />;
             case 'buttons': return <AdminManageButtons {...pageProps} />;
             default: return <AdminDashboard />;

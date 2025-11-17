@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import type { PublicPage, AdminConfig, AnnouncementDocument, User, RegistrationData, SelectionStage, ManagedButton, SupportersSection } from '../types';
-import { getAdminConfig, getAnnouncements, getUserRegistration, getSelectionStages, getSupporters } from '../services/firebase';
+import type { PublicPage, AdminConfig, HomePageUpdate, User, RegistrationData, SelectionStage, ManagedButton, SupportersSection } from '../types';
+import { getAdminConfig, getHomeUpdates, getUserRegistration, getSelectionStages, getSupporters } from '../services/firebase';
 
 interface HomeProps {
   setCurrentPage: (page: PublicPage) => void;
@@ -10,7 +10,7 @@ interface HomeProps {
 
 const Home: React.FC<HomeProps> = ({ setCurrentPage, user, onManagedButtonClick }) => {
   const [config, setConfig] = useState<AdminConfig | null>(null);
-  const [announcements, setAnnouncements] = useState<AnnouncementDocument[]>([]);
+  const [updates, setUpdates] = useState<HomePageUpdate[]>([]);
   const [supportersSection, setSupportersSection] = useState<SupportersSection | null>(null);
   const [registration, setRegistration] = useState<RegistrationData | null>(null);
   const [stages, setStages] = useState<SelectionStage[]>([]);
@@ -18,13 +18,13 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage, user, onManagedButtonClick 
 
   useEffect(() => {
     setLoading(true);
-    const promises: any[] = [getAdminConfig(), getAnnouncements(), getSelectionStages(), getSupporters()];
+    const promises: any[] = [getAdminConfig(), getHomeUpdates(), getSelectionStages(), getSupporters()];
     if (user) {
         promises.push(getUserRegistration(user.uid));
     }
-    Promise.all(promises).then(([configData, announcementsData, stagesData, supportersData, regData]) => {
+    Promise.all(promises).then(([configData, updatesData, stagesData, supportersData, regData]) => {
       setConfig(configData);
-      setAnnouncements(announcementsData);
+      setUpdates(updatesData);
       setStages(stagesData || []);
       setSupportersSection(supportersData || { title: 'Didukung Oleh', items: [] });
       if (user && regData) {
@@ -98,35 +98,31 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage, user, onManagedButtonClick 
         <p className="text-sm text-gray-600 dark:text-gray-300 mb-6 max-w-xl mx-auto">
           Platform informasi terpusat untuk seluruh tahapan seleksi, pengumuman penting, dan pendaftaran Calon Anggota Paskibra.
         </p>
-         {!config?.registrationActive && config?.registrationComingSoonText && (
+         {config?.showRegistrationButton && !config?.registrationActive && (
             <p className="text-yellow-600 dark:text-yellow-400 text-xs font-semibold animate-pulse mb-2">
-                {config.registrationComingSoonText}
+                {config.registrationComingSoonText || 'PENDAFTARAN SEGERA DIBUKA'}
             </p>
         )}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             {config?.showRegistrationButton && (
-                <>
-                    {config.registrationActive ? (
-                        <button
-                            onClick={() => setCurrentPage('login')}
-                            className="bg-brand-secondary text-white font-bold py-2 px-6 rounded-lg text-sm hover:bg-brand-accent transition-colors w-full sm:w-auto"
-                        >
-                            Daftar Sekarang
-                        </button>
-                    ) : (
-                        <button
-                            disabled
-                            className="bg-gray-300 text-gray-500 font-bold py-2 px-6 rounded-lg text-sm w-full sm:w-auto cursor-not-allowed flex items-center justify-center gap-2"
-                        >
-                            <i className="far fa-clock text-yellow-600"></i> Pendaftaran Belum Dibuka
-                        </button>
-                    )}
-                </>
+                <button
+                    onClick={() => setCurrentPage('login')}
+                    disabled={!config.registrationActive}
+                    className={`font-bold py-2 px-6 rounded-lg text-sm w-full sm:w-auto transition-colors duration-300 flex items-center justify-center gap-2
+                        ${config?.registrationActive 
+                            ? 'bg-brand-secondary text-white hover:bg-brand-accent' 
+                            : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300 cursor-not-allowed'
+                        }`
+                    }
+                >
+                    {config?.registrationActive ? 'Daftar Akun' : <><i className="far fa-clock"></i> Pendaftaran Belum Tersedia</>}
+                </button>
             )}
             {config?.loginActive && (
-                 <button 
+                 <button
                     onClick={() => setCurrentPage('login')}
-                    className="bg-brand-secondary text-white dark:bg-brand-light dark:text-brand-primary font-bold py-2 px-6 rounded-lg text-sm hover:bg-brand-accent dark:hover:bg-gray-200 transition-colors w-full sm:w-auto">
+                    className="bg-gray-200 dark:bg-gray-700 text-brand-primary dark:text-gray-200 font-bold py-2 px-6 rounded-lg text-sm hover:bg-gray-300 dark:hover:bg-gray-600 w-full sm:w-auto"
+                >
                     Masuk
                 </button>
             )}
@@ -177,7 +173,7 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage, user, onManagedButtonClick 
       <div className={`flex flex-col items-center justify-center ${user ? 'py-12' : 'min-h-[calc(100vh-5rem)]'} text-center p-4`}>
         <WelcomeSection />
       </div>
-      {announcements.length > 0 && (
+      {updates.length > 0 && (
           <div className="py-12 bg-brand-light dark:bg-brand-dark">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                   <div className="text-center mb-10">
@@ -185,21 +181,22 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage, user, onManagedButtonClick 
                       <p className="text-base text-gray-600 dark:text-gray-300 mt-2">Informasi dan highlight kegiatan terkini.</p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                      {announcements.slice(0, 3).map(announcement => (
-                          <div key={announcement.id} className="bg-white dark:bg-brand-primary rounded-lg shadow-lg overflow-hidden flex flex-col interactive-card">
-                              {announcement.thumbnailUrl && (
-                                <div className="aspect-[16/9] w-full">
+                      {updates.slice(0, 3).map(update => (
+                          <div key={update.id} className="bg-white dark:bg-brand-primary rounded-lg shadow-lg overflow-hidden flex flex-col interactive-card">
+                              {update.imageUrl && (
+                                <div className="w-full h-40 bg-gray-100 dark:bg-brand-dark">
                                     <img
-                                        src={announcement.thumbnailUrl}
-                                        alt={announcement.title}
+                                        src={update.imageUrl}
+                                        alt={update.title}
                                         className="w-full h-full object-cover"
                                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                                     />
                                 </div>
                               )}
                               <div className="p-6 flex flex-col flex-grow">
-                                  <h3 className="text-lg font-semibold text-brand-primary dark:text-white mt-2 mb-2">{announcement.title}</h3>
-                                  <p className="text-sm text-gray-600 dark:text-gray-300 flex-grow">{announcement.description}</p>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">{update.date}</p>
+                                  <h3 className="text-lg font-semibold text-brand-primary dark:text-white mt-2 mb-2">{update.title}</h3>
+                                  <p className="text-sm text-gray-600 dark:text-gray-300 flex-grow">{update.content}</p>
                               </div>
                           </div>
                       ))}

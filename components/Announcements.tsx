@@ -33,27 +33,36 @@ const DocumentCard: React.FC<{ doc: AnnouncementDocument }> = ({ doc }) => {
     };
 
     return (
-        <div className="bg-white dark:bg-brand-primary rounded-lg shadow-lg overflow-hidden flex flex-col interactive-card">
-            {doc.thumbnailUrl && (
-                <div className="aspect-[16/9] w-full">
-                    <img
-                        src={doc.thumbnailUrl}
-                        alt={doc.title}
-                        className="w-full h-full object-cover"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                    />
-                </div>
-            )}
-            <div className="p-6 flex flex-col flex-grow">
-                <h3 className="text-lg font-semibold text-brand-primary dark:text-white mb-2">{doc.title}</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-300 flex-grow">{doc.description || 'Klik untuk detail lebih lanjut.'}</p>
+        <div className="bg-brand-light dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md flex flex-col overflow-hidden transition-transform hover:scale-105 duration-300">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="font-semibold text-brand-dark dark:text-white">{doc.title}</h3>
             </div>
+            
+            <div className="p-4 flex-grow">
+                {doc.thumbnailUrl && (
+                     <div className="mb-4 h-40 bg-gray-200 dark:bg-gray-700 rounded-md">
+                        <img
+                            src={doc.thumbnailUrl}
+                            alt={doc.title}
+                            className="w-full h-full object-cover"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        />
+                    </div>
+                )}
+                {doc.description && (
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{doc.description}</p>
+                )}
+                 {(!doc.thumbnailUrl && !doc.description) && (
+                    <p className="text-sm text-gray-400 italic">Tidak ada detail tambahan.</p>
+                )}
+            </div>
+
             {doc.fileUrl && (
-                <div className="p-3 bg-gray-50 dark:bg-brand-dark/50 border-t border-gray-200 dark:border-gray-700 flex items-center justify-center gap-3 mt-auto">
-                     <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="flex-1 text-center bg-brand-secondary text-white px-4 py-2 rounded-md font-semibold hover:bg-brand-accent transition-colors text-sm">
+                <div className="p-3 bg-gray-100 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600 flex items-center justify-center gap-3 mt-auto">
+                     <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="flex-1 text-center bg-brand-secondary text-white px-4 py-2 rounded-md font-semibold hover:bg-blue-700 transition-colors text-sm">
                         <i className="fas fa-external-link-alt mr-2"></i>Buka
                     </a>
-                     <a href={downloadUrl} onClick={handleDownload} download className="flex-1 text-center bg-gray-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-gray-700 transition-colors text-sm">
+                     <a href={downloadUrl} onClick={handleDownload} download className="flex-1 text-center bg-gray-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-gray-800 transition-colors text-sm">
                         <i className="fas fa-download mr-2"></i>Download
                     </a>
                 </div>
@@ -85,10 +94,10 @@ const Announcements: React.FC = () => {
     }
     
     return (
-        <div className="bg-brand-light dark:bg-brand-dark min-h-screen py-10 px-4 sm:px-6 lg:px-8">
+        <div className="bg-gray-100 dark:bg-brand-dark min-h-screen py-10 px-4 sm:px-6 lg:px-8">
             <div className="max-w-7xl mx-auto">
                 <div className="text-center mb-12">
-                    <h1 className="text-4xl font-bold text-brand-primary dark:text-gray-100">Pengumuman</h1>
+                    <h1 className="text-4xl font-bold text-brand-dark dark:text-gray-100">Pengumuman</h1>
                     <p className="text-lg text-gray-600 dark:text-gray-300 mt-2">Informasi dan dokumen penting terkait proses seleksi.</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

@@ -6,6 +6,7 @@ type AdminNavItem = { page: AdminPage; label: string; icon: string; };
 
 const adminNavItems: AdminNavItem[] = [
   { page: 'dashboard', label: 'Dashboard', icon: 'fas fa-tachometer-alt' },
+  { page: 'highlights', label: 'Kelola Highlight', icon: 'fas fa-star' },
   { page: 'users', label: 'Kelola User', icon: 'fas fa-users-cog' },
   { page: 'stages', label: 'Kelola Tahapan', icon: 'fas fa-tasks' },
   { page: 'buttons', label: 'Kelola Tombol', icon: 'fas fa-plus-square' },

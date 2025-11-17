@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import type { PublicPage, User, ManagedButton } from '../types';
 import AnimatedLogo from './AnimatedLogo';
 
@@ -57,24 +57,9 @@ interface HeaderProps {
   managedButtons: ManagedButton[];
   onManagedButtonClick: (button: ManagedButton) => void;
   loginActive: boolean;
-  navigateToAuth: (isLogin: boolean) => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, toggleSidebar, user, onLogout, isSidebarOpen, isSelectionFinished, managedButtons, onManagedButtonClick, loginActive, navigateToAuth }) => {
-  const [isAuthMenuOpen, setIsAuthMenuOpen] = useState(false);
-  const authMenuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (authMenuRef.current && !authMenuRef.current.contains(event.target as Node)) {
-        setIsAuthMenuOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
+const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, toggleSidebar, user, onLogout, isSidebarOpen, isSelectionFinished, managedButtons, onManagedButtonClick, loginActive }) => {
   
   const getRole = (): 'user' | 'guest' => {
     return user ? 'user' : 'guest';
@@ -137,26 +122,9 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, toggleSide
             ) : (
                 <>
                 {loginActive && (
-                  <div className="relative" ref={authMenuRef}>
-                    <button 
-                      onClick={() => setIsAuthMenuOpen(prev => !prev)}
-                      className="bg-brand-secondary text-white dark:bg-brand-light dark:text-brand-primary font-bold py-1 px-4 rounded-md text-xs hover:bg-brand-accent dark:hover:bg-gray-200 transition-colors"
-                    >
-                      Masuk
-                    </button>
-                    {isAuthMenuOpen && (
-                      <div className={`auth-dropdown w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 ${isAuthMenuOpen ? 'animate-fade-in-scale' : 'animate-fade-out-scale'}`}>
-                        <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-                           <a href="#" onClick={(e) => { e.preventDefault(); navigateToAuth(false); setIsAuthMenuOpen(false); }} className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">
-                             <i className="fas fa-user-plus w-6"></i> Buat Akun Baru
-                          </a>
-                          <a href="#" onClick={(e) => { e.preventDefault(); navigateToAuth(true); setIsAuthMenuOpen(false); }} className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">
-                            <i className="fas fa-sign-in-alt w-6"></i> Masuk Akun
-                          </a>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <button onClick={() => setCurrentPage('login')} className="bg-brand-secondary text-white font-bold py-1 px-4 rounded-md text-xs hover:bg-brand-accent transition-colors">
+                      Daftar/Masuk
+                  </button>
                 )}
                 </>
             )}
