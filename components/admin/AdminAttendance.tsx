@@ -117,16 +117,18 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
                     setScanResult({ message: 'QR Code tidak valid.', type: 'error' });
                     return;
                 }
+                
+                const allRegs = await getRegistrations();
+                const userExists = !!allRegs[uid];
 
-                const userExists = attendees.some(att => att.uid === uid);
                 if (!userExists) {
-                    setScanResult({ message: 'Peserta tidak ditemukan di daftar lolos.', type: 'error' });
+                    setScanResult({ message: 'Peserta tidak ditemukan di database.', type: 'error' });
                     return;
                 }
                 
                 // Mark as present
                 await setDailyAttendanceStatus(selectedDate, uid, true);
-                const userToUpdate = attendees.find(att => att.uid === uid);
+                const userToUpdate = allRegs[uid];
                 setScanResult({ message: `Berhasil! ${userToUpdate?.fullName || ''} ditandai Hadir`, type: 'success' });
                 
                 fetchData();
@@ -145,7 +147,7 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
                 qrCodeScanner.clear().catch((error: any) => console.error("Failed to clear scanner.", error));
             }
         };
-    }, [scannerActive, showNotification, selectedDate, attendees, fetchData]);
+    }, [scannerActive, showNotification, selectedDate, fetchData]);
     
     const exportToPDF = () => {
         const doc = new jspdf.jsPDF();

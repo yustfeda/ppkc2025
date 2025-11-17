@@ -208,45 +208,53 @@ export const sendMessage = async (
         isGlobal,
     };
 
-    // If global message from admin, broadcast to all registered users
+    // If it's a broadcast message from an admin
     if (isGlobal && sender === 'admin') {
-        const allRegs = await getRegistrations();
-        for (const reg of Object.values(allRegs)) {
-            const userThreadRef = database.ref(`chats/${reg.uid}`);
-            const userMsgRef = userThreadRef.child('messages').push();
-            const globalMessageForUser: Message = { ...message, id: userMsgRef.key! };
-            
-            const metadataUpdate = {
-                userId: reg.uid,
-                userEmail: reg.email,
-                lastMessageText: text,
-                lastMessageTimestamp: message.timestamp,
-                unreadByAdmin: false, // It's from admin
-                unreadByUser: true, // User needs to read it
-            };
+        const registrations = await getRegistrations();
+        if (!registrations) return;
 
-            await userMsgRef.set(globalMessageForUser);
-            await userThreadRef.child('metadata').update(metadataUpdate);
-        }
-    } else {
-        // This is a personal message (either user->admin or admin->user)
-        const threadRef = database.ref(`chats/${userId}`);
-        const newMessageRef = threadRef.child('messages').push();
-        const finalMessage: Message = { ...message, id: newMessageRef.key! };
+        // Use a multi-location update (fan-out) for atomicity and efficiency
+        const fanOut: { [key: string]: any } = {};
         
-        const metadataUpdate = {
-            userId,
-            userEmail,
-            lastMessageText: text,
-            lastMessageTimestamp: message.timestamp,
-            unreadByAdmin: sender === 'user',
-            unreadByUser: sender === 'admin',
-        };
-
-        await newMessageRef.set(finalMessage);
-        await threadRef.child('metadata').update(metadataUpdate);
+        Object.values(registrations).forEach(reg => {
+            if (reg.uid) { // Ensure user has a valid UID
+                const newMessageRef = database.ref(`chats/${reg.uid}/messages`).push();
+                const messageId = newMessageRef.key!;
+                
+                fanOut[`/chats/${reg.uid}/messages/${messageId}`] = { ...message, id: messageId };
+                fanOut[`/chats/${reg.uid}/metadata`] = {
+                    userId: reg.uid,
+                    userEmail: reg.email,
+                    lastMessageText: `[Pesan Global] ${text}`,
+                    lastMessageTimestamp: message.timestamp,
+                    unreadByAdmin: false,
+                    unreadByUser: true,
+                };
+            }
+        });
+        
+        return database.ref().update(fanOut);
     }
+
+    // Otherwise, it's a personal message
+    const threadRef = database.ref(`chats/${userId}`);
+    const newMessageRef = threadRef.child('messages').push();
+    const finalMessage: Message = { ...message, id: newMessageRef.key! };
+    
+    const metadataUpdate = {
+        userId,
+        userEmail,
+        lastMessageText: text,
+        lastMessageTimestamp: message.timestamp,
+        unreadByAdmin: sender === 'user',
+        unreadByUser: sender === 'admin',
+    };
+
+    // Update both messages and metadata for the specific thread
+    await newMessageRef.set(finalMessage);
+    await threadRef.child('metadata').update(metadataUpdate);
 };
+
 
 export const deleteMessage = (userId: string, messageId: string): Promise<void> => {
     return database.ref(`chats/${userId}/messages/${messageId}`).remove();
