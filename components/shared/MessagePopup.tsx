@@ -19,6 +19,7 @@ interface MessagePopupProps {
 const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onClose, threads, allRegistrations = [], currentThread, onSendMessage, onDeleteMessage, onClearThread, onSelectThread, showConfirmation }) => {
     const [isClosing, setIsClosing] = useState(false);
     const [newMessage, setNewMessage] = useState('');
+    const [broadcastMessage, setBroadcastMessage] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [adminTab, setAdminTab] = useState<'inbox' | 'broadcast'>('inbox');
     const [userTab, setUserTab] = useState<'conversation' | 'inbox'>('conversation');
@@ -48,14 +49,17 @@ const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onCl
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newMessage.trim() || !user) return;
+        if (!user) return;
+
+        const isGlobal = isAdmin && adminTab === 'broadcast';
+        const textToSend = isGlobal ? broadcastMessage : newMessage;
+
+        if (!textToSend.trim()) return;
         
         let targetUserId: string | null = null;
-        const isGlobal = isAdmin && adminTab === 'broadcast';
-
         if (isAdmin) {
              if (isGlobal) {
-                targetUserId = user.uid; // Use admin UID as a placeholder for global send
+                targetUserId = user.uid; // Use admin UID as a placeholder
              } else {
                 targetUserId = currentThread?.userId || null;
              }
@@ -63,14 +67,18 @@ const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onCl
             targetUserId = user.uid;
         }
 
-        if (!targetUserId && !isGlobal) {
+        if (!targetUserId) {
             console.error("No target user to send message to.");
             return;
         }
 
         try {
-            await onSendMessage(targetUserId!, newMessage, isGlobal);
-            setNewMessage('');
+            await onSendMessage(targetUserId, textToSend, isGlobal);
+            if (isGlobal) {
+                setBroadcastMessage('');
+            } else {
+                setNewMessage('');
+            }
         } catch (error: any) {
             alert(error.message); // Show limit error
         }
@@ -217,13 +225,19 @@ const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onCl
                             <form onSubmit={handleSendMessage} className="flex-shrink-0 p-4 border-t dark:border-gray-700 flex items-center gap-3 bg-white dark:bg-gray-900">
                                 <input
                                     type="text"
-                                    value={newMessage}
-                                    onChange={(e) => setNewMessage(e.target.value)}
+                                    value={isAdmin && adminTab === 'broadcast' ? broadcastMessage : newMessage}
+                                    onChange={(e) => {
+                                        if (isAdmin && adminTab === 'broadcast') {
+                                            setBroadcastMessage(e.target.value);
+                                        } else {
+                                            setNewMessage(e.target.value);
+                                        }
+                                    }}
                                     placeholder={isAdmin && adminTab === 'broadcast' ? "Kirim pesan global..." : "Ketik pesan..."}
                                     className="flex-grow p-2 border rounded-full text-sm bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
                                     disabled={isAdmin && adminTab === 'inbox' && !currentThread}
                                 />
-                                <button type="submit" className="bg-brand-secondary text-white rounded-full w-9 h-9 flex items-center justify-center flex-shrink-0 disabled:bg-gray-400" disabled={isAdmin && adminTab === 'inbox' && !currentThread}>
+                                <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white rounded-full w-9 h-9 flex items-center justify-center flex-shrink-0 disabled:bg-gray-400" disabled={isAdmin && adminTab === 'inbox' && !currentThread}>
                                     <i className="fas fa-paper-plane"></i>
                                 </button>
                             </form>
