@@ -40,9 +40,30 @@ const StageDetailPopup: React.FC<{ stage: SelectionStage; status: StageStatus; o
         }
 
         switch(status) {
-            case 'pending': return { isInfo: false, icon: 'fa-solid fa-hourglass-half', color: 'text-yellow-500', title: 'Sedang Ditinjau', message: 'Pendaftaran Anda untuk tahap ini telah kami terima dan sedang dalam proses peninjauan oleh tim panitia. Mohon tunggu informasi selanjutnya.'};
-            case 'lolos': return { isInfo: false, icon: 'fa-solid fa-circle-check', color: 'text-green-500', title: 'Selamat!', message: `Anda dinyatakan lolos tahap "${stage.title}". Anda dapat melanjutkan ke tahapan seleksi berikutnya.`};
-            case 'gagal': return { isInfo: false, icon: 'fa-solid fa-circle-xmark', color: 'text-red-500', title: 'Mohon Maaf', message: `Anda dinyatakan gagal tahap "${stage.title}". Terima kasih atas partisipasi Anda. Tetap semangat!`};
+            case 'pending': 
+                return { 
+                    isInfo: false, 
+                    icon: 'fa-solid fa-hourglass-half', 
+                    color: 'text-yellow-500', 
+                    title: stage.popupContent?.pending?.title || 'Sedang Ditinjau', 
+                    message: stage.popupContent?.pending?.message || 'Pendaftaran Anda untuk tahap ini telah kami terima dan sedang dalam proses peninjauan oleh tim panitia. Mohon tunggu informasi selanjutnya.'
+                };
+            case 'lolos': 
+                return { 
+                    isInfo: false, 
+                    icon: 'fa-solid fa-circle-check', 
+                    color: 'text-green-500', 
+                    title: stage.popupContent?.lolos?.title || 'Selamat!', 
+                    message: stage.popupContent?.lolos?.message || `Anda dinyatakan lolos tahap "${stage.title}". Anda dapat melanjutkan ke tahapan seleksi berikutnya.`
+                };
+            case 'gagal': 
+                return { 
+                    isInfo: false, 
+                    icon: 'fa-solid fa-circle-xmark', 
+                    color: 'text-red-500', 
+                    title: stage.popupContent?.gagal?.title || 'Mohon Maaf', 
+                    message: stage.popupContent?.gagal?.message || `Anda dinyatakan gagal tahap "${stage.title}". Terima kasih atas partisipasi Anda. Tetap semangat!`
+                };
             default: return infoViewContent;
         }
     };

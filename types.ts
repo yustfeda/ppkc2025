@@ -16,6 +16,12 @@ export interface SelectionStage {
   formDescription?: string;
   formViewUrl?: string;
   formDownloadUrl?: string;
+  // New fields for custom popup content
+  popupContent?: {
+    pending: { title: string; message: string; };
+    lolos: { title: string; message: string; };
+    gagal: { title: string; message: string; };
+  };
 }
 
 export interface AnnouncementDocument {
@@ -60,6 +66,7 @@ export interface RegistrationData {
     email: string;
     medicalHistory: string;
     emergencyContact: string;
+    participantNumber?: string; // New field for unique participant number
     // New dynamic fields for document links and profile picture
     documentLinks?: Record<string, string>;
     profilePictureUrl?: string;

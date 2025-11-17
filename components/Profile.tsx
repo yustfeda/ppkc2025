@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import type { User, RegistrationData, FormField } from '../types';
-import { getUserRegistration, setData, deleteUserRegistration, logoutUser, getRegistrationFormFields } from '../services/firebase';
+import { getUserRegistration, setData, deleteUserRegistration, logoutUser, getRegistrationFormFields, getRegistrations } from '../services/firebase';
 
 interface ProfileProps {
     user: User;
@@ -103,11 +103,20 @@ const Profile: React.FC<ProfileProps> = ({ user, showNotification, showConfirmat
         showConfirmation(confirmationMessage, async () => {
             setIsSaving(true);
             try {
+                let participantNumber = registration?.participantNumber;
+                // Generate participant number only on first submission
+                if (!registration) {
+                    const allRegs = await getRegistrations();
+                    const count = allRegs ? Object.keys(allRegs).length : 0;
+                    participantNumber = `PKC-2025-${(count + 1).toString().padStart(5, '0')}`;
+                }
+
                  const dataToSave: RegistrationData = {
                     ...registration,
                     ...formData,
                     uid: user.uid,
                     email: user.email || '',
+                    participantNumber: participantNumber,
                     profilePictureUrl: profilePic || '',
                     status: registration?.status || 'Terkirim',
                     submittedAt: registration?.submittedAt || Date.now(),
@@ -162,6 +171,11 @@ const Profile: React.FC<ProfileProps> = ({ user, showNotification, showConfirmat
                     </div>
                     <h1 className="text-3xl font-bold text-brand-primary dark:text-white">{formData.fullName || "Profil & Pendaftaran"}</h1>
                     <p className="text-base text-gray-500 dark:text-gray-400">{formData.email}</p>
+                     {registration?.participantNumber && (
+                        <p className="text-sm font-semibold text-brand-secondary dark:text-brand-accent mt-2 bg-blue-100 dark:bg-blue-900/50 inline-block px-3 py-1 rounded-full">
+                            No. Peserta: {registration.participantNumber}
+                        </p>
+                     )}
                 </div>
                 
                 <form onSubmit={handleSave} className="bg-white dark:bg-brand-primary p-6 rounded-lg shadow-lg space-y-6">

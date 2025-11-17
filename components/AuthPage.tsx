@@ -14,10 +14,32 @@ const AuthPage: React.FC<AuthPageProps> = ({ setCurrentPage, showNotification, l
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    const [captchaVerified, setCaptchaVerified] = useState(false);
+    const [isVerifyingCaptcha, setIsVerifyingCaptcha] = useState(false);
+
+    const handleCaptchaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.checked) {
+            setIsVerifyingCaptcha(true);
+            setTimeout(() => {
+                setCaptchaVerified(true);
+                setIsVerifyingCaptcha(false);
+            }, 2000);
+        } else {
+            setCaptchaVerified(false);
+        }
+    };
+
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+
+        if (mode === 'register' && !captchaVerified) {
+            showNotification('Harap verifikasi bahwa Anda bukan robot.', 'error');
+            setLoading(false);
+            return;
+        }
+
         try {
             if (mode === 'login') {
                 await loginUser(email, password);
@@ -137,10 +159,22 @@ const AuthPage: React.FC<AuthPageProps> = ({ setCurrentPage, showNotification, l
                             Password
                         </label>
                     </div>
+
+                    {mode === 'register' && (
+                         <div className="p-3 bg-gray-100 dark:bg-brand-dark border dark:border-gray-600 rounded-md">
+                             <label className="flex items-center gap-3 cursor-pointer">
+                                 <input type="checkbox" onChange={handleCaptchaChange} disabled={isVerifyingCaptcha || captchaVerified} className="h-5 w-5 rounded text-brand-secondary focus:ring-brand-secondary" />
+                                 <span className="text-sm text-gray-700 dark:text-gray-200 font-medium">Saya bukan robot</span>
+                                 {isVerifyingCaptcha && <i className="fas fa-spinner fa-spin text-brand-secondary"></i>}
+                                 {captchaVerified && <i className="fas fa-check-circle text-green-500"></i>}
+                             </label>
+                         </div>
+                     )}
+
                     <div className="flex items-center justify-end">
                         <button
                             type="submit"
-                            disabled={loading}
+                            disabled={loading || (mode === 'register' && !captchaVerified)}
                             className="bg-brand-secondary hover:bg-brand-accent text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:bg-gray-400"
                         >
                             {loading ? <i className="fas fa-spinner fa-spin"></i> : (mode === 'login' ? 'Masuk' : 'Daftar')}

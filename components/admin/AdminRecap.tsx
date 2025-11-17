@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getRegistrationsRealtime, getSelectionStagesRealtime, deleteUserRegistration, getManagedButtonsRealtime, getAllFormSubmissionsRealtime, getRegistrationFormFieldsRealtime } from '../../services/firebase';
+import { getRegistrations, getSelectionStages, deleteUserRegistration, getManagedButtons, getAllFormSubmissions, getRegistrationFormFields } from '../../services/firebase';
 import type { RegistrationData, SelectionStage, AdminPageProps, ManagedButton, FormSubmission, FormField } from '../../types';
 
 declare const jspdf: any;
@@ -9,21 +9,27 @@ const AdminRecap: React.FC<AdminPageProps> = ({ showNotification, showConfirmati
     const [registrations, setRegistrations] = useState<RegistrationData[]>([]);
     const [stages, setStages] = useState<SelectionStage[]>([]);
     const [docFields, setDocFields] = useState<FormField[]>([]);
-    const [selectedStage, setSelectedStage] = useState<string>('all');
     const [loading, setLoading] = useState(true);
     const [formSubmissions, setFormSubmissions] = useState<{[buttonId: string]: FormSubmission[]}>({});
     const [recapButtons, setRecapButtons] = useState<ManagedButton[]>([]);
 
+    // Filter states
+    const [selectedStage, setSelectedStage] = useState<string>('all');
+    const [genderFilter, setGenderFilter] = useState<string>('all');
+    const [schoolFilter, setSchoolFilter] = useState<string>('all');
+    const [uniqueSchools, setUniqueSchools] = useState<string[]>([]);
+
     const fetchData = useCallback(() => {
         setLoading(true);
         Promise.all([
-            getRegistrationsRealtime(), 
-            getSelectionStagesRealtime(),
-            getManagedButtonsRealtime(),
-            getAllFormSubmissionsRealtime(),
-            getRegistrationFormFieldsRealtime()
+            getRegistrations(), 
+            getSelectionStages(),
+            getManagedButtons(),
+            getAllFormSubmissions(),
+            getRegistrationFormFields()
         ]).then(([regsData, stagesData, buttonsData, submissionsData, fieldsData]) => {
-            setRegistrations(regsData ? Object.values(regsData) : []);
+            const regsArray = regsData ? Object.values(regsData) : [];
+            setRegistrations(regsArray);
             setStages([{ id: 'administration', title: 'Lolos Administrasi', description: '', date: '' }, ...stagesData]);
             setDocFields(fieldsData || []);
             
@@ -38,6 +44,9 @@ const AdminRecap: React.FC<AdminPageProps> = ({ showNotification, showConfirmati
             }
             setFormSubmissions(submissionsByButton);
 
+            const schools = [...new Set(regsArray.map(r => r.originUnit))].sort();
+            setUniqueSchools(schools);
+
             setLoading(false);
         });
     }, []);
@@ -47,13 +56,14 @@ const AdminRecap: React.FC<AdminPageProps> = ({ showNotification, showConfirmati
     }, [fetchData]);
 
     const getFilteredRegistrations = () => {
-        if (selectedStage === 'all') {
-            return registrations;
-        }
-        if (selectedStage === 'administration') {
-            return registrations.filter(r => r.status === 'Lolos');
-        }
-        return registrations.filter(r => r.stageProgress?.[selectedStage]?.status === 'lolos');
+        return registrations
+            .filter(r => {
+                if (selectedStage === 'all') return true;
+                if (selectedStage === 'administration') return r.status === 'Lolos';
+                return r.stageProgress?.[selectedStage]?.status === 'lolos';
+            })
+            .filter(r => genderFilter === 'all' || r.gender === genderFilter)
+            .filter(r => schoolFilter === 'all' || r.originUnit === schoolFilter);
     };
     
     const handleDelete = async (uid: string) => {
@@ -77,16 +87,16 @@ const AdminRecap: React.FC<AdminPageProps> = ({ showNotification, showConfirmati
         doc.setFontSize(10);
         doc.text("Rekapitulasi Pendaftar Calon Paskibra Kecamatan Cileles Tahun 2025", 14, 16);
         doc.setFontSize(9);
-        doc.text(`Filter Tahapan: ${currentStageTitle}`, 14, 22);
+        doc.text(`Filter: ${currentStageTitle}, Gender: ${genderFilter}, Sekolah: ${schoolFilter}`, 14, 22);
         
         const docFieldLabels = docFields.map(f => f.label);
-        const head = [['No', 'Nama', 'TTL', 'Asal Satuan', 'Kontak Darurat', ...docFieldLabels]];
+        const head = [['No', 'No. Peserta', 'Nama', 'TTL', 'Asal Satuan', ...docFieldLabels]];
         const body = filteredData.map((r, i) => [
             i + 1,
+            r.participantNumber || 'N/A',
             r.fullName,
             `${r.birthPlace}, ${r.birthDate}`,
             r.originUnit,
-            r.emergencyContact,
             ...docFields.map(field => r.documentLinks?.[field.id] || '-')
         ]);
 
@@ -122,6 +132,7 @@ const AdminRecap: React.FC<AdminPageProps> = ({ showNotification, showConfirmati
     const exportToExcel = () => {
         const mainData = filteredData.map(r => {
             const row: Record<string, any> = {
+                'No. Peserta': r.participantNumber || 'N/A',
                 'Nama Lengkap': r.fullName,
                 'Tempat Lahir': r.birthPlace,
                 'Tanggal Lahir': r.birthDate,
@@ -167,26 +178,54 @@ const AdminRecap: React.FC<AdminPageProps> = ({ showNotification, showConfirmati
     };
 
 
-    const tableHeaders = ["#", "Nama", "TTL", "Jenis Kelamin", "Asal Satuan", "Email", "Riwayat Penyakit", "Kontak Darurat", ...docFields.map(f => f.label), "Aksi"];
+    const tableHeaders = ["#", "No. Peserta", "Nama", "TTL", "Jenis Kelamin", "Asal Satuan", "Email", ...docFields.map(f => f.label), "Aksi"];
 
     return (
         <div className="bg-white dark:bg-brand-primary p-6 rounded-lg shadow-md animate-fade-in">
             <h1 className="text-2xl font-bold text-brand-primary dark:text-white mb-4">Rekapitulasi Peserta</h1>
             
-            <div className="flex flex-col sm:flex-row gap-4 mb-4">
-                <select 
-                    value={selectedStage} 
-                    onChange={e => setSelectedStage(e.target.value)}
-                    className="p-2 border rounded text-sm w-full sm:w-auto bg-white dark:bg-brand-dark dark:border-gray-600 dark:text-white"
-                >
-                    <option value="all">Semua Pendaftar</option>
-                    {stages.map(stage => (
-                        <option key={stage.id} value={stage.id}>{stage.title}</option>
-                    ))}
-                </select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-4 items-end">
+                <div className="w-full">
+                    <label className="text-xs font-semibold dark:text-gray-300">Filter Tahapan</label>
+                    <select 
+                        value={selectedStage} 
+                        onChange={e => setSelectedStage(e.target.value)}
+                        className="p-2 border rounded text-sm w-full bg-white dark:bg-brand-dark dark:border-gray-600 dark:text-white"
+                    >
+                        <option value="all">Semua Pendaftar</option>
+                        {stages.map(stage => (
+                            <option key={stage.id} value={stage.id}>{stage.title}</option>
+                        ))}
+                    </select>
+                </div>
+                 <div className="w-full">
+                    <label className="text-xs font-semibold dark:text-gray-300">Filter Gender</label>
+                    <select 
+                        value={genderFilter} 
+                        onChange={e => setGenderFilter(e.target.value)}
+                        className="p-2 border rounded text-sm w-full bg-white dark:bg-brand-dark dark:border-gray-600 dark:text-white"
+                    >
+                        <option value="all">Semua</option>
+                        <option value="Laki-laki">Laki-laki</option>
+                        <option value="Perempuan">Perempuan</option>
+                    </select>
+                </div>
+                 <div className="w-full">
+                    <label className="text-xs font-semibold dark:text-gray-300">Filter Sekolah</label>
+                    <select 
+                        value={schoolFilter} 
+                        onChange={e => setSchoolFilter(e.target.value)}
+                        className="p-2 border rounded text-sm w-full bg-white dark:bg-brand-dark dark:border-gray-600 dark:text-white"
+                    >
+                        <option value="all">Semua Sekolah</option>
+                        {uniqueSchools.map(school => (
+                            <option key={school} value={school}>{school}</option>
+                        ))}
+                    </select>
+                </div>
                 <div className="flex gap-2">
-                    <button onClick={exportToPDF} className="bg-red-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-red-700"><i className="fas fa-file-pdf mr-2"></i>PDF</button>
-                    <button onClick={exportToExcel} className="bg-green-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-green-700"><i className="fas fa-file-excel mr-2"></i>Excel</button>
+                    <button onClick={exportToPDF} className="bg-red-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-red-700 w-full"><i className="fas fa-file-pdf mr-2"></i>PDF</button>
+                    <button onClick={exportToExcel} className="bg-green-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-green-700 w-full"><i className="fas fa-file-excel mr-2"></i>Excel</button>
                 </div>
             </div>
 
@@ -203,13 +242,12 @@ const AdminRecap: React.FC<AdminPageProps> = ({ showNotification, showConfirmati
                         ) : filteredData.length > 0 ? filteredData.map((reg, index) => (
                             <tr key={reg.uid}>
                                 <td className="p-2">{index + 1}</td>
+                                <td className="p-2 font-semibold">{reg.participantNumber || 'N/A'}</td>
                                 <td className="p-2 font-medium whitespace-nowrap">{reg.fullName}</td>
                                 <td className="p-2 whitespace-nowrap">{reg.birthPlace}, {reg.birthDate}</td>
                                 <td className="p-2">{reg.gender}</td>
                                 <td className="p-2">{reg.originUnit}</td>
                                 <td className="p-2">{reg.email}</td>
-                                <td className="p-2">{reg.medicalHistory || '-'}</td>
-                                <td className="p-2">{reg.emergencyContact}</td>
                                 {docFields.map(field => (
                                     <td key={field.id} className="p-2 max-w-xs truncate">
                                         <a href={reg.documentLinks?.[field.id]} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
@@ -224,7 +262,7 @@ const AdminRecap: React.FC<AdminPageProps> = ({ showNotification, showConfirmati
                                 </td>
                             </tr>
                         )) : (
-                             <tr><td colSpan={tableHeaders.length} className="p-4 text-center text-gray-500">Tidak ada data peserta untuk tahapan ini.</td></tr>
+                             <tr><td colSpan={tableHeaders.length} className="p-4 text-center text-gray-500">Tidak ada data peserta untuk filter ini.</td></tr>
                         )}
                     </tbody>
                 </table>
