@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getManagedButtons, setData } from '../../services/firebase';
+import { getManagedButtonsRealtime, setData } from '../../services/firebase';
 import type { ManagedButton, FormField, AdminPageProps } from '../../types';
 
 const AdminManageButtons: React.FC<AdminPageProps> = ({ showNotification, showConfirmation }) => {
@@ -8,7 +8,7 @@ const AdminManageButtons: React.FC<AdminPageProps> = ({ showNotification, showCo
 
     useEffect(() => {
         setLoading(true);
-        getManagedButtons().then(data => {
+        getManagedButtonsRealtime().then(data => {
             setButtons(data || []);
             setLoading(false);
         });

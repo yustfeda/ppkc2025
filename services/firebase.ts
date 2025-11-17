@@ -116,6 +116,31 @@ export const getData = async <T>(path: string, mockData?: T): Promise<T> => {
     }
 };
 
+// New realtime-only data fetching function for the admin panel.
+export const getRealtimeData = async <T>(path: string, mockDataForInit?: T): Promise<T> => {
+    try {
+        const snapshot = await database.ref(path).once('value');
+        const data = snapshot.val();
+        if (data !== null) {
+            // This logic handles Firebase returning an object of items when we expect an array
+            if (mockDataForInit && Array.isArray(mockDataForInit) && typeof data === 'object') {
+                return Object.values(data).filter(item => item !== null) as T;
+            }
+            return data;
+        }
+        // If the path doesn't exist in Firebase, initialize it with mock data
+        if (mockDataForInit !== undefined) {
+            await database.ref(path).set(mockDataForInit);
+        }
+        return mockDataForInit as T;
+    } catch (error) {
+        console.error(`[Firebase Realtime] Fetch failed for ${path}. Falling back to initial data.`, error);
+        return mockDataForInit as T;
+    }
+};
+
+
+// Original public getters using getData (with cache)
 export const getSelectionStages = () => getData<SelectionStage[]>('selectionStages', MOCK_STAGES);
 export const getAnnouncements = () => getData<AnnouncementDocument[]>('announcements', MOCK_ANNOUNCEMENTS);
 export const getAdminConfig = () => getData<AdminConfig>('config', MOCK_CONFIG);
@@ -127,6 +152,18 @@ export const getSupporters = () => getData<SupportersSection>('supporters', MOCK
 export const getAttendanceData = () => getData<{[uid: string]: { present: boolean }}>('attendance', {});
 export const getAllFormSubmissions = () => getData<{[buttonId: string]: {[submissionId: string]: FormSubmission}}>('formSubmissions', {});
 export const getRegistrationFormFields = () => getData<FormField[]>('registrationFormFields', MOCK_REG_FORM_FIELDS);
+
+// New admin getters using getRealtimeData (no cache)
+export const getSelectionStagesRealtime = () => getRealtimeData<SelectionStage[]>('selectionStages', MOCK_STAGES);
+export const getAnnouncementsRealtime = () => getRealtimeData<AnnouncementDocument[]>('announcements', MOCK_ANNOUNCEMENTS);
+export const getAdminConfigRealtime = () => getRealtimeData<AdminConfig>('config', MOCK_CONFIG);
+export const getHomeUpdatesRealtime = () => getRealtimeData<HomePageUpdate[]>('homeUpdates', MOCK_UPDATES);
+export const getRegistrationsRealtime = () => getRealtimeData<{[uid: string]: RegistrationData}>('registrations', {});
+export const getManagedButtonsRealtime = () => getRealtimeData<ManagedButton[]>('managedButtons', MOCK_BUTTONS);
+export const getSupportersRealtime = () => getRealtimeData<SupportersSection>('supporters', MOCK_SUPPORTERS_SECTION);
+export const getAttendanceDataRealtime = () => getRealtimeData<{[uid: string]: { present: boolean }}>('attendance', {});
+export const getAllFormSubmissionsRealtime = () => getRealtimeData<{[buttonId: string]: {[submissionId: string]: FormSubmission}}>('formSubmissions', {});
+export const getRegistrationFormFieldsRealtime = () => getRealtimeData<FormField[]>('registrationFormFields', MOCK_REG_FORM_FIELDS);
 
 
 // Data Writing

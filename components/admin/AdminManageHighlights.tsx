@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getHomeUpdates, setData, getSupporters } from '../../services/firebase';
+import { getHomeUpdatesRealtime, setData, getSupportersRealtime } from '../../services/firebase';
 import type { HomePageUpdate, AdminPageProps, Supporter, SupportersSection } from '../../types';
 
 const AdminManageHighlights: React.FC<AdminPageProps> = ({ showNotification, showConfirmation }) => {
@@ -11,8 +11,8 @@ const AdminManageHighlights: React.FC<AdminPageProps> = ({ showNotification, sho
     useEffect(() => {
         setLoading(true);
         Promise.all([
-            getHomeUpdates(),
-            getSupporters()
+            getHomeUpdatesRealtime(),
+            getSupportersRealtime()
         ]).then(([updatesData, supportersSectionData]) => {
             setUpdates(updatesData || []);
             setSupporters(supportersSectionData?.items || []);

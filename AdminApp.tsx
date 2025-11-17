@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import type { AdminPage, AdminPageProps, Notification, User, RegistrationData, ConfirmationState, AdminConfig } from './types';
-import { getAdminConfig, getRegistrations, onAuthChange } from './services/firebase';
+import { getAdminConfigRealtime, getRegistrationsRealtime, onAuthChange } from './services/firebase';
 
 import AdminLayout from './components/admin/AdminLayout';
 import AdminDashboard from './components/admin/AdminDashboard';
@@ -71,8 +71,8 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
     }, []);
 
     const fetchAdminData = useCallback(() => {
-        getAdminConfig().then(setAdminConfig);
-        getRegistrations().then(regs => {
+        getAdminConfigRealtime().then(setAdminConfig);
+        getRegistrationsRealtime().then(regs => {
             const pendingCount = Object.values(regs).filter(r => r.status === 'Terkirim').length;
             setNotificationBadge(pendingCount);
         });

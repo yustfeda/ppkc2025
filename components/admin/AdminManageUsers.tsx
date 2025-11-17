@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getRegistrations, updateRegistrationStatus, deleteUserRegistration, getSelectionStages, updateUserStageProgress } from '../../services/firebase';
+import { getRegistrationsRealtime, updateRegistrationStatus, deleteUserRegistration, getSelectionStagesRealtime, updateUserStageProgress } from '../../services/firebase';
 import type { RegistrationData, AdminPageProps, SelectionStage } from '../../types';
 
 interface AdminManageUsersProps extends AdminPageProps {
@@ -14,8 +14,8 @@ const AdminManageUsers: React.FC<AdminManageUsersProps> = ({ showNotification, s
     const fetchData = useCallback(() => {
         setLoading(true);
         Promise.all([
-            getRegistrations(),
-            getSelectionStages()
+            getRegistrationsRealtime(),
+            getSelectionStagesRealtime()
         ]).then(([regsData, stagesData]) => {
             const regsArray = regsData ? Object.values(regsData) : [];
             setRegistrations(regsArray.filter(reg => reg.status !== 'Belum Mendaftar').sort((a, b) => (b.submittedAt || 0) - (a.submittedAt || 0)));

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getRegistrations, getSelectionStages, getAttendanceData, setAttendanceStatus } from '../../services/firebase';
+import { getRegistrationsRealtime, getSelectionStagesRealtime, getAttendanceDataRealtime, setAttendanceStatus } from '../../services/firebase';
 import type { RegistrationData, SelectionStage, AdminPageProps } from '../../types';
 
 declare const Html5QrcodeScanner: any;
@@ -20,9 +20,9 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
         setLoading(true);
         try {
             const [regsData, stagesData, attendanceData] = await Promise.all([
-                getRegistrations(),
-                getSelectionStages(),
-                getAttendanceData()
+                getRegistrationsRealtime(),
+                getSelectionStagesRealtime(),
+                getAttendanceDataRealtime()
             ]);
             
             const stages = stagesData || [];

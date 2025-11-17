@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getSelectionStages, setData } from '../../services/firebase';
+import { getSelectionStagesRealtime, setData } from '../../services/firebase';
 import type { SelectionStage, AdminPageProps } from '../../types';
 
 const AdminManageStages: React.FC<AdminPageProps> = ({ showNotification, showConfirmation }) => {
@@ -8,7 +8,7 @@ const AdminManageStages: React.FC<AdminPageProps> = ({ showNotification, showCon
 
     const fetchData = useCallback(async () => {
         setLoading(true);
-        const stagesData = await getSelectionStages();
+        const stagesData = await getSelectionStagesRealtime();
         setStages(stagesData || []);
         setLoading(false);
     }, []);

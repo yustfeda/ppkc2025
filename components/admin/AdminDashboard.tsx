@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getRegistrations, getSelectionStages } from '../../services/firebase';
+import { getRegistrationsRealtime, getSelectionStagesRealtime } from '../../services/firebase';
 import type { RegistrationData, SelectionStage } from '../../types';
 
 const AdminDashboard: React.FC = () => {
@@ -11,7 +11,7 @@ const AdminDashboard: React.FC = () => {
         const calculateStats = async () => {
             setLoading(true);
             try {
-                const [regsData, stagesData] = await Promise.all([getRegistrations(), getSelectionStages()]);
+                const [regsData, stagesData] = await Promise.all([getRegistrationsRealtime(), getSelectionStagesRealtime()]);
                 setRegistrations(regsData ? Object.values(regsData) : []);
                 setStages(stagesData || []);
             } catch (error) {

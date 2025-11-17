@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getRegistrations, getSelectionStages, deleteUserRegistration, getManagedButtons, getAllFormSubmissions, getRegistrationFormFields } from '../../services/firebase';
+import { getRegistrationsRealtime, getSelectionStagesRealtime, deleteUserRegistration, getManagedButtonsRealtime, getAllFormSubmissionsRealtime, getRegistrationFormFieldsRealtime } from '../../services/firebase';
 import type { RegistrationData, SelectionStage, AdminPageProps, ManagedButton, FormSubmission, FormField } from '../../types';
 
 declare const jspdf: any;
@@ -17,11 +17,11 @@ const AdminRecap: React.FC<AdminPageProps> = ({ showNotification, showConfirmati
     const fetchData = useCallback(() => {
         setLoading(true);
         Promise.all([
-            getRegistrations(), 
-            getSelectionStages(),
-            getManagedButtons(),
-            getAllFormSubmissions(),
-            getRegistrationFormFields()
+            getRegistrationsRealtime(), 
+            getSelectionStagesRealtime(),
+            getManagedButtonsRealtime(),
+            getAllFormSubmissionsRealtime(),
+            getRegistrationFormFieldsRealtime()
         ]).then(([regsData, stagesData, buttonsData, submissionsData, fieldsData]) => {
             setRegistrations(regsData ? Object.values(regsData) : []);
             setStages([{ id: 'administration', title: 'Lolos Administrasi', description: '', date: '' }, ...stagesData]);
