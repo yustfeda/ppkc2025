@@ -48,6 +48,7 @@ const MOCK_CONFIG: AdminConfig = {
     proofOfPassing: {
       participantNumberAppName: 'PPKC',
       passingStatement: 'SELAMAT ANDA DINYATAKAN LOLOS SELEKSI PENERIMAAN PASKIBRA KECAMATAN CILELES TAHUN {year}',
+      logoUrl: '',
     }
 };
 

@@ -35,6 +35,7 @@ export interface AnnouncementDocument {
 export interface ProofOfPassingConfig {
     participantNumberAppName: string;
     passingStatement: string;
+    logoUrl?: string;
 }
 
 export interface AdminConfig {

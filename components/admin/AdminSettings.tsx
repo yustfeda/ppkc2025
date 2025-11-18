@@ -23,6 +23,17 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ onThemeChange, showNotifi
         });
     }, []);
 
+    const handleProofConfigChange = (field: keyof ProofOfPassingConfig, value: string) => {
+        if (!config) return;
+        setConfig(prevConfig => ({
+            ...prevConfig!,
+            proofOfPassing: {
+                ...(prevConfig!.proofOfPassing || { participantNumberAppName: '', passingStatement: '' }),
+                [field]: value,
+            },
+        }));
+    };
+
     const handleSave = async () => {
         if (config) {
             setLoading(true);
@@ -173,6 +184,46 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ onThemeChange, showNotifi
                 <button onClick={handleAddField} className="text-sm bg-green-600 text-white font-bold py-1 px-3 rounded-md hover:bg-green-700">
                     <i className="fas fa-plus mr-1"></i>Tambah Field Dokumen
                 </button>
+            </div>
+
+            <div className="space-y-6 p-4 border rounded-md dark:border-gray-700">
+                <h2 className="text-lg font-semibold text-brand-dark dark:text-white">Pengaturan Bukti Lolos</h2>
+                
+                <div className="relative input-group">
+                    <input 
+                        id="logoUrl"
+                        type="text"
+                        value={config.proofOfPassing?.logoUrl || ''}
+                        onChange={e => handleProofConfigChange('logoUrl', e.target.value)}
+                        className={inputClass}
+                        placeholder=" "
+                    />
+                     <label htmlFor="logoUrl" className={labelClass}>URL Logo (akan tampil di PDF)</label>
+                </div>
+                
+                <div className="relative input-group">
+                    <input 
+                        id="participantNumberAppName"
+                        type="text"
+                        value={config.proofOfPassing?.participantNumberAppName || ''}
+                        onChange={e => handleProofConfigChange('participantNumberAppName', e.target.value)}
+                        className={inputClass}
+                        placeholder=" "
+                    />
+                     <label htmlFor="participantNumberAppName" className={labelClass}>Singkatan Aplikasi (untuk No. Peserta)</label>
+                </div>
+
+                <div className="relative input-group">
+                    <textarea 
+                        id="passingStatement"
+                        value={config.proofOfPassing?.passingStatement || ''}
+                        onChange={e => handleProofConfigChange('passingStatement', e.target.value)}
+                        className={inputClass}
+                        placeholder=" "
+                        rows={3}
+                    />
+                     <label htmlFor="passingStatement" className={labelClass}>Pernyataan Kelulusan (Gunakan {'{year}'} untuk tahun)</label>
+                </div>
             </div>
 
             <div className="space-y-6 p-4 border rounded-md dark:border-gray-700">

@@ -5,6 +5,30 @@ import { getUserRegistration, getSelectionStages } from '../services/firebase';
 declare const QRCode: any;
 declare const jspdf: any;
 
+const imageUrlToBase64 = (url: string): Promise<string | null> => {
+    return new Promise(async (resolve) => {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                console.error(`Failed to fetch image: ${response.statusText}`);
+                resolve(null);
+                return;
+            }
+            const blob = await response.blob();
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                resolve(reader.result as string);
+            };
+            reader.onerror = () => {
+                resolve(null);
+            };
+            reader.readAsDataURL(blob);
+        } catch (error) {
+            resolve(null);
+        }
+    });
+};
+
 interface StatusProps {
     user: User;
     adminConfig: AdminConfig | null;
@@ -72,18 +96,50 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig, showNotification }) 
             const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
             let currentY = 20;
 
+            const logoUrl = adminConfig?.proofOfPassing?.logoUrl;
+            const logoData = logoUrl ? await imageUrlToBase64(logoUrl) : null;
+
             // --- Header ---
-            // Titles are now centered
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(18);
-            doc.setTextColor('#0B2447'); // Blue
-            doc.text("PANITIA SELEKSI", 105, currentY + 5, { align: 'center' });
-            
-            doc.setFontSize(14);
-            doc.setTextColor('#F57C00'); // Orange
-            doc.text("PURNA PASKIBRA KECAMATAN CILELES", 105, currentY + 12, { align: 'center' });
-            
-            currentY += 15 + 5; // move below header text
+            if (logoData) {
+                try {
+                    const logoHeight = 20;
+                    const logoWidth = 20; 
+                    const logoX = 20;
+                    doc.addImage(logoData, 'PNG', logoX, currentY, logoWidth, logoHeight);
+
+                    const textX = logoX + logoWidth + 5;
+                    const textY = currentY + 5; // Vertically center text with logo
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(18);
+                    doc.setTextColor('#0B2447');
+                    doc.text("PANITIA SELEKSI", textX, textY + 2);
+                    
+                    doc.setFontSize(14);
+                    doc.setTextColor('#F57C00');
+                    doc.text("PURNA PASKIBRA KECAMATAN CILELES", textX, textY + 9);
+                    
+                    currentY += logoHeight + 5;
+                } catch(e) {
+                    // Fallback to centered text if addImage fails
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(18);
+                    doc.setTextColor('#0B2447');
+                    doc.text("PANITIA SELEKSI", 105, currentY + 5, { align: 'center' });
+                    doc.setFontSize(14);
+                    doc.setTextColor('#F57C00');
+                    doc.text("PURNA PASKIBRA KECAMATAN CILELES", 105, currentY + 12, { align: 'center' });
+                    currentY += 15 + 5;
+                }
+            } else {
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(18);
+                doc.setTextColor('#0B2447');
+                doc.text("PANITIA SELEKSI", 105, currentY + 5, { align: 'center' });
+                doc.setFontSize(14);
+                doc.setTextColor('#F57C00');
+                doc.text("PURNA PASKIBRA KECAMATAN CILELES", 105, currentY + 12, { align: 'center' });
+                currentY += 15 + 5;
+            }
             
             // Line
             doc.setLineWidth(1);
@@ -109,8 +165,8 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig, showNotification }) 
             const dataStartY = currentY;
             const photoX = 30;
             const photoY = dataStartY;
-            const photoWidth = 30;  // Adjusted size
-            const photoHeight = 40; // Adjusted size
+            const photoWidth = 30;
+            const photoHeight = 40;
 
             // Photo (no border)
             if (profilePic) {
@@ -135,7 +191,7 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig, showNotification }) 
             ];
             
             const dataX = photoX + photoWidth + 15; // Positioned next to photo
-            let dataY = dataStartY; // Aligned with top of photo
+            let dataY = dataStartY + 3; // Adjust text block down slightly to align top with photo top
             const labelWidth = 40;
 
             doc.setFontSize(10);
