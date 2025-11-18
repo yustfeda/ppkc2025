@@ -34,13 +34,13 @@ const ProofOfPassingModal: React.FC<{
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[1001] p-4" onClick={handleClose}>
             <div 
-                className={`bg-brand-light dark:bg-gray-700 rounded-lg p-6 max-w-4xl w-full shadow-lg ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'}`}
+                className={`bg-brand-light dark:bg-gray-700 w-full h-full md:w-auto md:h-auto md:max-w-4xl md:max-h-[90vh] flex flex-col md:rounded-lg shadow-lg ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'}`}
                 onClick={e => e.stopPropagation()}
             >
-                <h3 className="text-lg font-semibold text-brand-dark dark:text-white mb-4">Atur Bukti Kelulusan</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[70vh]">
+                <h3 className="text-lg font-semibold text-brand-dark dark:text-white p-4 border-b dark:border-gray-600 flex-shrink-0">Atur Bukti Kelulusan</h3>
+                <div className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-6 p-4 overflow-y-auto">
                     {/* Editor Form */}
-                    <div className="space-y-4 overflow-y-auto pr-2">
+                    <div className="space-y-4">
                         <div className="p-3 bg-gray-100 dark:bg-gray-800/50 rounded-md space-y-3">
                             <h4 className="font-bold text-sm dark:text-white">Format No. Peserta</h4>
                             <div className="flex gap-2 items-center">
@@ -76,25 +76,31 @@ const ProofOfPassingModal: React.FC<{
                         </div>
                     </div>
                     {/* Preview */}
-                    <div className="bg-white p-4 rounded-md shadow-inner h-[400px] scale-90 origin-top overflow-hidden">
-                        <div className="border border-gray-300 h-full w-full flex flex-col items-center text-center p-2 text-black">
-                            {editingConfig.headerImageUrl && <img src={editingConfig.headerImageUrl} alt="Header Preview" className="max-w-full h-16 object-contain mb-2" onError={(e) => (e.currentTarget.style.display = 'none')} />}
-                            <h1 className="font-bold text-lg mt-2">{editingConfig.title}</h1>
+                    <div className="bg-white p-4 rounded-md shadow-inner h-[500px] md:h-full overflow-hidden flex items-center justify-center">
+                        <div className="border border-gray-300 h-full w-full flex flex-col items-center text-center p-2 text-black transform scale-90 origin-top">
+                            {editingConfig.headerImageUrl && <img src={editingConfig.headerImageUrl} alt="Header Preview" className="max-w-full h-20 object-contain mb-2" onError={(e) => (e.currentTarget.style.display = 'none')} />}
+                            <h1 className="font-bold text-xl mt-2">{editingConfig.title}</h1>
                             <div className="w-4/5 h-px bg-gray-400 my-2"></div>
-                            <p className="text-[8px] leading-tight px-4 my-2">{editingConfig.congratsText}</p>
-                            <div className="text-left text-[7px] border p-1 my-2">
-                                <p><strong>Nama:</strong> John Doe</p>
-                                <p><strong>No. Peserta:</strong> {editingConfig.participantNumberPrefix1}-{editingConfig.participantNumberPrefix2}-001</p>
+                            <p className="text-[10px] leading-tight px-4 my-2">{editingConfig.congratsText}</p>
+                             <div className="w-16 h-16 bg-gray-200 flex items-center justify-center text-gray-400 text-3xl my-2">
+                                <i className="fas fa-user"></i>
                             </div>
-                            <p className="text-[9px] font-bold leading-tight px-4 my-2">{editingConfig.proofText}</p>
+                            <div className="text-left text-[8px] border p-1 my-2 w-4/5">
+                                <p><strong>Nama Lengkap:</strong> John Doe</p>
+                                <p><strong>No. Peserta:</strong> {editingConfig.participantNumberPrefix1}-{editingConfig.participantNumberPrefix2}-001</p>
+                                <p><strong>TTL:</strong> Cileles, 01 Januari 2000</p>
+                                <p><strong>Jenis Kelamin:</strong> Laki-laki</p>
+                                <p><strong>Asal Satuan:</strong> SMAN 1 Cileles</p>
+                            </div>
+                            <p className="text-[10px] font-bold leading-tight px-4 my-2">{editingConfig.proofText}</p>
                             <div className="mt-auto text-gray-400">
-                                <i className="fas fa-qrcode text-4xl"></i>
-                                <p className="text-[6px]">QR Code Verifikasi</p>
+                                <i className="fas fa-qrcode text-5xl"></i>
+                                <p className="text-[7px]">QR Code Verifikasi</p>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div className="flex justify-end gap-3 mt-6">
+                <div className="flex-shrink-0 flex justify-end gap-3 p-4 border-t dark:border-gray-600">
                     <button onClick={handleClose} className="bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-2 px-4 rounded-md text-sm hover:bg-gray-300">Batal</button>
                     <button onClick={handleSave} className="bg-brand-secondary text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-brand-accent">Simpan</button>
                 </div>

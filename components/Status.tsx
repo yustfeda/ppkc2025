@@ -74,11 +74,10 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig }) => {
             // --- Header Image ---
             if (proofConfig.headerImageUrl) {
                 try {
-                    // Note: The image must be hosted on a server that allows CORS requests.
                     doc.addImage(proofConfig.headerImageUrl, 'JPEG', 15, currentY, 180, 40, undefined, 'FAST');
                     currentY += 40 + 10;
                 } catch (e) {
-                    console.error("Could not add header image to PDF. Check CORS policy on the image host.", e);
+                    console.error("Could not add header image to PDF.", e);
                 }
             }
 
@@ -89,7 +88,7 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig }) => {
             doc.text(proofConfig.title, 105, currentY, { align: 'center' });
             currentY += 10;
             doc.setLineWidth(0.5);
-            doc.line(30, currentY, 180, currentY); // separator
+            doc.line(30, currentY, 180, currentY);
             currentY += 10;
 
             // --- Congrats Text ---
@@ -99,23 +98,33 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig }) => {
             doc.text(congratsLines, 105, currentY, { align: 'center' });
             currentY += (congratsLines.length * 5) + 8;
 
+            // --- User Profile Picture ---
+             if (profilePic) {
+                try {
+                    // Center the profile picture
+                    doc.addImage(profilePic, 'JPEG', 85, currentY, 40, 40);
+                    currentY += 40 + 5;
+                } catch (e) {
+                    console.error("Could not add profile picture to PDF.", e);
+                }
+            }
+
             // --- User Details with AutoTable ---
             (doc as any).autoTable({
                 startY: currentY,
-                margin: { left: 30 },
+                margin: { left: 30, right: 30 },
                 theme: 'plain',
-                styles: { fontSize: 11, cellPadding: 2 },
-                head: [],
+                styles: { fontSize: 11, cellPadding: 2, halign: 'center' },
                 body: [
-                    ['Nama Lengkap', `: ${registration.fullName}`],
-                    ['No. Peserta', `: ${registration.participantNumber || 'N/A'}`],
-                    ['Jenis Kelamin', `: ${registration.gender}`],
-                    ['Tanggal Lahir', `: ${registration.birthPlace}, ${new Date(registration.birthDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`],
-                    ['Asal Satuan', `: ${registration.originUnit}`],
+                    [{ content: 'Nama Lengkap', styles: { fontStyle: 'bold' } }, { content: `: ${registration.fullName}` }],
+                    [{ content: 'No. Peserta', styles: { fontStyle: 'bold' } }, { content: `: ${registration.participantNumber || 'N/A'}` }],
+                    [{ content: 'Jenis Kelamin', styles: { fontStyle: 'bold' } }, { content: `: ${registration.gender}` }],
+                    [{ content: 'Tempat, Tanggal Lahir', styles: { fontStyle: 'bold' } }, { content: `: ${registration.birthPlace}, ${new Date(registration.birthDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}` }],
+                    [{ content: 'Asal Satuan', styles: { fontStyle: 'bold' } }, { content: `: ${registration.originUnit}` }],
                 ],
                 columnStyles: {
-                    0: { fontStyle: 'bold', cellWidth: 35 },
-                    1: { cellWidth: 'auto' },
+                    0: { halign: 'left', cellWidth: 50 },
+                    1: { halign: 'left' },
                 }
             });
             currentY = (doc as any).lastAutoTable.finalY + 10;
@@ -127,15 +136,15 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig }) => {
             doc.text(proofLines, 105, currentY, { align: 'center' });
             currentY += (proofLines.length * 6) + 15;
 
-
             // --- QR Code ---
             const qrData = JSON.stringify({ uid: user.uid, name: registration.fullName, number: registration.participantNumber });
             const qrCodeUrl = await QRCode.toDataURL(qrData, { width: 256, margin: 1 });
-            doc.addImage(qrCodeUrl, 'PNG', 75, currentY, 60, 60);
+            // Center the QR Code
+            doc.addImage(qrCodeUrl, 'PNG', 90, currentY, 30, 30);
 
             doc.setFontSize(10);
             doc.setTextColor(150, 150, 150);
-            doc.text('Pindai QR Code ini untuk verifikasi.', 105, currentY + 65, { align: 'center' });
+            doc.text('Pindai QR Code ini untuk verifikasi.', 105, currentY + 35, { align: 'center' });
 
             doc.save(`bukti-lolos-${registration.participantNumber}-${registration.fullName}.pdf`);
 

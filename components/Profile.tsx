@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import type { User, RegistrationData, FormField, AdminConfig } from '../types';
-import { getUserRegistration, setData, deleteUserRegistration, logoutUser, getRegistrationFormFields, getRegistrations, getAdminConfig } from '../services/firebase';
+import { getUserRegistration, setData, deleteUserRegistration, logoutUser, getRegistrationFormFields, getRegistrations } from '../services/firebase';
 
 interface ProfileProps {
     user: User;
     showNotification: (message: string, type: 'success' | 'error') => void;
     showConfirmation: (message: string, onConfirm: () => void) => void;
+    adminConfig: AdminConfig | null;
 }
 
-const Profile: React.FC<ProfileProps> = ({ user, showNotification, showConfirmation }) => {
+const Profile: React.FC<ProfileProps> = ({ user, showNotification, showConfirmation, adminConfig }) => {
     const [registration, setRegistration] = useState<RegistrationData | null>(null);
     const [formData, setFormData] = useState<Partial<RegistrationData>>({});
     const [docFields, setDocFields] = useState<FormField[]>([]);
@@ -106,7 +107,7 @@ const Profile: React.FC<ProfileProps> = ({ user, showNotification, showConfirmat
                 let participantNumber = registration?.participantNumber;
                 // Generate participant number only on first submission
                 if (!registration) {
-                    const [allRegs, adminConfig] = await Promise.all([getRegistrations(), getAdminConfig()]);
+                    const allRegs = await getRegistrations();
                     const count = allRegs ? Object.keys(allRegs).length : 0;
                     const prefix1 = adminConfig?.proofOfPassing?.participantNumberPrefix1 || 'PPKC25';
                     const prefix2 = adminConfig?.proofOfPassing?.participantNumberPrefix2 || '26';
