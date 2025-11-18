@@ -160,17 +160,15 @@ const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onCl
                             </h3>
                              {isAdmin && currentThread && onToggleMessagingPermission && (
                                 <div className="flex items-center gap-2 mt-1">
-                                    <label className="text-xs text-gray-500 dark:text-gray-400">Izinkan Pesan:</label>
-                                    <label htmlFor="messagingToggle" className="cursor-pointer relative inline-flex items-center">
-                                        <input 
-                                            type="checkbox" 
-                                            id="messagingToggle" 
-                                            className="sr-only peer" 
-                                            checked={messagingEnabled}
-                                            onChange={(e) => onToggleMessagingPermission(currentThread.userId, e.target.checked)}
-                                        />
-                                        <div className="w-9 h-5 bg-gray-300 rounded-full peer dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
-                                    </label>
+                                    <label className="text-xs text-gray-500 dark:text-gray-400">Izin Pesan:</label>
+                                    <select
+                                        value={String(messagingEnabled)}
+                                        onChange={(e) => onToggleMessagingPermission(currentThread.userId, e.target.value === 'true')}
+                                        className="p-1 border rounded-md text-xs bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                                    >
+                                        <option value="true">Izinkan</option>
+                                        <option value="false">Tolak</option>
+                                    </select>
                                 </div>
                             )}
                         </div>

@@ -106,6 +106,9 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
             // This now correctly uses the `allRegistrations` state to build the map.
             const regsMap = new Map(allRegistrations.map(r => [r.uid, r]));
 
+            // FIX: The `reduce` function had an untyped initial value, causing incorrect type inference for `threadsWithPermissions`.
+            // By adding a type assertion to the initial value and typing the accumulator, we ensure TypeScript knows the correct type,
+            // fixing property access errors on subsequent lines.
             const threadsWithPermissions = Object.entries(threads).reduce((acc: Record<string, ChatThread>, [userId, thread]) => {
                 const registration = regsMap.get(userId);
                 // FIX: Explicitly type `thread` to avoid `unknown` type issue during spread.
@@ -172,8 +175,6 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
                 updatedRegs[regIndex].messagingEnabled = isEnabled;
                 setAllRegistrations(updatedRegs);
             }
-
-            showNotification(`Izin pesan untuk pengguna telah ${isEnabled ? 'diaktifkan' : 'dinonaktifkan'}.`, 'success');
         } catch (error) {
             showNotification('Gagal mengubah izin pesan.', 'error');
         }
