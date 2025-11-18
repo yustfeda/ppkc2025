@@ -1,15 +1,113 @@
 import React, { useState, useEffect } from 'react';
 import { getAdminConfig, setData, resetAllRegistrations, getRegistrationFormFields } from '../../services/firebase';
-import type { AdminConfig, AdminPageProps, FormField } from '../../types';
+import type { AdminConfig, AdminPageProps, FormField, ProofOfPassingConfig } from '../../types';
 
 interface AdminSettingsProps extends AdminPageProps {
     onThemeChange: () => void;
 }
 
+const ProofOfPassingModal: React.FC<{
+    config: ProofOfPassingConfig;
+    onClose: () => void;
+    onSave: (newConfig: ProofOfPassingConfig) => void;
+}> = ({ config, onClose, onSave }) => {
+    const [isClosing, setIsClosing] = useState(false);
+    const [editingConfig, setEditingConfig] = useState(config);
+
+    const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(onClose, 300);
+    };
+
+    const handleSave = () => {
+        onSave(editingConfig);
+        handleClose();
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        setEditingConfig({ ...editingConfig, [e.target.name]: e.target.value });
+    };
+
+    const inputClass = "peer form-input p-2 border rounded text-sm w-full bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-brand-accent";
+    const labelClass = "form-label text-xs";
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[1001] p-4" onClick={handleClose}>
+            <div 
+                className={`bg-brand-light dark:bg-gray-700 rounded-lg p-6 max-w-4xl w-full shadow-lg ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'}`}
+                onClick={e => e.stopPropagation()}
+            >
+                <h3 className="text-lg font-semibold text-brand-dark dark:text-white mb-4">Atur Bukti Kelulusan</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[70vh]">
+                    {/* Editor Form */}
+                    <div className="space-y-4 overflow-y-auto pr-2">
+                        <div className="p-3 bg-gray-100 dark:bg-gray-800/50 rounded-md space-y-3">
+                            <h4 className="font-bold text-sm dark:text-white">Format No. Peserta</h4>
+                            <div className="flex gap-2 items-center">
+                                <div className="relative input-group flex-1">
+                                    <input name="participantNumberPrefix1" value={editingConfig.participantNumberPrefix1} onChange={handleChange} className={inputClass} placeholder=" " />
+                                    <label className={labelClass}>Prefix 1 (cth: PPKC25)</label>
+                                </div>
+                                <div className="relative input-group flex-1">
+                                    <input name="participantNumberPrefix2" value={editingConfig.participantNumberPrefix2} onChange={handleChange} className={inputClass} placeholder=" " />
+                                    <label className={labelClass}>Prefix 2 (cth: 26)</label>
+                                </div>
+                                <span className="text-gray-500 dark:text-gray-400">-001</span>
+                            </div>
+                        </div>
+                        <div className="p-3 bg-gray-100 dark:bg-gray-800/50 rounded-md space-y-3">
+                            <h4 className="font-bold text-sm dark:text-white">Konten Sertifikat</h4>
+                            <div className="relative input-group">
+                                <input name="title" value={editingConfig.title} onChange={handleChange} className={inputClass} placeholder=" " />
+                                <label className={labelClass}>Judul (cth: BUKTI KELULUSAN)</label>
+                            </div>
+                            <div className="relative input-group">
+                                <input name="headerImageUrl" value={editingConfig.headerImageUrl} onChange={handleChange} className={inputClass} placeholder=" " />
+                                <label className={labelClass}>URL Gambar Header (cth: Logo/Kop Surat)</label>
+                            </div>
+                            <div className="relative input-group">
+                                <textarea name="congratsText" value={editingConfig.congratsText} onChange={handleChange} className={inputClass} rows={3} placeholder=" " />
+                                <label className={labelClass}>Teks Ucapan Selamat</label>
+                            </div>
+                            <div className="relative input-group">
+                                <textarea name="proofText" value={editingConfig.proofText} onChange={handleChange} className={inputClass} rows={4} placeholder=" " />
+                                <label className={labelClass}>Teks Kalimat Kelulusan</label>
+                            </div>
+                        </div>
+                    </div>
+                    {/* Preview */}
+                    <div className="bg-white p-4 rounded-md shadow-inner h-[400px] scale-90 origin-top overflow-hidden">
+                        <div className="border border-gray-300 h-full w-full flex flex-col items-center text-center p-2 text-black">
+                            {editingConfig.headerImageUrl && <img src={editingConfig.headerImageUrl} alt="Header Preview" className="max-w-full h-16 object-contain mb-2" onError={(e) => (e.currentTarget.style.display = 'none')} />}
+                            <h1 className="font-bold text-lg mt-2">{editingConfig.title}</h1>
+                            <div className="w-4/5 h-px bg-gray-400 my-2"></div>
+                            <p className="text-[8px] leading-tight px-4 my-2">{editingConfig.congratsText}</p>
+                            <div className="text-left text-[7px] border p-1 my-2">
+                                <p><strong>Nama:</strong> John Doe</p>
+                                <p><strong>No. Peserta:</strong> {editingConfig.participantNumberPrefix1}-{editingConfig.participantNumberPrefix2}-001</p>
+                            </div>
+                            <p className="text-[9px] font-bold leading-tight px-4 my-2">{editingConfig.proofText}</p>
+                            <div className="mt-auto text-gray-400">
+                                <i className="fas fa-qrcode text-4xl"></i>
+                                <p className="text-[6px]">QR Code Verifikasi</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div className="flex justify-end gap-3 mt-6">
+                    <button onClick={handleClose} className="bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-2 px-4 rounded-md text-sm hover:bg-gray-300">Batal</button>
+                    <button onClick={handleSave} className="bg-brand-secondary text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-brand-accent">Simpan</button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const AdminSettings: React.FC<AdminSettingsProps> = ({ onThemeChange, showNotification, showConfirmation }) => {
     const [config, setConfig] = useState<AdminConfig | null>(null);
     const [docFields, setDocFields] = useState<FormField[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isProofModalOpen, setIsProofModalOpen] = useState(false);
 
     useEffect(() => {
         setLoading(true);
@@ -86,6 +184,12 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ onThemeChange, showNotifi
         setDocFields(docFields.filter(f => f.id !== id));
     };
     
+    const handleSaveProofConfig = (newProofConfig: ProofOfPassingConfig) => {
+        if (config) {
+            setConfig({ ...config, proofOfPassing: newProofConfig });
+        }
+    };
+
     if (loading || !config) {
         return <div className="text-center p-4"><i className="fas fa-spinner fa-spin text-2xl text-brand-secondary"></i></div>;
     }
@@ -95,6 +199,13 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ onThemeChange, showNotifi
     
     return (
         <div className="bg-white dark:bg-brand-primary p-6 rounded-lg shadow-md max-w-2xl mx-auto space-y-8">
+            {isProofModalOpen && config.proofOfPassing && (
+                <ProofOfPassingModal 
+                    config={config.proofOfPassing}
+                    onClose={() => setIsProofModalOpen(false)}
+                    onSave={handleSaveProofConfig}
+                />
+            )}
             <div>
                 <h1 className="text-2xl font-bold text-brand-primary dark:text-white">Pengaturan Global</h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Kontrol fitur utama dan tampilan aplikasi.</p>
@@ -149,6 +260,16 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ onThemeChange, showNotifi
                         {config.userMessagingActive ? 'Nonaktifkan' : 'Aktifkan'}
                     </button>
                 </div>
+            </div>
+
+            <div className="space-y-4 p-4 border rounded-md dark:border-gray-700">
+                <h2 className="text-lg font-semibold text-brand-dark dark:text-white">Bukti Kelulusan</h2>
+                 <button 
+                    onClick={() => setIsProofModalOpen(true)}
+                    className="w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-indigo-700"
+                >
+                    <i className="fas fa-certificate mr-2"></i>Atur Bukti Lolos
+                </button>
             </div>
 
              <div className="space-y-6 p-4 border rounded-md dark:border-gray-700">

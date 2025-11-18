@@ -32,6 +32,15 @@ export interface AnnouncementDocument {
   thumbnailUrl: string;
 }
 
+export interface ProofOfPassingConfig {
+    participantNumberPrefix1: string;
+    participantNumberPrefix2: string;
+    title: string;
+    headerImageUrl: string;
+    congratsText: string;
+    proofText: string;
+}
+
 export interface AdminConfig {
     registrationActive: boolean;
     loginActive: boolean;
@@ -40,6 +49,7 @@ export interface AdminConfig {
     registrationComingSoonText: string;
     appVersion: string;
     userMessagingActive: boolean; // Global messaging toggle
+    proofOfPassing?: ProofOfPassingConfig;
 }
 
 export interface HomePageUpdate {

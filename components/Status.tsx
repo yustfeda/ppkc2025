@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { User, RegistrationData, SelectionStage } from '../types';
+import type { User, RegistrationData, SelectionStage, AdminConfig } from '../types';
 import { getUserRegistration, getSelectionStages } from '../services/firebase';
 
 declare const QRCode: any;
@@ -7,9 +7,10 @@ declare const jspdf: any;
 
 interface StatusProps {
     user: User;
+    adminConfig: AdminConfig | null;
 }
 
-const Status: React.FC<StatusProps> = ({ user }) => {
+const Status: React.FC<StatusProps> = ({ user, adminConfig }) => {
     const [registration, setRegistration] = useState<RegistrationData | null>(null);
     const [allStages, setAllStages] = useState<SelectionStage[]>([]);
     const [loading, setLoading] = useState(true);
@@ -59,47 +60,49 @@ const Status: React.FC<StatusProps> = ({ user }) => {
     };
     
     const handleDownloadPdfProof = async () => {
-        if (!registration) {
-            alert('Data pendaftaran tidak ditemukan.');
+        if (!registration || !adminConfig?.proofOfPassing) {
+            alert('Data pendaftaran atau konfigurasi bukti lolos tidak ditemukan.');
             return;
         }
+        const proofConfig = adminConfig.proofOfPassing;
 
         try {
             const { jsPDF } = jspdf;
             const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+            let currentY = 15;
 
-            // --- Title ---
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(32);
-            doc.setTextColor('#FF8C00'); // Orange
-            doc.text('PPKC', 80, 25);
-            doc.setTextColor('#42A5F5'); // Blue
-            doc.text('2025', 115, 25);
-
-            // --- Subtitle ---
-            doc.setFontSize(18);
-            doc.setTextColor('#0B2447');
-            doc.text('BUKTI KELULUSAN SELEKSI', 105, 40, { align: 'center' });
-            doc.setDrawColor(200, 200, 200);
-            doc.line(30, 45, 180, 45); // line separator
-
-            // --- Profile Picture ---
-            if (profilePic) {
+            // --- Header Image ---
+            if (proofConfig.headerImageUrl) {
                 try {
-                    doc.addImage(profilePic, 'PNG', 30, 55, 40, 40);
-                    doc.setDrawColor(11, 36, 71);
-                    doc.setLineWidth(0.5);
-                    doc.rect(30, 55, 40, 40); // Border
+                    // Note: The image must be hosted on a server that allows CORS requests.
+                    doc.addImage(proofConfig.headerImageUrl, 'JPEG', 15, currentY, 180, 40, undefined, 'FAST');
+                    currentY += 40 + 10;
                 } catch (e) {
-                    console.error("Could not add profile picture to PDF.", e);
+                    console.error("Could not add header image to PDF. Check CORS policy on the image host.", e);
                 }
             }
 
+            // --- Title ---
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(18);
+            doc.setTextColor('#0B2447');
+            doc.text(proofConfig.title, 105, currentY, { align: 'center' });
+            currentY += 10;
+            doc.setLineWidth(0.5);
+            doc.line(30, currentY, 180, currentY); // separator
+            currentY += 10;
+
+            // --- Congrats Text ---
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(11);
+            const congratsLines = doc.splitTextToSize(proofConfig.congratsText, 170);
+            doc.text(congratsLines, 105, currentY, { align: 'center' });
+            currentY += (congratsLines.length * 5) + 8;
+
             // --- User Details with AutoTable ---
-            const detailsStartY = 55;
             (doc as any).autoTable({
-                startY: detailsStartY,
-                margin: { left: 80 },
+                startY: currentY,
+                margin: { left: 30 },
                 theme: 'plain',
                 styles: { fontSize: 11, cellPadding: 2 },
                 head: [],
@@ -115,16 +118,24 @@ const Status: React.FC<StatusProps> = ({ user }) => {
                     1: { cellWidth: 'auto' },
                 }
             });
+            currentY = (doc as any).lastAutoTable.finalY + 10;
+
+            // --- Proof Text ---
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(12);
+            const proofLines = doc.splitTextToSize(proofConfig.proofText, 170);
+            doc.text(proofLines, 105, currentY, { align: 'center' });
+            currentY += (proofLines.length * 6) + 15;
+
 
             // --- QR Code ---
             const qrData = JSON.stringify({ uid: user.uid, name: registration.fullName, number: registration.participantNumber });
             const qrCodeUrl = await QRCode.toDataURL(qrData, { width: 256, margin: 1 });
-            const qrY = (doc as any).lastAutoTable.finalY + 20 > 110 ? (doc as any).lastAutoTable.finalY + 20 : 110;
-            doc.addImage(qrCodeUrl, 'PNG', 75, qrY, 60, 60);
+            doc.addImage(qrCodeUrl, 'PNG', 75, currentY, 60, 60);
 
             doc.setFontSize(10);
             doc.setTextColor(150, 150, 150);
-            doc.text('Pindai QR Code ini untuk verifikasi kehadiran.', 105, qrY + 65, { align: 'center' });
+            doc.text('Pindai QR Code ini untuk verifikasi.', 105, currentY + 65, { align: 'center' });
 
             doc.save(`bukti-lolos-${registration.participantNumber}-${registration.fullName}.pdf`);
 
@@ -190,7 +201,7 @@ const Status: React.FC<StatusProps> = ({ user }) => {
 
                 <p className="text-center text-sm text-gray-600 dark:text-gray-300">
                     {isLolos 
-                        ? "Anda dinyatakan lolos seluruh tahapan seleksi menjadi anggota paskibra kec. cileles tahun 2026. Untuk info selanjutnya silahkan tunggu informasi dari penyelenggara."
+                        ? (adminConfig?.proofOfPassing?.proofText || "Anda dinyatakan lolos seluruh tahapan seleksi. Untuk info selanjutnya silahkan tunggu informasi dari penyelenggara.")
                         : "Anda dinyatakan tidak lolos dan tidak dapat melanjutkan ke tahap selanjutnya, jangan patah semangat! Hari esok kita tidak tahu menahu maka berjuanglah."
                     }
                 </p>

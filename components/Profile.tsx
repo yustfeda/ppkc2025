@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import type { User, RegistrationData, FormField } from '../types';
-import { getUserRegistration, setData, deleteUserRegistration, logoutUser, getRegistrationFormFields, getRegistrations } from '../services/firebase';
+import type { User, RegistrationData, FormField, AdminConfig } from '../types';
+import { getUserRegistration, setData, deleteUserRegistration, logoutUser, getRegistrationFormFields, getRegistrations, getAdminConfig } from '../services/firebase';
 
 interface ProfileProps {
     user: User;
@@ -106,9 +106,11 @@ const Profile: React.FC<ProfileProps> = ({ user, showNotification, showConfirmat
                 let participantNumber = registration?.participantNumber;
                 // Generate participant number only on first submission
                 if (!registration) {
-                    const allRegs = await getRegistrations();
+                    const [allRegs, adminConfig] = await Promise.all([getRegistrations(), getAdminConfig()]);
                     const count = allRegs ? Object.keys(allRegs).length : 0;
-                    participantNumber = `PKC-2025-${(count + 1).toString().padStart(5, '0')}`;
+                    const prefix1 = adminConfig?.proofOfPassing?.participantNumberPrefix1 || 'PPKC25';
+                    const prefix2 = adminConfig?.proofOfPassing?.participantNumberPrefix2 || '26';
+                    participantNumber = `${prefix1}-${prefix2}-${(count + 1).toString().padStart(3, '0')}`;
                 }
 
                  const dataToSave: RegistrationData = {
