@@ -294,7 +294,7 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
             case 'login': return <AuthPage setCurrentPage={navigate} showNotification={showNotification} loginActive={adminConfig?.loginActive} registrationActive={adminConfig?.registrationActive} />;
             case 'registration': return user ? <Registration user={user} setCurrentPage={navigate} showNotification={showNotification} showConfirmation={showConfirmation} registrationActive={adminConfig?.registrationActive} /> : <AuthPage setCurrentPage={navigate} showNotification={showNotification} loginActive={adminConfig?.loginActive} registrationActive={adminConfig?.registrationActive} />;
             case 'profile': return user ? <Profile user={user} showNotification={showNotification} showConfirmation={showConfirmation} adminConfig={adminConfig} /> : <AuthPage setCurrentPage={navigate} showNotification={showNotification} loginActive={adminConfig?.loginActive} registrationActive={adminConfig?.registrationActive}/>;
-            case 'status': return user ? <Status user={user} adminConfig={adminConfig} /> : <AuthPage setCurrentPage={navigate} showNotification={showNotification} loginActive={adminConfig?.loginActive} registrationActive={adminConfig?.registrationActive} />;
+            case 'status': return user ? <Status user={user} adminConfig={adminConfig} showNotification={showNotification} /> : <AuthPage setCurrentPage={navigate} showNotification={showNotification} loginActive={adminConfig?.loginActive} registrationActive={adminConfig?.registrationActive} />;
             case 'messages': return null; // Handled by popup
             default: return <Home setCurrentPage={navigate} user={user} onManagedButtonClick={handleManagedButtonClick} />;
         }

@@ -109,9 +109,10 @@ const Profile: React.FC<ProfileProps> = ({ user, showNotification, showConfirmat
                 if (!registration) {
                     const allRegs = await getRegistrations();
                     const count = allRegs ? Object.keys(allRegs).length : 0;
-                    const prefix1 = adminConfig?.proofOfPassing?.participantNumberPrefix1 || 'PPKC25';
-                    const prefix2 = adminConfig?.proofOfPassing?.participantNumberPrefix2 || '26';
-                    participantNumber = `${prefix1}-${prefix2}-${(count + 1).toString().padStart(3, '0')}`;
+                    const appName = adminConfig?.proofOfPassing?.participantNumberAppName || 'PPKC';
+                    const year = new Date().getFullYear();
+                    const sequence = (count + 1).toString().padStart(4, '0');
+                    participantNumber = `${appName}-${year}-${sequence}`;
                 }
 
                  const dataToSave: RegistrationData = {

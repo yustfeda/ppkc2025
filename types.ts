@@ -33,12 +33,8 @@ export interface AnnouncementDocument {
 }
 
 export interface ProofOfPassingConfig {
-    participantNumberPrefix1: string;
-    participantNumberPrefix2: string;
-    title: string;
-    headerImageUrl: string;
-    congratsText: string;
-    proofText: string;
+    participantNumberAppName: string;
+    passingStatement: string;
 }
 
 export interface AdminConfig {

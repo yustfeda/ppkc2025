@@ -9,7 +9,8 @@ const StageDetailPopup: React.FC<{
     status: StageStatus; 
     onClose: () => void;
     showNotification: (message: string, type: 'success' | 'error') => void;
-}> = ({ stage, status, onClose, showNotification }) => {
+    isFinalStage: boolean;
+}> = ({ stage, status, onClose, showNotification, isFinalStage }) => {
     const [isClosing, setIsClosing] = useState(false);
 
     const handleClose = () => {
@@ -41,6 +42,17 @@ const StageDetailPopup: React.FC<{
         formViewUrl?: string;
         formDownloadUrl?: string;
     } | null => {
+        
+        if (isFinalStage && status === 'lolos') {
+            return {
+                isInfo: false,
+                icon: 'fa-solid fa-circle-check',
+                color: 'text-green-500',
+                title: 'Selamat !',
+                message: 'Anda dinyatakan LOLOS pada tahap akhir seleksi, silahkan cetak bukti lolos anda pada menu "status kelulusan" untuk berikutnya verifikasi data',
+            };
+        }
+
         const infoViewContent = { 
             isInfo: true,
             icon: 'fa-solid fa-circle-info', 
@@ -268,7 +280,13 @@ const SelectionStages: React.FC<SelectionStagesProps> = ({ user, setCurrentPage,
     
     return (
         <div className="bg-brand-light dark:bg-brand-dark min-h-screen py-8 px-4 sm:px-6 lg:px-8">
-            {popupStage && <StageDetailPopup stage={popupStage} status={getStageProgress(popupStage, stages.findIndex(s => s.id === popupStage.id))} onClose={() => setPopupStage(null)} showNotification={showNotification} />}
+            {popupStage && <StageDetailPopup 
+                stage={popupStage} 
+                status={getStageProgress(popupStage, stages.findIndex(s => s.id === popupStage.id))} 
+                onClose={() => setPopupStage(null)} 
+                showNotification={showNotification} 
+                isFinalStage={stages.length > 0 && popupStage.id === stages[stages.length - 1].id}
+             />}
             <div className="max-w-7xl mx-auto">
                 <div className="text-center mb-10">
                     <h1 className="text-3xl font-bold text-brand-primary dark:text-gray-100">Tahapan Seleksi</h1>

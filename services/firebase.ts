@@ -46,12 +46,8 @@ const MOCK_CONFIG: AdminConfig = {
     appVersion: 'v1.1.11',
     userMessagingActive: true,
     proofOfPassing: {
-      participantNumberPrefix1: 'PPKC25',
-      participantNumberPrefix2: '26',
-      title: 'BUKTI KELULUSAN SELEKSI',
-      headerImageUrl: '',
-      congratsText: 'Dengan ini menyatakan bahwa peserta dengan data di bawah ini:',
-      proofText: 'Telah LULUS seluruh rangkaian seleksi dan berhak menjadi Calon Anggota Paskibra Kecamatan Cileles Tahun 2026.'
+      participantNumberAppName: 'PPKC',
+      passingStatement: 'SELAMAT ANDA DINYATAKAN LOLOS SELEKSI PENERIMAAN PASKIBRA KECAMATAN CILELES TAHUN {year}',
     }
 };
 
