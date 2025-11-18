@@ -67,9 +67,14 @@ const AdminManageUsers: React.FC<AdminManageUsersProps> = ({ showNotification, s
     };
 
     const handleDelete = async (uid: string) => {
-        await deleteUserRegistration(uid);
-        showNotification('Pendaftaran pengguna berhasil dihapus.', 'success');
-        fetchData();
+        try {
+            await deleteUserRegistration(uid);
+            showNotification('Pendaftaran pengguna berhasil dihapus.', 'success');
+            fetchData();
+        } catch (error) {
+            console.error("Failed to delete user registration:", error);
+            showNotification('Gagal menghapus pendaftaran pengguna.', 'error');
+        }
     };
 
     const handleRejectWithConfirm = (uid: string) => {
@@ -79,9 +84,9 @@ const AdminManageUsers: React.FC<AdminManageUsersProps> = ({ showNotification, s
         );
     };
 
-    const handleDeleteWithConfirm = (uid: string) => {
+    const handleDeleteWithConfirm = (uid: string, fullName: string) => {
         showConfirmation(
-            'Anda yakin ingin menghapus pendaftaran pengguna ini? Tindakan ini tidak dapat diurungkan.',
+            `Anda yakin ingin menghapus pendaftaran untuk "${fullName}"? Tindakan ini tidak dapat diurungkan.`,
             () => handleDelete(uid)
         );
     };
@@ -191,7 +196,7 @@ const AdminManageUsers: React.FC<AdminManageUsersProps> = ({ showNotification, s
                                 ))}
                                 <td className="p-3 align-top">
                                     <div className="flex gap-4 items-center">
-                                        <button onClick={() => handleDeleteWithConfirm(reg.uid)} className="text-gray-400 hover:text-red-500" aria-label="Hapus Pendaftaran">
+                                        <button onClick={() => handleDeleteWithConfirm(reg.uid, reg.fullName)} className="text-gray-400 hover:text-red-500" aria-label="Hapus Pendaftaran" title="Hapus Pendaftaran">
                                             <i className="fas fa-trash-alt"></i>
                                         </button>
                                     </div>

@@ -12,7 +12,7 @@ interface MessagePopupProps {
     onSendMessage: (targetUserId: string, text: string, isGlobal: boolean) => Promise<void>;
     onDeleteMessage: (targetUserId: string, messageId: string) => void;
     onClearThread: (targetUserId: string) => void;
-    onSelectThread?: (userId: string) => void;
+    onSelectThread?: (userId: string | null) => void;
     showConfirmation: (message: string, onConfirm: () => void) => void;
 }
 
@@ -132,30 +132,37 @@ const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onCl
     const currentThreadName = allRegistrations.find(r => r.uid === currentThread?.userId)?.fullName || currentThread?.userEmail;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[1000] p-4" onClick={handleClose}>
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[1000] p-0 sm:p-4" onClick={handleClose}>
             <div 
-                className={`bg-brand-light dark:bg-brand-dark rounded-lg shadow-xl w-full max-w-4xl h-[80vh] flex flex-col ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'}`}
+                className={`bg-brand-light dark:bg-brand-dark shadow-xl w-full h-full sm:rounded-lg sm:max-w-4xl sm:h-[80vh] flex flex-col ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'}`}
                 onClick={e => e.stopPropagation()}
             >
                 <header className="flex-shrink-0 p-4 border-b dark:border-gray-700 flex justify-between items-center">
-                    <div>
-                        <h3 className="text-lg font-semibold text-brand-dark dark:text-white">
-                            {isAdmin ? `Pesan Admin: ${currentThreadName || 'Pilih Percakapan'}` : 'Pesan ke Admin'}
-                        </h3>
-                        {((!isAdmin && currentThread) || (isAdmin && currentThread)) && (
-                            <button onClick={handleClearConversation} className="text-xs text-red-500 hover:underline">
-                                <i className="fas fa-eraser mr-1"></i>Hapus Percakapan
+                    <div className="flex items-center gap-3">
+                         {isAdmin && currentThread && (
+                            <button onClick={() => onSelectThread?.(null)} className="md:hidden text-gray-400 hover:text-white p-2 -ml-2">
+                                <i className="fas fa-arrow-left"></i>
                             </button>
                         )}
+                        <div>
+                            <h3 className="text-lg font-semibold text-brand-dark dark:text-white">
+                                {isAdmin ? `Pesan Admin: ${currentThreadName || 'Pilih Percakapan'}` : 'Pesan ke Admin'}
+                            </h3>
+                            {((!isAdmin && currentThread) || (isAdmin && currentThread)) && (
+                                <button onClick={handleClearConversation} className="text-xs text-red-500 hover:underline">
+                                    <i className="fas fa-eraser mr-1"></i>Hapus Percakapan
+                                </button>
+                            )}
+                        </div>
                     </div>
                     <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
                         <i className="fas fa-times text-xl"></i>
                     </button>
                 </header>
 
-                <div className="flex-grow flex overflow-hidden">
+                <div className="flex-grow md:flex overflow-hidden">
                     {isAdmin && (
-                        <aside className="w-1/3 border-r dark:border-gray-700 flex flex-col">
+                        <aside className={`w-full md:w-1/3 border-r dark:border-gray-700 flex flex-col ${currentThread ? 'hidden md:flex' : 'flex'}`}>
                             <div className="p-2 border-b dark:border-gray-700">
                                 <div className="flex bg-gray-200 dark:bg-gray-900 rounded-md p-1">
                                     <button onClick={() => setAdminTab('inbox')} className={`flex-1 text-sm p-1 rounded-md ${adminTab === 'inbox' ? 'bg-white dark:bg-gray-700 shadow' : ''}`}>Kotak Masuk</button>
@@ -185,10 +192,17 @@ const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onCl
                                 </div>
                                 </>
                             )}
+                             {adminTab === 'broadcast' && (
+                                <div className="p-4 text-center text-gray-500 flex-grow flex flex-col items-center justify-center">
+                                    <i className="fas fa-bullhorn text-4xl mb-3"></i>
+                                    <p className="font-semibold text-sm">Mode Pesan Global</p>
+                                    <p className="text-xs">Pesan yang Anda kirim di sini akan diterima oleh semua pengguna terdaftar.</p>
+                                </div>
+                            )}
                         </aside>
                     )}
                     
-                    <main className="flex-1 flex flex-col">
+                    <main className={`flex-1 flex flex-col ${isAdmin && !currentThread ? 'hidden md:flex' : 'flex'}`}>
                         {!isAdmin && (
                             <div className="flex-shrink-0 p-2 border-b dark:border-gray-700">
                                 <div className="flex bg-gray-200 dark:bg-gray-900 rounded-md p-1">
@@ -206,6 +220,13 @@ const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onCl
                             </div>
                            ) : (
                                 <>
+                                {messagesToDisplay.length === 0 && (
+                                    <div className="text-center p-4 text-gray-500 h-full flex items-center justify-center">
+                                        <p className="text-sm">
+                                            {isAdmin ? 'Pilih percakapan untuk memulai' : 'Belum ada pesan.'}
+                                        </p>
+                                    </div>
+                                )}
                                 {messagesToDisplay.map((msg: Message) => (
                                     <div key={msg.id} className={`flex items-end gap-2 group ${msg.sender === (isAdmin ? 'admin' : 'user') ? 'justify-end' : 'justify-start'}`}>
                                         {msg.sender === (isAdmin ? 'admin' : 'user') && <button onClick={() => handleDelete(msg)} className="text-gray-400 hover:text-red-500 text-xs opacity-0 group-hover:opacity-100"><i className="fas fa-trash"></i></button>}

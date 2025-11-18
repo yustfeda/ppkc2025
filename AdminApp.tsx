@@ -113,9 +113,11 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
         };
     }, [fetchAdminData]);
 
-    const handleSelectThread = (userId: string) => {
+    const handleSelectThread = (userId: string | null) => {
         setSelectedThreadId(userId);
-        markThreadAsRead(userId, 'admin');
+        if (userId) {
+            markThreadAsRead(userId, 'admin');
+        }
     };
 
     const handleSendMessage = async (targetUserId: string, text: string, isGlobal: boolean) => {
