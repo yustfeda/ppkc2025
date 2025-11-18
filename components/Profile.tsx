@@ -27,15 +27,11 @@ const Profile: React.FC<ProfileProps> = ({ user, showNotification, showConfirmat
             ]);
             
             const storedPic = localStorage.getItem(`profilePic_${user.uid}`);
+            setProfilePic(storedPic);
             
             if (data) {
                 setRegistration(data);
                 setFormData(data);
-                if (storedPic) {
-                    setProfilePic(storedPic);
-                } else if (data.profilePictureUrl) {
-                    setProfilePic(data.profilePictureUrl);
-                }
             } else {
                  setFormData({
                     uid: user.uid,
@@ -49,7 +45,6 @@ const Profile: React.FC<ProfileProps> = ({ user, showNotification, showConfirmat
                     emergencyContact: '',
                     documentLinks: {}
                 });
-                if (storedPic) setProfilePic(storedPic);
             }
             setDocFields(fieldsData || []);
         } catch(e) {
@@ -89,7 +84,6 @@ const Profile: React.FC<ProfileProps> = ({ user, showNotification, showConfirmat
                 }
                 localStorage.setItem(`profilePic_${user.uid}`, base64String);
                 setProfilePic(base64String);
-                setFormData(prev => ({ ...prev, profilePictureUrl: base64String }));
             };
             reader.readAsDataURL(file);
         }
@@ -97,6 +91,32 @@ const Profile: React.FC<ProfileProps> = ({ user, showNotification, showConfirmat
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        const requiredMainFields: {key: keyof RegistrationData, label: string}[] = [
+            {key: 'fullName', label: 'Nama Lengkap'},
+            {key: 'originUnit', label: 'Asal Satuan'},
+            {key: 'birthPlace', label: 'Tempat Lahir'},
+            {key: 'birthDate', label: 'Tanggal Lahir'},
+            {key: 'emergencyContact', label: 'Kontak Darurat'},
+        ];
+
+        for (const field of requiredMainFields) {
+            if (!formData[field.key]) {
+                showNotification(`Field '${field.label}' wajib diisi.`, 'error');
+                return;
+            }
+        }
+        for (const docField of docFields) {
+            if (docField.required && (!formData.documentLinks || !formData.documentLinks[docField.id])) {
+                showNotification(`Dokumen '${docField.label}' wajib diisi.`, 'error');
+                return;
+            }
+        }
+        if (!profilePic) {
+             showNotification('Foto Profil wajib diunggah.', 'error');
+             return;
+        }
+
         const confirmationMessage = registration 
             ? "Anda yakin ingin menyimpan perubahan pada profil Anda?"
             : "Pastikan semua data sudah benar. Setelah dikirim, beberapa data tidak dapat diubah. Lanjutkan pendaftaran?";
@@ -104,33 +124,39 @@ const Profile: React.FC<ProfileProps> = ({ user, showNotification, showConfirmat
         showConfirmation(confirmationMessage, async () => {
             setIsSaving(true);
             try {
-                let participantNumber = registration?.participantNumber;
-                // Generate participant number only on first submission
-                if (!registration) {
+                let finalParticipantNumber = registration?.participantNumber || '';
+                
+                if (!finalParticipantNumber) {
                     const allRegs = await getRegistrations();
                     const count = allRegs ? Object.keys(allRegs).length : 0;
                     const appName = adminConfig?.proofOfPassing?.participantNumberAppName || 'PPKC';
-                    const year = new Date().getFullYear();
+                    const year = new Date().getFullYear().toString().slice(-2);
                     const sequence = (count + 1).toString().padStart(4, '0');
-                    participantNumber = `${appName}-${year}-${sequence}`;
+                    finalParticipantNumber = `${appName}-${year}-${sequence}`;
                 }
 
-                 const dataToSave: RegistrationData = {
-                    ...registration,
-                    ...formData,
+                const dataToSave: RegistrationData = {
                     uid: user.uid,
                     email: user.email || '',
-                    participantNumber: participantNumber,
-                    profilePictureUrl: profilePic || '',
+                    fullName: formData.fullName || '',
+                    birthPlace: formData.birthPlace || '',
+                    birthDate: formData.birthDate || '',
+                    gender: formData.gender || 'Laki-laki',
+                    originUnit: formData.originUnit || '',
+                    medicalHistory: formData.medicalHistory || '',
+                    emergencyContact: formData.emergencyContact || '',
+                    documentLinks: formData.documentLinks || {},
+                    participantNumber: finalParticipantNumber,
                     status: registration?.status || 'Terkirim',
                     submittedAt: registration?.submittedAt || Date.now(),
                     stageProgress: registration?.stageProgress || {},
-                } as RegistrationData;
+                };
 
                 await setData(`registrations/${user.uid}`, dataToSave);
-                showNotification(registration ? 'Profil berhasil diperbarui.' : 'Pendaftaran berhasil dikirim!', 'success');
-                fetchData(); // Refresh data to show saved state
+                showNotification(registration ? 'Perubahan berhasil di simpan.' : 'Pendaftaran berhasil dikirim!', 'success');
+                fetchData();
             } catch (error) {
+                console.error("Save error:", error);
                 showNotification('Gagal menyimpan perubahan.', 'error');
             } finally {
                 setIsSaving(false);
@@ -186,7 +212,7 @@ const Profile: React.FC<ProfileProps> = ({ user, showNotification, showConfirmat
                     <h2 className="text-xl font-semibold text-brand-primary dark:text-white border-b dark:border-gray-700 pb-2 mb-4">Data Diri</h2>
                     
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Upload Foto Profil</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Upload Foto Profil <span className="text-red-500">*</span></label>
                         <div className="mt-1 flex items-center">
                             <span className="inline-block h-20 w-20 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700">
                                 {profilePic ? (

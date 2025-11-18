@@ -32,6 +32,7 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig, showNotification }) 
                 if (storedPic) {
                     setProfilePic(storedPic);
                 } else if (regData?.profilePictureUrl) {
+                    // Fallback for old data, new data won't have this
                     setProfilePic(regData.profilePictureUrl);
                 }
             } catch (err) {
@@ -72,9 +73,7 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig, showNotification }) 
             let currentY = 20;
 
             // --- Header ---
-            // Logo placeholder removed for a cleaner look.
-
-            // Titles
+            // Titles are now centered
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(18);
             doc.setTextColor('#0B2447'); // Blue
@@ -92,16 +91,14 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig, showNotification }) 
             currentY += 15;
 
             // --- Main Title ---
+            const passingStatement = adminConfig?.proofOfPassing?.passingStatement || 'SELAMAT ANDA DINYATAKAN LOLOS SELEKSI PENERIMAAN PASKIBRA KECAMATAN CILELES TAHUN {year}';
+            const finalStatement = passingStatement.replace('{year}', new Date().getFullYear().toString());
+            
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(14);
             doc.setTextColor(0, 0, 0);
-            doc.text("SELAMAT !", 105, currentY, { align: 'center' });
-            currentY += 7;
-
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(12);
-            doc.text("ANDA DINYATAKAN LOLOS SELEKSI", 105, currentY, { align: 'center' });
-            currentY += 10;
+            doc.text(finalStatement, 105, currentY, { align: 'center', maxWidth: 170 });
+            currentY += 15;
             
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(10);
@@ -112,21 +109,20 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig, showNotification }) 
             const dataStartY = currentY;
             const photoX = 30;
             const photoY = dataStartY;
-            const photoWidth = 40;
-            const photoHeight = 50;
+            const photoWidth = 30;  // Adjusted size
+            const photoHeight = 40; // Adjusted size
 
-            // Border for photo removed.
+            // Photo (no border)
             if (profilePic) {
                 try {
-                    // Determine image type from base64 string
                     const imageType = profilePic.startsWith('data:image/jpeg') ? 'JPEG' : 'PNG';
                     doc.addImage(profilePic, imageType, photoX, photoY, photoWidth, photoHeight);
                 } catch (e) {
                     console.error("Could not add profile picture to PDF.", e);
-                    doc.text("Foto user", photoX + photoWidth / 2, photoY + photoHeight / 2, { align: 'center', baseline: 'middle' });
+                    doc.text("Foto", photoX + photoWidth / 2, photoY + photoHeight / 2, { align: 'center', baseline: 'middle' });
                 }
             } else {
-                 doc.text("Foto user", photoX + photoWidth / 2, photoY + photoHeight / 2, { align: 'center', baseline: 'middle' });
+                 doc.text("Foto", photoX + photoWidth / 2, photoY + photoHeight / 2, { align: 'center', baseline: 'middle' });
             }
 
             // Data
@@ -138,8 +134,8 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig, showNotification }) 
                 ["JENIS KELAMIN", registration.gender],
             ];
             
-            const dataX = 85;
-            let dataY = dataStartY + 5;
+            const dataX = photoX + photoWidth + 15; // Positioned next to photo
+            let dataY = dataStartY; // Aligned with top of photo
             const labelWidth = 40;
 
             doc.setFontSize(10);
@@ -152,13 +148,13 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig, showNotification }) 
                 dataY += 8;
             });
             
-            currentY = dataStartY + photoHeight + 30; // Position below the info section
+            currentY = dataStartY + photoHeight + 20; // Position below the info section
 
             // --- QR Code ---
             const qrBoxSize = 40;
             const qrBoxX = (210 - qrBoxSize) / 2;
             
-            // Border for QR code removed.
+            // QR code (no border)
             const qrData = JSON.stringify({ uid: user.uid, name: registration.fullName, number: registration.participantNumber });
             const qrCodeUrl = await QRCode.toDataURL(qrData, { width: 256, margin: 1 });
             doc.addImage(qrCodeUrl, 'PNG', qrBoxX, currentY, qrBoxSize, qrBoxSize);

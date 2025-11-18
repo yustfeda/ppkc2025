@@ -6,74 +6,10 @@ interface AdminSettingsProps extends AdminPageProps {
     onThemeChange: () => void;
 }
 
-const ProofOfPassingModal: React.FC<{
-    config: ProofOfPassingConfig;
-    onClose: () => void;
-    onSave: (newConfig: ProofOfPassingConfig) => void;
-}> = ({ config, onClose, onSave }) => {
-    const [isClosing, setIsClosing] = useState(false);
-    const [editingConfig, setEditingConfig] = useState(config);
-
-    const handleClose = () => {
-        setIsClosing(true);
-        setTimeout(onClose, 300);
-    };
-
-    const handleSave = () => {
-        onSave(editingConfig);
-        handleClose();
-    };
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        setEditingConfig({ ...editingConfig, [e.target.name]: e.target.value });
-    };
-
-    const inputClass = "peer form-input p-2 border rounded text-sm w-full bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-brand-accent";
-    const labelClass = "form-label text-xs";
-
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[1001] p-4" onClick={handleClose}>
-            <div 
-                className={`bg-brand-light dark:bg-gray-700 w-full max-w-lg md:rounded-lg shadow-lg ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'}`}
-                onClick={e => e.stopPropagation()}
-            >
-                <h3 className="text-lg font-semibold text-brand-dark dark:text-white p-4 border-b dark:border-gray-600">Atur Bukti Kelulusan</h3>
-                <div className="p-4 space-y-4">
-                     <div className="p-3 bg-gray-100 dark:bg-gray-800/50 rounded-md space-y-3">
-                        <h4 className="font-bold text-sm dark:text-white">Format No. Peserta</h4>
-                         <div className="relative input-group">
-                            <input name="participantNumberAppName" value={editingConfig.participantNumberAppName} onChange={handleChange} className={inputClass} placeholder=" " />
-                            <label className={labelClass}>Nama Aplikasi (cth: PPKC)</label>
-                        </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                            Contoh hasil: <strong>{editingConfig.participantNumberAppName || 'APP'}-{new Date().getFullYear()}-0001</strong>
-                        </p>
-                    </div>
-                     <div className="p-3 bg-gray-100 dark:bg-gray-800/50 rounded-md space-y-3">
-                        <h4 className="font-bold text-sm dark:text-white">Konten PDF</h4>
-                         <div className="relative input-group">
-                            <textarea name="passingStatement" value={editingConfig.passingStatement || ''} onChange={handleChange} className={inputClass} placeholder=" " rows={3} />
-                            <label className={labelClass}>Kalimat Pernyataan Kelulusan</label>
-                        </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                            Gunakan {'{year}'} untuk menampilkan tahun pendaftaran secara otomatis.
-                        </p>
-                    </div>
-                </div>
-                <div className="flex justify-end gap-3 p-4 border-t dark:border-gray-600">
-                    <button onClick={handleClose} className="bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-2 px-4 rounded-md text-sm hover:bg-gray-300">Batal</button>
-                    <button onClick={handleSave} className="bg-brand-secondary text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-brand-accent">Simpan</button>
-                </div>
-            </div>
-        </div>
-    );
-};
-
 const AdminSettings: React.FC<AdminSettingsProps> = ({ onThemeChange, showNotification, showConfirmation }) => {
     const [config, setConfig] = useState<AdminConfig | null>(null);
     const [docFields, setDocFields] = useState<FormField[]>([]);
     const [loading, setLoading] = useState(true);
-    const [isProofModalOpen, setIsProofModalOpen] = useState(false);
 
     useEffect(() => {
         setLoading(true);
@@ -149,12 +85,6 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ onThemeChange, showNotifi
     const handleDeleteField = (id: string) => {
         setDocFields(docFields.filter(f => f.id !== id));
     };
-    
-    const handleSaveProofConfig = (newProofConfig: ProofOfPassingConfig) => {
-        if (config) {
-            setConfig({ ...config, proofOfPassing: newProofConfig });
-        }
-    };
 
     if (loading || !config) {
         return <div className="text-center p-4"><i className="fas fa-spinner fa-spin text-2xl text-brand-secondary"></i></div>;
@@ -165,13 +95,6 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ onThemeChange, showNotifi
     
     return (
         <div className="bg-white dark:bg-brand-primary p-6 rounded-lg shadow-md max-w-2xl mx-auto space-y-8">
-            {isProofModalOpen && config.proofOfPassing && (
-                <ProofOfPassingModal 
-                    config={config.proofOfPassing}
-                    onClose={() => setIsProofModalOpen(false)}
-                    onSave={handleSaveProofConfig}
-                />
-            )}
             <div>
                 <h1 className="text-2xl font-bold text-brand-primary dark:text-white">Pengaturan Global</h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Kontrol fitur utama dan tampilan aplikasi.</p>
@@ -226,16 +149,6 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ onThemeChange, showNotifi
                         {config.userMessagingActive ? 'Nonaktifkan' : 'Aktifkan'}
                     </button>
                 </div>
-            </div>
-
-            <div className="space-y-4 p-4 border rounded-md dark:border-gray-700">
-                <h2 className="text-lg font-semibold text-brand-dark dark:text-white">Bukti Kelulusan</h2>
-                 <button 
-                    onClick={() => setIsProofModalOpen(true)}
-                    className="w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-indigo-700"
-                >
-                    <i className="fas fa-certificate mr-2"></i>Atur Bukti Lolos
-                </button>
             </div>
 
              <div className="space-y-6 p-4 border rounded-md dark:border-gray-700">

@@ -18,6 +18,7 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
     const [scanResult, setScanResult] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
     const [viewType, setViewType] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+    const [cameraFacingMode, setCameraFacingMode] = useState<'environment' | 'user'>('environment');
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -102,9 +103,17 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
             return;
         }
 
+        const config = {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+            videoConstraints: {
+                facingMode: cameraFacingMode
+            }
+        };
+
         const qrCodeScanner = new Html5QrcodeScanner(
             "qr-reader", 
-            { fps: 10, qrbox: { width: 250, height: 250 } },
+            config,
             false
         );
 
@@ -147,7 +156,7 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
                 qrCodeScanner.clear().catch((error: any) => console.error("Failed to clear scanner.", error));
             }
         };
-    }, [scannerActive, showNotification, selectedDate, fetchData]);
+    }, [scannerActive, showNotification, selectedDate, fetchData, cameraFacingMode]);
     
     const exportToPDF = () => {
         const doc = new jspdf.jsPDF();
@@ -228,12 +237,21 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
                                     </div>
                                 </div>
                             )}
-                            <button 
-                                onClick={() => setScannerActive(false)}
-                                className="mt-4 bg-red-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-red-700"
-                            >
-                                Tutup Scanner
-                            </button>
+                             <div className="mt-4 flex flex-wrap gap-4">
+                                <button 
+                                    onClick={() => setScannerActive(false)}
+                                    className="bg-red-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-red-700"
+                                >
+                                    Tutup Scanner
+                                </button>
+                                <button
+                                    onClick={() => setCameraFacingMode(prev => prev === 'user' ? 'environment' : 'user')}
+                                    className="bg-gray-500 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-gray-600"
+                                    title="Switch Camera"
+                                >
+                                    <i className="fas fa-camera-rotate mr-2"></i>Ganti Kamera
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>
