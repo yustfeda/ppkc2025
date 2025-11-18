@@ -128,17 +128,27 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
                 }
                 
                 const allRegs = await getRegistrations();
-                const userExists = !!allRegs[uid];
+                const userToUpdate = allRegs[uid];
 
-                if (!userExists) {
+                if (!userToUpdate) {
                     setScanResult({ message: 'Peserta tidak ditemukan di database.', type: 'error' });
                     return;
                 }
                 
-                // Mark as present
-                await setDailyAttendanceStatus(selectedDate, uid, true);
-                const userToUpdate = allRegs[uid];
-                setScanResult({ message: `Berhasil! ${userToUpdate?.fullName || ''} ditandai Hadir`, type: 'success' });
+                // Check current attendance status for the selected date
+                const dailyAttendance = await getDailyAttendanceData(selectedDate);
+                const isCurrentlyPresent = dailyAttendance[uid]?.present === true;
+
+                // Toggle status
+                if (isCurrentlyPresent) {
+                    // If present, mark as absent (remove record)
+                    await setDailyAttendanceStatus(selectedDate, uid, false);
+                    setScanResult({ message: `Berhasil! ${userToUpdate.fullName || ''} ditandai Tidak Hadir (nonaktif).`, type: 'success' });
+                } else {
+                    // If not present, mark as present
+                    await setDailyAttendanceStatus(selectedDate, uid, true);
+                    setScanResult({ message: `Berhasil! ${userToUpdate.fullName || ''} ditandai Hadir.`, type: 'success' });
+                }
                 
                 fetchData();
 
