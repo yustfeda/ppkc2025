@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type { User, ChatThread, Message, RegistrationData } from '../../types';
+import { updateUserMessagingPermission } from '../../services/firebase';
 
 interface MessagePopupProps {
     user: User | null;
@@ -14,15 +15,23 @@ interface MessagePopupProps {
     onClearThread: (targetUserId: string) => void;
     onSelectThread?: (userId: string | null) => void;
     showConfirmation: (message: string, onConfirm: () => void) => void;
+    onToggleMessagingPermission?: (userId: string, isEnabled: boolean) => void;
 }
 
-const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onClose, threads, allRegistrations = [], currentThread, onSendMessage, onDeleteMessage, onClearThread, onSelectThread, showConfirmation }) => {
+const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onClose, threads, allRegistrations = [], currentThread, onSendMessage, onDeleteMessage, onClearThread, onSelectThread, showConfirmation, onToggleMessagingPermission }) => {
     const [isClosing, setIsClosing] = useState(false);
     const [newMessage, setNewMessage] = useState('');
     const [broadcastMessage, setBroadcastMessage] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [adminTab, setAdminTab] = useState<'inbox' | 'broadcast'>('inbox');
     const [userTab, setUserTab] = useState<'conversation' | 'inbox'>('conversation');
+
+    const messagingEnabled = useMemo(() => {
+        if (isAdmin || currentThread === undefined) return true;
+        // Default to true if the property is missing
+        return currentThread?.messagingEnabled !== false;
+    }, [isAdmin, currentThread]);
+
 
     useEffect(() => {
         if (isOpen) {
@@ -49,7 +58,7 @@ const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onCl
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!user) return;
+        if (!user || !messagingEnabled) return;
 
         const isGlobal = isAdmin && adminTab === 'broadcast';
         const textToSend = isGlobal ? broadcastMessage : newMessage;
@@ -80,7 +89,7 @@ const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onCl
                 setNewMessage('');
             }
         } catch (error: any) {
-            alert(error.message); // Show limit error
+           // Error is handled in PublicApp, no need to alert here
         }
     };
     
@@ -130,11 +139,12 @@ const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onCl
         : (userTab === 'inbox' ? inboxMessages : conversationMessages);
 
     const currentThreadName = allRegistrations.find(r => r.uid === currentThread?.userId)?.fullName || currentThread?.userEmail;
-
+    
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[1000] p-4" onClick={handleClose}>
             <div 
-                className={`bg-brand-light dark:bg-brand-dark shadow-xl w-full h-full sm:rounded-lg sm:max-w-4xl sm:h-[80vh] flex flex-col ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'}`}
+                className={`bg-brand-light dark:bg-brand-dark shadow-xl w-full h-full sm:rounded-lg sm:max-w-4xl sm:h-auto sm:max-h-[90vh] flex flex-col ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'}`}
+                style={{ height: 'calc(100% - 2rem)' }}
                 onClick={e => e.stopPropagation()}
             >
                 <header className="flex-shrink-0 p-4 border-b dark:border-gray-700 flex justify-between items-center">
@@ -148,10 +158,20 @@ const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onCl
                             <h3 className="text-lg font-semibold text-brand-dark dark:text-white">
                                 {isAdmin ? `Pesan Admin: ${currentThreadName || 'Pilih Percakapan'}` : 'Pesan ke Admin'}
                             </h3>
-                            {((!isAdmin && currentThread) || (isAdmin && currentThread)) && (
-                                <button onClick={handleClearConversation} className="text-xs text-red-500 hover:underline">
-                                    <i className="fas fa-eraser mr-1"></i>Hapus Percakapan
-                                </button>
+                             {isAdmin && currentThread && onToggleMessagingPermission && (
+                                <div className="flex items-center gap-2 mt-1">
+                                    <label className="text-xs text-gray-500 dark:text-gray-400">Izinkan Pesan:</label>
+                                    <label htmlFor="messagingToggle" className="cursor-pointer relative inline-flex items-center">
+                                        <input 
+                                            type="checkbox" 
+                                            id="messagingToggle" 
+                                            className="sr-only peer" 
+                                            checked={messagingEnabled}
+                                            onChange={(e) => onToggleMessagingPermission(currentThread.userId, e.target.checked)}
+                                        />
+                                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-green-600"></div>
+                                    </label>
+                                </div>
                             )}
                         </div>
                     </div>
@@ -202,7 +222,7 @@ const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onCl
                         </aside>
                     )}
                     
-                    <main className={`flex-1 flex flex-col ${isAdmin && !currentThread ? 'hidden md:flex' : 'flex'}`}>
+                    <main className={`flex-1 flex flex-col ${isAdmin && !currentThread && adminTab !== 'broadcast' ? 'hidden md:flex' : 'flex'}`}>
                         {!isAdmin && (
                             <div className="flex-shrink-0 p-2 border-b dark:border-gray-700">
                                 <div className="flex bg-gray-200 dark:bg-gray-900 rounded-md p-1">
@@ -213,10 +233,12 @@ const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onCl
                         )}
                          <div className="chat-messages flex-grow p-4 space-y-4 overflow-y-auto">
                            {(adminTab === 'broadcast' && isAdmin) ? (
-                             <div className="text-center p-4 text-gray-500">
-                                <i className="fas fa-bullhorn text-3xl mb-2"></i>
-                                <p className="font-semibold">Mode Pesan Global</p>
-                                <p className="text-xs">Pesan yang Anda kirim di sini akan diterima oleh semua pengguna terdaftar.</p>
+                             <div className="text-center p-4 text-gray-500 h-full flex items-center justify-center">
+                                <div>
+                                    <i className="fas fa-bullhorn text-3xl mb-2"></i>
+                                    <p className="font-semibold">Mode Pesan Global</p>
+                                    <p className="text-xs">Pesan yang Anda kirim di sini akan diterima oleh semua pengguna terdaftar.</p>
+                                </div>
                             </div>
                            ) : (
                                 <>
@@ -244,7 +266,7 @@ const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onCl
                     </main>
                 </div>
 
-                {((isAdmin) || (!isAdmin && userTab === 'conversation')) && (
+                {((isAdmin && currentThread) || (isAdmin && adminTab === 'broadcast') || (!isAdmin && userTab === 'conversation')) && (
                     <form onSubmit={handleSendMessage} className="flex-shrink-0 p-4 border-t dark:border-gray-700 flex items-center gap-3 bg-white dark:bg-gray-900">
                         <input
                             type="text"
@@ -256,11 +278,11 @@ const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onCl
                                     setNewMessage(e.target.value);
                                 }
                             }}
-                            placeholder={isAdmin && adminTab === 'broadcast' ? "Kirim pesan global..." : "Ketik pesan..."}
-                            className="flex-grow p-2 border rounded-full text-sm bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-                            disabled={isAdmin && adminTab === 'inbox' && !currentThread}
+                            placeholder={!messagingEnabled ? "Pengiriman pesan dinonaktifkan oleh admin" : (isAdmin && adminTab === 'broadcast' ? "Kirim pesan global..." : "Ketik pesan...")}
+                            className="flex-grow p-2 border rounded-full text-sm bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:bg-gray-200 dark:disabled:bg-gray-900/50"
+                            disabled={isAdmin ? (adminTab === 'inbox' && !currentThread) : !messagingEnabled}
                         />
-                        <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white rounded-full w-9 h-9 flex items-center justify-center flex-shrink-0 disabled:bg-gray-400" disabled={isAdmin && adminTab === 'inbox' && !currentThread}>
+                        <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white rounded-full w-9 h-9 flex items-center justify-center flex-shrink-0 disabled:bg-gray-400" disabled={isAdmin ? (adminTab === 'inbox' && !currentThread) : !messagingEnabled}>
                             <i className="fas fa-paper-plane"></i>
                         </button>
                     </form>

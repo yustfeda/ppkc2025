@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import type { AdminPage, AdminPageProps, Notification, User, RegistrationData, ConfirmationState, AdminConfig, ChatThread } from './types';
-import { getAdminConfig, getRegistrations, onAuthChange, listenToAllChatThreads, sendMessage, deleteMessage, markThreadAsRead, clearChatThread } from './services/firebase';
+import { getAdminConfig, getRegistrations, onAuthChange, listenToAllChatThreads, sendMessage, deleteMessage, markThreadAsRead, clearChatThread, updateUserMessagingPermission } from './services/firebase';
 
 import AdminLayout from './components/admin/AdminLayout';
 import AdminDashboard from './components/admin/AdminDashboard';
@@ -102,8 +102,21 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
         }
         const unsubscribeAuth = onAuthChange(setCurrentUser);
         const unsubscribeChats = listenToAllChatThreads((threads) => {
-            setChatThreads(threads);
-            const unreadCount = Object.values(threads).filter(t => t.unreadByAdmin).length;
+            // FIX: The previous implementation incorrectly called an async function synchronously.
+            // This now correctly uses the `allRegistrations` state to build the map.
+            const regsMap = new Map(allRegistrations.map(r => [r.uid, r]));
+
+            const threadsWithPermissions = Object.entries(threads).reduce((acc, [userId, thread]) => {
+                const registration = regsMap.get(userId);
+                acc[userId] = {
+                    ...thread,
+                    messagingEnabled: registration?.messagingEnabled
+                };
+                return acc;
+            }, {} as Record<string, ChatThread>);
+            
+            setChatThreads(threadsWithPermissions);
+            const unreadCount = Object.values(threadsWithPermissions).filter(t => t.unreadByAdmin).length;
             setMessageBadge(unreadCount);
         });
 
@@ -111,7 +124,7 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
             unsubscribeAuth();
             unsubscribeChats();
         };
-    }, [fetchAdminData]);
+    }, [fetchAdminData, allRegistrations]);
 
     const handleSelectThread = (userId: string | null) => {
         setSelectedThreadId(userId);
@@ -139,6 +152,29 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
         await clearChatThread(userId);
         showNotification("Seluruh percakapan telah dihapus.", "success");
     };
+
+    const handleToggleMessagingPermission = async (userId: string, isEnabled: boolean) => {
+        try {
+            await updateUserMessagingPermission(userId, isEnabled);
+            setChatThreads(prev => ({
+                ...prev,
+                [userId]: {
+                    ...prev[userId],
+                    messagingEnabled: isEnabled
+                }
+            }));
+            const regIndex = allRegistrations.findIndex(r => r.uid === userId);
+            if (regIndex > -1) {
+                const updatedRegs = [...allRegistrations];
+                updatedRegs[regIndex].messagingEnabled = isEnabled;
+                setAllRegistrations(updatedRegs);
+            }
+
+            showNotification(`Izin pesan untuk pengguna telah ${isEnabled ? 'diaktifkan' : 'dinonaktifkan'}.`, 'success');
+        } catch (error) {
+            showNotification('Gagal mengubah izin pesan.', 'error');
+        }
+    };
     
     const handleLogout = () => {
         sessionStorage.setItem('adminLoggedOut', 'true');
@@ -147,9 +183,7 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
 
     const selectedThread = selectedThreadId ? chatThreads[selectedThreadId] : null;
     let threadForPopup = selectedThread;
-
-    // If a user is selected to start a new chat but no thread exists, create a placeholder.
-    // This fixes the bug where the message input was disabled for new conversations.
+    
     if (selectedThreadId && !selectedThread) {
         const registration = allRegistrations.find(r => r.uid === selectedThreadId);
         if (registration) {
@@ -159,6 +193,7 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
                 messages: {},
                 unreadByAdmin: false,
                 unreadByUser: false,
+                messagingEnabled: registration.messagingEnabled
             };
         }
     }
@@ -200,6 +235,7 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
                     onDeleteMessage={handleDeleteMessage}
                     onClearThread={handleClearThread}
                     showConfirmation={showConfirmation}
+                    onToggleMessagingPermission={handleToggleMessagingPermission}
                 />
             )}
            

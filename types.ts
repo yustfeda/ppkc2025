@@ -32,6 +32,18 @@ export interface AnnouncementDocument {
   thumbnailUrl: string;
 }
 
+export interface WelcomePopupButton {
+  id: string;
+  label: string;
+  link: string;
+}
+
+export interface WelcomePopupConfig {
+  title: string;
+  message: string;
+  buttons: WelcomePopupButton[];
+}
+
 export interface AdminConfig {
     registrationActive: boolean;
     loginActive: boolean;
@@ -39,6 +51,7 @@ export interface AdminConfig {
     showRegistrationButton: boolean;
     registrationComingSoonText: string;
     appVersion: string;
+    welcomePopup?: WelcomePopupConfig;
 }
 
 export interface HomePageUpdate {
@@ -67,6 +80,7 @@ export interface RegistrationData {
     medicalHistory: string;
     emergencyContact: string;
     participantNumber?: string; // New field for unique participant number
+    messagingEnabled?: boolean; // New field for messaging permission
     // New dynamic fields for document links and profile picture
     documentLinks?: Record<string, string>;
     profilePictureUrl?: string;
@@ -166,6 +180,7 @@ export interface ChatThread {
   unreadByAdmin: boolean;
   unreadByUser: boolean;
   messages: Record<string, Message>;
+  messagingEnabled?: boolean; // Added for admin control
 }
 
 // For flattened admin inbox view

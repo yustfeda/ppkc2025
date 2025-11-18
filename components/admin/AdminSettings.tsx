@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getAdminConfig, setData, resetAllRegistrations, getRegistrationFormFields } from '../../services/firebase';
-import type { AdminConfig, AdminPageProps, FormField } from '../../types';
+import type { AdminConfig, AdminPageProps, FormField, WelcomePopupButton } from '../../types';
 
 interface AdminSettingsProps extends AdminPageProps {
     onThemeChange: () => void;
@@ -27,11 +27,19 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ onThemeChange, showNotifi
         if (config) {
             setLoading(true);
             const fieldsToSave = docFields.filter(f => f.label.trim() !== '');
+            const configToSave = {
+                ...config,
+                welcomePopup: {
+                    ...config.welcomePopup,
+                    buttons: config.welcomePopup?.buttons.filter(b => b.label.trim() !== '' && b.link.trim() !== '') || []
+                }
+            };
             await Promise.all([
-                setData('config', config),
+                setData('config', configToSave),
                 setData('registrationFormFields', fieldsToSave)
             ]);
             onThemeChange(); // Inform App.tsx about theme change
+            setConfig(configToSave);
             setDocFields(fieldsToSave);
             setLoading(false);
             showNotification('Pengaturan berhasil disimpan!', 'success');
@@ -68,6 +76,33 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ onThemeChange, showNotifi
 
     const handleDeleteField = (id: string) => {
         setDocFields(docFields.filter(f => f.id !== id));
+    };
+    
+    const handleWelcomePopupButtonChange = (index: number, field: keyof WelcomePopupButton, value: string) => {
+        if (!config || !config.welcomePopup) return;
+        const newButtons = [...config.welcomePopup.buttons];
+        (newButtons[index] as any)[field] = value;
+        setConfig({
+            ...config,
+            welcomePopup: { ...config.welcomePopup, buttons: newButtons }
+        });
+    };
+
+    const handleAddWelcomePopupButton = () => {
+        if (!config || !config.welcomePopup) return;
+        const newButton: WelcomePopupButton = { id: `wpb_${Date.now()}`, label: '', link: '#' };
+        setConfig({
+            ...config,
+            welcomePopup: { ...config.welcomePopup, buttons: [...config.welcomePopup.buttons, newButton] }
+        });
+    };
+
+    const handleDeleteWelcomePopupButton = (id: string) => {
+        if (!config || !config.welcomePopup) return;
+        setConfig({
+            ...config,
+            welcomePopup: { ...config.welcomePopup, buttons: config.welcomePopup.buttons.filter(b => b.id !== id) }
+        });
     };
 
 
@@ -115,6 +150,40 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ onThemeChange, showNotifi
                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-brand-dark rounded-md">
                     <label htmlFor="loginActive" className="font-medium text-sm text-gray-800 dark:text-white">Tampilkan Tombol Login</label>
                     <input id="loginActive" type="checkbox" checked={config.loginActive} onChange={e => setConfig({...config, loginActive: e.target.checked})} className="h-5 w-5 rounded text-brand-secondary focus:ring-brand-secondary"/>
+                </div>
+            </div>
+
+             <div className="space-y-6 p-4 border rounded-md dark:border-gray-700">
+                <h2 className="text-lg font-semibold text-brand-dark dark:text-white">Kelola Popup Selamat Datang</h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400 -mt-4">Gunakan `&#123;userName&#125;` untuk menampilkan nama pengguna secara dinamis.</p>
+                <div className="relative input-group">
+                    <input value={config.welcomePopup?.title || ''} onChange={e => setConfig({...config, welcomePopup: {...config.welcomePopup!, title: e.target.value}})} className={inputClass} placeholder=" "/>
+                    <label className={labelClass}>Judul Popup</label>
+                </div>
+                 <div className="relative input-group">
+                    <textarea value={config.welcomePopup?.message || ''} onChange={e => setConfig({...config, welcomePopup: {...config.welcomePopup!, message: e.target.value}})} className={inputClass} placeholder=" " rows={3}/>
+                    <label className={labelClass}>Pesan Popup</label>
+                </div>
+                 <div>
+                    <h3 className="text-md font-semibold dark:text-white mb-2">Tombol Tambahan</h3>
+                    <div className="space-y-2">
+                        {config.welcomePopup?.buttons.map((btn, index) => (
+                             <div key={btn.id} className="grid grid-cols-1 sm:grid-cols-5 gap-2 p-2 bg-gray-50 dark:bg-brand-dark rounded-md">
+                                <div className="relative input-group sm:col-span-2">
+                                    <input value={btn.label} onChange={e => handleWelcomePopupButtonChange(index, 'label', e.target.value)} className={inputClass} placeholder=" "/>
+                                    <label className={labelClass}>Label Tombol</label>
+                                </div>
+                                 <div className="relative input-group sm:col-span-2">
+                                    <input value={btn.link} onChange={e => handleWelcomePopupButtonChange(index, 'link', e.target.value)} className={inputClass} placeholder=" "/>
+                                    <label className={labelClass}>Link URL</label>
+                                </div>
+                                <button onClick={() => handleDeleteWelcomePopupButton(btn.id)} className="text-red-500 hover:text-red-700 p-2 sm:col-span-1"><i className="fas fa-trash"></i></button>
+                            </div>
+                        ))}
+                    </div>
+                     <button onClick={handleAddWelcomePopupButton} className="mt-2 text-sm bg-blue-600 text-white font-bold py-1 px-3 rounded-md hover:bg-blue-700">
+                        <i className="fas fa-plus mr-1"></i>Tambah Tombol
+                    </button>
                 </div>
             </div>
 

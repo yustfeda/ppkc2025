@@ -43,7 +43,12 @@ const MOCK_CONFIG: AdminConfig = {
     theme: 'light',
     showRegistrationButton: true,
     registrationComingSoonText: 'SEGERA HADIR',
-    appVersion: 'v1.1.11'
+    appVersion: 'v1.1.11',
+    welcomePopup: {
+        title: "Selamat datang, {userName}!",
+        message: "Silahkan klik ok untuk melanjutkan.",
+        buttons: []
+    }
 };
 
 const MOCK_UPDATES: HomePageUpdate[] = [
@@ -148,6 +153,10 @@ export const resetAllRegistrations = (): Promise<void> => {
     return database.ref('registrations').remove();
 };
 
+export const updateUserMessagingPermission = (uid: string, enabled: boolean): Promise<void> => {
+    return database.ref(`registrations/${uid}/messagingEnabled`).set(enabled);
+};
+
 // Auth Functions
 export const setAuthPersistence = (): Promise<void> => {
     return auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
@@ -187,17 +196,17 @@ export const sendMessage = async (
     sender: 'user' | 'admin',
     isGlobal: boolean = false
 ): Promise<void> => {
-    // User daily limit check
+    // User daily limit check (only applies to 'user' sender)
     if (sender === 'user') {
         const today = getToday();
         const limitRef = database.ref(`messageLimits/${userId}/${today}`);
         const { committed } = await limitRef.transaction(currentCount => {
             if (currentCount === null) return 1;
-            if (currentCount >= 5) return; // Abort
+            if (currentCount >= 5) return; // Abort if limit reached
             return currentCount + 1;
         });
         if (!committed) {
-            throw new Error("Message limit for today has been reached.");
+            throw new Error("Batas pengiriman pesan harian (5) telah tercapai.");
         }
     }
 
@@ -208,51 +217,52 @@ export const sendMessage = async (
         isGlobal,
     };
 
-    // If it's a broadcast message from an admin
+    const fanOut: { [key: string]: any } = {};
+
+    // Logic for a global broadcast message from an admin
     if (isGlobal && sender === 'admin') {
         const registrations = await getRegistrations();
         if (!registrations) return;
 
-        // Use a multi-location update (fan-out) for atomicity and efficiency
-        const fanOut: { [key: string]: any } = {};
-        
         Object.values(registrations).forEach(reg => {
             if (reg.uid) { // Ensure user has a valid UID
                 const newMessageRef = database.ref(`chats/${reg.uid}/messages`).push();
                 const messageId = newMessageRef.key!;
                 
+                // Add the new global message to each user's chat
                 fanOut[`/chats/${reg.uid}/messages/${messageId}`] = { ...message, id: messageId };
-                fanOut[`/chats/${reg.uid}/metadata`] = {
-                    userId: reg.uid,
-                    userEmail: reg.email,
-                    lastMessageText: `[Pesan Global] ${text}`,
-                    lastMessageTimestamp: message.timestamp,
-                    unreadByAdmin: false,
-                    unreadByUser: true,
-                };
+                
+                // Atomically update metadata fields for each user's thread
+                fanOut[`/chats/${reg.uid}/metadata/userId`] = reg.uid;
+                fanOut[`/chats/${reg.uid}/metadata/userEmail`] = reg.email;
+                fanOut[`/chats/${reg.uid}/metadata/lastMessageText`] = `[Pesan Global] ${text}`;
+                fanOut[`/chats/${reg.uid}/metadata/lastMessageTimestamp`] = message.timestamp;
+                fanOut[`/chats/${reg.uid}/metadata/unreadByAdmin`] = false; // Not unread for the admin who sent it
+                fanOut[`/chats/${reg.uid}/metadata/unreadByUser`] = true;  // Mark as unread for the user
             }
         });
-        
-        return database.ref().update(fanOut);
+    } else { 
+        // Logic for a personal message (user-to-admin or admin-to-user)
+        const newMessageRef = database.ref(`chats/${userId}/messages`).push();
+        const messageId = newMessageRef.key!;
+        const finalMessage: Message = { ...message, id: messageId };
+
+        // Add the new personal message
+        fanOut[`/chats/${userId}/messages/${messageId}`] = finalMessage;
+
+        // Atomically update metadata fields for the specific thread
+        fanOut[`/chats/${userId}/metadata/userId`] = userId;
+        fanOut[`/chats/${userId}/metadata/userEmail`] = userEmail;
+        fanOut[`/chats/${userId}/metadata/lastMessageText`] = text;
+        fanOut[`/chats/${userId}/metadata/lastMessageTimestamp`] = message.timestamp;
+        fanOut[`/chats/${userId}/metadata/unreadByAdmin`] = sender === 'user';
+        fanOut[`/chats/${userId}/metadata/unreadByUser`] = sender === 'admin';
     }
 
-    // Otherwise, it's a personal message
-    const threadRef = database.ref(`chats/${userId}`);
-    const newMessageRef = threadRef.child('messages').push();
-    const finalMessage: Message = { ...message, id: newMessageRef.key! };
-    
-    const metadataUpdate = {
-        userId,
-        userEmail,
-        lastMessageText: text,
-        lastMessageTimestamp: message.timestamp,
-        unreadByAdmin: sender === 'user',
-        unreadByUser: sender === 'admin',
-    };
-
-    // Update both messages and metadata for the specific thread
-    await newMessageRef.set(finalMessage);
-    await threadRef.child('metadata').update(metadataUpdate);
+    // Execute the single, atomic multi-path update
+    if (Object.keys(fanOut).length > 0) {
+        return database.ref().update(fanOut);
+    }
 };
 
 
@@ -261,7 +271,8 @@ export const deleteMessage = (userId: string, messageId: string): Promise<void> 
 };
 
 export const clearChatThread = (userId: string): Promise<void> => {
-    return database.ref(`chats/${userId}/messages`).remove();
+    // Also clear metadata to reset the conversation state
+    return database.ref(`chats/${userId}`).remove();
 };
 
 export const markThreadAsRead = (userId: string, reader: 'user' | 'admin'): Promise<void> => {
@@ -292,7 +303,6 @@ export const listenToAllChatThreads = (callback: (threads: Record<string, ChatTh
     const chatsRef = database.ref('chats');
     const listener = (snapshot: any) => {
         if (snapshot.exists()) {
-            // FIX: Transform raw Firebase data into the ChatThread type.
             const rawThreads = snapshot.val();
             const transformedThreads: Record<string, ChatThread> = {};
             for (const userId in rawThreads) {

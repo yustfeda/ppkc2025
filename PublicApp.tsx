@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import type { PublicPage, User, Notification, ConfirmationState, ManagedButton, DynamicFormModalState, AdminConfig, ChatThread } from './types';
+import type { PublicPage, User, Notification, ConfirmationState, ManagedButton, DynamicFormModalState, AdminConfig, ChatThread, RegistrationData } from './types';
 import { getAdminConfig, getUserRegistration, getSelectionStages, getManagedButtons, listenToUserChatThread, sendMessage, deleteMessage, markThreadAsRead, clearChatThread } from './services/firebase';
 
 import Header from './components/Header';
@@ -16,6 +16,7 @@ import Footer from './components/Footer';
 import AdminLoginModal from './components/AdminLoginModal';
 import DynamicFormModal from './components/DynamicFormModal';
 import MessagePopup from './components/shared/MessagePopup';
+import WelcomePopup from './components/WelcomePopup';
 
 const NotificationPopup: React.FC<{ notification: Notification, onClose: () => void }> = ({ notification, onClose }) => {
     useEffect(() => {
@@ -90,6 +91,8 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
     const [isMessageOpen, setIsMessageOpen] = useState(false);
     const [chatThread, setChatThread] = useState<ChatThread | null>(null);
     const [unreadMessages, setUnreadMessages] = useState(0);
+    const [userRegistration, setUserRegistration] = useState<RegistrationData | null>(null);
+    const [showWelcomePopup, setShowWelcomePopup] = useState(false);
 
     const showNotification = useCallback((message: string, type: 'success' | 'error') => {
         setNotification({ id: Date.now(), message, type });
@@ -112,8 +115,11 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
         if (!user) {
             setChatThread(null);
             setUnreadMessages(0);
+            setUserRegistration(null);
             return;
         }
+
+        getUserRegistration(user.uid).then(setUserRegistration);
 
         const unsubscribe = listenToUserChatThread(user.uid, (thread) => {
             setChatThread(thread);
@@ -185,11 +191,10 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
         setIsAdminLoginOpen(false);
         window.history.pushState({}, '', '/');
     };
-
     
      useEffect(() => {
         if(user && sessionStorage.getItem('justLoggedIn') === 'true'){
-            showNotification(`Selamat datang, ${user.displayName || user.email}!`, 'success');
+            setShowWelcomePopup(true);
             setCurrentPage('home');
             sessionStorage.removeItem('justLoggedIn');
         }
@@ -260,6 +265,13 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
 
      const handleSendMessage = async (userId: string, text: string, isGlobal: boolean) => {
         if (!user) return;
+        
+        if (userRegistration && userRegistration.messagingEnabled === false) {
+            showNotification("Anda perlu izin admin untuk mengirim pesan ke admin, silahkan hubungi admin terkait hal tersebut", 'error');
+            navigate('contact');
+            throw new Error("Messaging disabled");
+        }
+
         try {
             await sendMessage(user.uid, user.email || 'N/A', text, 'user', false);
         } catch (e: any) {
@@ -305,6 +317,14 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
         <div className="font-sans bg-brand-light dark:bg-brand-dark min-h-screen text-sm flex flex-col">
             <ConfirmationModal confirmation={confirmation} onCancel={hideConfirmation} />
             {notification && <NotificationPopup notification={notification} onClose={() => setNotification(null)} />}
+            {showWelcomePopup && user && adminConfig?.welcomePopup && (
+                <WelcomePopup 
+                    user={user}
+                    config={adminConfig.welcomePopup}
+                    onClose={() => setShowWelcomePopup(false)}
+                    setCurrentPage={navigate}
+                />
+            )}
             {dynamicFormState.isOpen && dynamicFormState.button && (
                 <DynamicFormModal 
                     button={dynamicFormState.button} 
@@ -319,7 +339,7 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
                     isAdmin={false}
                     isOpen={isMessageOpen}
                     onClose={() => setIsMessageOpen(false)}
-                    currentThread={chatThread}
+                    currentThread={{...chatThread, messagingEnabled: userRegistration?.messagingEnabled} as ChatThread}
                     onSendMessage={handleSendMessage}
                     onDeleteMessage={handleDeleteMessage}
                     onClearThread={handleClearThread}
