@@ -132,7 +132,7 @@ const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onCl
     const currentThreadName = allRegistrations.find(r => r.uid === currentThread?.userId)?.fullName || currentThread?.userEmail;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[1000] p-0 sm:p-4" onClick={handleClose}>
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[1000] p-4" onClick={handleClose}>
             <div 
                 className={`bg-brand-light dark:bg-brand-dark shadow-xl w-full h-full sm:rounded-lg sm:max-w-4xl sm:h-[80vh] flex flex-col ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'}`}
                 onClick={e => e.stopPropagation()}
@@ -241,30 +241,30 @@ const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onCl
                            )}
                             <div ref={messagesEndRef} />
                         </div>
-
-                         {((isAdmin) || (!isAdmin && userTab === 'conversation')) && (
-                            <form onSubmit={handleSendMessage} className="flex-shrink-0 p-4 border-t dark:border-gray-700 flex items-center gap-3 bg-white dark:bg-gray-900">
-                                <input
-                                    type="text"
-                                    value={isAdmin && adminTab === 'broadcast' ? broadcastMessage : newMessage}
-                                    onChange={(e) => {
-                                        if (isAdmin && adminTab === 'broadcast') {
-                                            setBroadcastMessage(e.target.value);
-                                        } else {
-                                            setNewMessage(e.target.value);
-                                        }
-                                    }}
-                                    placeholder={isAdmin && adminTab === 'broadcast' ? "Kirim pesan global..." : "Ketik pesan..."}
-                                    className="flex-grow p-2 border rounded-full text-sm bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-                                    disabled={isAdmin && adminTab === 'inbox' && !currentThread}
-                                />
-                                <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white rounded-full w-9 h-9 flex items-center justify-center flex-shrink-0 disabled:bg-gray-400" disabled={isAdmin && adminTab === 'inbox' && !currentThread}>
-                                    <i className="fas fa-paper-plane"></i>
-                                </button>
-                            </form>
-                         )}
                     </main>
                 </div>
+
+                {((isAdmin) || (!isAdmin && userTab === 'conversation')) && (
+                    <form onSubmit={handleSendMessage} className="flex-shrink-0 p-4 border-t dark:border-gray-700 flex items-center gap-3 bg-white dark:bg-gray-900">
+                        <input
+                            type="text"
+                            value={isAdmin && adminTab === 'broadcast' ? broadcastMessage : newMessage}
+                            onChange={(e) => {
+                                if (isAdmin && adminTab === 'broadcast') {
+                                    setBroadcastMessage(e.target.value);
+                                } else {
+                                    setNewMessage(e.target.value);
+                                }
+                            }}
+                            placeholder={isAdmin && adminTab === 'broadcast' ? "Kirim pesan global..." : "Ketik pesan..."}
+                            className="flex-grow p-2 border rounded-full text-sm bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                            disabled={isAdmin && adminTab === 'inbox' && !currentThread}
+                        />
+                        <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white rounded-full w-9 h-9 flex items-center justify-center flex-shrink-0 disabled:bg-gray-400" disabled={isAdmin && adminTab === 'inbox' && !currentThread}>
+                            <i className="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                )}
             </div>
         </div>
     );
