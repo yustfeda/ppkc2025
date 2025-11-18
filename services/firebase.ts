@@ -100,7 +100,25 @@ export const getData = async <T>(path: string, mockData?: T): Promise<T> => {
 // Getters now use realtime getData by default
 export const getSelectionStages = () => getData<SelectionStage[]>('selectionStages', MOCK_STAGES);
 export const getAnnouncements = () => getData<AnnouncementDocument[]>('announcements', MOCK_ANNOUNCEMENTS);
-export const getAdminConfig = () => getData<AdminConfig>('config', MOCK_CONFIG);
+
+export const getAdminConfig = async (): Promise<AdminConfig> => {
+    const snapshot = await database.ref('config').once('value');
+    const firebaseConfig = snapshot.val() || {}; // Ensure firebaseConfig is an object
+    
+    // This creates a new object ensuring all default keys are present,
+    // while overwriting with any values from firebase.
+    const finalConfig = {
+        ...MOCK_CONFIG,
+        ...firebaseConfig,
+        proofOfPassing: {
+            ...MOCK_CONFIG.proofOfPassing,
+            ...(firebaseConfig.proofOfPassing || {}),
+        }
+    };
+    
+    return finalConfig;
+};
+
 export const getHomeUpdates = () => getData<HomePageUpdate[]>('homeUpdates', MOCK_UPDATES);
 export const getRegistrations = () => getData<{[uid: string]: RegistrationData}>('registrations', {});
 export const getUserRegistration = (uid: string) => getData<RegistrationData | null>(`registrations/${uid}`);

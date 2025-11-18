@@ -61,8 +61,8 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig, showNotification }) 
     };
     
     const handleDownloadPdfProof = async () => {
-        if (!registration || !adminConfig?.proofOfPassing) {
-            alert('Data pendaftaran atau konfigurasi bukti lolos tidak ditemukan.');
+        if (!registration) {
+            showNotification('Data pendaftaran tidak ditemukan.', 'error');
             return;
         }
 
@@ -71,83 +71,110 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig, showNotification }) 
             const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
             let currentY = 20;
 
-            const participantNumberParts = registration.participantNumber?.split('-') || [];
-            const appName = participantNumberParts[0] || 'APP';
-            const registrationYear = participantNumberParts[1] || new Date().getFullYear().toString();
+            // --- Header ---
+            // Logo placeholder removed for a cleaner look.
 
-            // --- Titles ---
+            // Titles
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(18);
+            doc.setTextColor('#0B2447'); // Blue
+            doc.text("PANITIA SELEKSI", 105, currentY + 5, { align: 'center' });
+            
+            doc.setFontSize(14);
+            doc.setTextColor('#F57C00'); // Orange
+            doc.text("PURNA PASKIBRA KECAMATAN CILELES", 105, currentY + 12, { align: 'center' });
+            
+            currentY += 15 + 5; // move below header text
+            
+            // Line
+            doc.setLineWidth(1);
+            doc.line(20, currentY, 190, currentY);
+            currentY += 15;
+
+            // --- Main Title ---
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(14);
-            doc.setTextColor('#000000');
-            doc.text("PANITIA PELAKSANA SELEKSI PASKIBRA", 105, currentY, { align: 'center' });
+            doc.setTextColor(0, 0, 0);
+            doc.text("SELAMAT !", 105, currentY, { align: 'center' });
             currentY += 7;
-            doc.text("PURNA PASKIBRA KECAMATAN CILELES", 105, currentY, { align: 'center' });
-            currentY += 10;
-            doc.setFontSize(12);
-            doc.text(`${appName}${registrationYear}`, 105, currentY, { align: 'center' });
-            currentY += 10;
 
-            // --- Passing Statement ---
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(12);
-            const statementTemplate = adminConfig.proofOfPassing.passingStatement || 'SELAMAT ANDA DINYATAKAN LOLOS SELEKSI TAHUN {year}';
-            const passingStatement = statementTemplate.replace('{year}', registrationYear);
-            const statementLines = doc.splitTextToSize(passingStatement, 180);
-            doc.text(statementLines, 105, currentY, { align: 'center' });
-            currentY += (statementLines.length * 5) + 15;
-
+            doc.text("ANDA DINYATAKAN LOLOS SELEKSI", 105, currentY, { align: 'center' });
+            currentY += 10;
+            
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            doc.text("BUKTI LOLOS SELEKSI", 105, currentY, { align: 'center' });
+            currentY += 20;
+            
             // --- Participant Data & Photo ---
-            const dataStartX = 25;
-            const photoStartX = 135;
-            let dataY = currentY;
+            const dataStartY = currentY;
+            const photoX = 30;
+            const photoY = dataStartY;
+            const photoWidth = 40;
+            const photoHeight = 50;
 
-            // Photo
+            // Border for photo removed.
             if (profilePic) {
                 try {
-                    doc.addImage(profilePic, 'JPEG', photoStartX, dataY, 50, 60);
+                    // Determine image type from base64 string
+                    const imageType = profilePic.startsWith('data:image/jpeg') ? 'JPEG' : 'PNG';
+                    doc.addImage(profilePic, imageType, photoX, photoY, photoWidth, photoHeight);
                 } catch (e) {
                     console.error("Could not add profile picture to PDF.", e);
-                    doc.rect(photoStartX, dataY, 50, 60);
-                    doc.text("Foto", photoStartX + 25, dataY + 30, { align: 'center' });
+                    doc.text("Foto user", photoX + photoWidth / 2, photoY + photoHeight / 2, { align: 'center', baseline: 'middle' });
                 }
             } else {
-                 doc.rect(photoStartX, dataY, 50, 60);
-                 doc.text("Foto", photoStartX + 25, dataY + 30, { align: 'center' });
+                 doc.text("Foto user", photoX + photoWidth / 2, photoY + photoHeight / 2, { align: 'center', baseline: 'middle' });
             }
 
             // Data
             const dataPairs = [
-                ["Nama Lengkap", `: ${registration.fullName}`],
-                ["No. Peserta", `: ${registration.participantNumber}`],
-                ["Asal Satuan", `: ${registration.originUnit}`],
-                ["Tempat, Tanggal Lahir", `: ${registration.birthPlace}, ${new Date(registration.birthDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`],
-                ["Jenis Kelamin", `: ${registration.gender}`],
+                ["NAMA LENGKAP", registration.fullName],
+                ["NO PESERTA", registration.participantNumber || 'N/A'],
+                ["TEMPAT, TGL LAHIR", `${registration.birthPlace}, ${new Date(registration.birthDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`],
+                ["ASAL SATUAN", registration.originUnit],
+                ["JENIS KELAMIN", registration.gender],
             ];
             
-            doc.setFontSize(11);
+            const dataX = 85;
+            let dataY = dataStartY + 5;
+            const labelWidth = 40;
+
+            doc.setFontSize(10);
             dataPairs.forEach(([label, value]) => {
-                doc.setFont('helvetica', 'bold');
-                doc.text(label, dataStartX, dataY);
                 doc.setFont('helvetica', 'normal');
-                doc.text(value, dataStartX + 50, dataY);
-                dataY += 7;
+                doc.text(label, dataX, dataY, { align: 'left' });
+                doc.text(":", dataX + labelWidth, dataY);
+                doc.setFont('helvetica', 'bold');
+                doc.text(value, dataX + labelWidth + 3, dataY);
+                dataY += 8;
             });
             
-            currentY = Math.max(dataY, currentY + 70); // Ensure Y is below photo
+            currentY = dataStartY + photoHeight + 30; // Position below the info section
 
             // --- QR Code ---
-            currentY += 15;
+            const qrBoxSize = 40;
+            const qrBoxX = (210 - qrBoxSize) / 2;
+            
+            // Border for QR code removed.
             const qrData = JSON.stringify({ uid: user.uid, name: registration.fullName, number: registration.participantNumber });
             const qrCodeUrl = await QRCode.toDataURL(qrData, { width: 256, margin: 1 });
-            doc.addImage(qrCodeUrl, 'PNG', 90, currentY, 30, 30);
-            currentY += 35;
+            doc.addImage(qrCodeUrl, 'PNG', qrBoxX, currentY, qrBoxSize, qrBoxSize);
+            
+            currentY += qrBoxSize + 8;
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'italic');
+            doc.setTextColor(100);
+            doc.text("Pindai qr code ini untuk verifikasi kehadiran", 105, currentY, { align: 'center' });
 
             // --- Footer ---
             const pageHeight = doc.internal.pageSize.height;
             doc.setFont('helvetica', 'italic');
             doc.setFontSize(9);
             doc.setTextColor(100);
-            const footerText = "Dokumen ini bersifat rahasia. Jika dokumen ini hilang itu jadi tanggung jawab peserta sepenuhnya";
+            const footerText = "Dokumen ini bersifat rahasia, kerusakan dan kehilangan jadi tanggung jawab peserta";
             doc.text(footerText, 105, pageHeight - 15, { align: 'center' });
 
             doc.save(`bukti-lolos-${registration.participantNumber}-${registration.fullName}.pdf`);
@@ -155,7 +182,7 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig, showNotification }) 
 
         } catch (error) {
             console.error("Gagal membuat PDF:", error);
-            alert('Terjadi kesalahan saat membuat file PDF. Silakan coba lagi.');
+            showNotification('Terjadi kesalahan saat membuat file PDF. Silakan coba lagi.', 'error');
         }
     };
 
