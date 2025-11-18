@@ -43,7 +43,8 @@ const MOCK_CONFIG: AdminConfig = {
     theme: 'light',
     showRegistrationButton: true,
     registrationComingSoonText: 'SEGERA HADIR',
-    appVersion: 'v1.1.11'
+    appVersion: 'v1.1.11',
+    userMessagingActive: true,
 };
 
 const MOCK_UPDATES: HomePageUpdate[] = [
@@ -146,10 +147,6 @@ export const setDailyAttendanceStatus = async (date: string, uid: string, presen
 
 export const resetAllRegistrations = (): Promise<void> => {
     return database.ref('registrations').remove();
-};
-
-export const updateUserMessagingPermission = (uid: string, enabled: boolean): Promise<void> => {
-    return database.ref(`registrations/${uid}/messagingEnabled`).set(enabled);
 };
 
 // Auth Functions

@@ -39,6 +39,7 @@ export interface AdminConfig {
     showRegistrationButton: boolean;
     registrationComingSoonText: string;
     appVersion: string;
+    userMessagingActive: boolean; // Global messaging toggle
 }
 
 export interface HomePageUpdate {
@@ -67,7 +68,6 @@ export interface RegistrationData {
     medicalHistory: string;
     emergencyContact: string;
     participantNumber?: string; // New field for unique participant number
-    messagingEnabled?: boolean; // New field for messaging permission
     // New dynamic fields for document links and profile picture
     documentLinks?: Record<string, string>;
     profilePictureUrl?: string;
@@ -167,7 +167,6 @@ export interface ChatThread {
   unreadByAdmin: boolean;
   unreadByUser: boolean;
   messages: Record<string, Message>;
-  messagingEnabled?: boolean; // Added for admin control
 }
 
 // For flattened admin inbox view

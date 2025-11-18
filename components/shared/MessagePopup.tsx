@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type { User, ChatThread, Message, RegistrationData } from '../../types';
-import { updateUserMessagingPermission } from '../../services/firebase';
 
 interface MessagePopupProps {
     user: User | null;
@@ -15,23 +14,16 @@ interface MessagePopupProps {
     onClearThread: (targetUserId: string) => void;
     onSelectThread?: (userId: string | null) => void;
     showConfirmation: (message: string, onConfirm: () => void) => void;
-    onToggleMessagingPermission?: (userId: string, isEnabled: boolean) => void;
+    isMessagingGloballyEnabled?: boolean;
 }
 
-const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onClose, threads, allRegistrations = [], currentThread, onSendMessage, onDeleteMessage, onClearThread, onSelectThread, showConfirmation, onToggleMessagingPermission }) => {
+const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onClose, threads, allRegistrations = [], currentThread, onSendMessage, onDeleteMessage, onClearThread, onSelectThread, showConfirmation, isMessagingGloballyEnabled }) => {
     const [isClosing, setIsClosing] = useState(false);
     const [newMessage, setNewMessage] = useState('');
     const [broadcastMessage, setBroadcastMessage] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [adminTab, setAdminTab] = useState<'inbox' | 'broadcast'>('inbox');
     const [userTab, setUserTab] = useState<'conversation' | 'inbox'>('conversation');
-
-    const messagingEnabled = useMemo(() => {
-        if (isAdmin || currentThread === undefined) return true;
-        // Default to true if the property is missing
-        return currentThread?.messagingEnabled !== false;
-    }, [isAdmin, currentThread]);
-
 
     useEffect(() => {
         if (isOpen) {
@@ -58,7 +50,7 @@ const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onCl
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!user || !messagingEnabled) return;
+        if (!user || !isMessagingGloballyEnabled) return;
 
         const isGlobal = isAdmin && adminTab === 'broadcast';
         const textToSend = isGlobal ? broadcastMessage : newMessage;
@@ -158,19 +150,6 @@ const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onCl
                             <h3 className="text-lg font-semibold text-brand-dark dark:text-white">
                                 {isAdmin ? `Pesan Admin: ${currentThreadName || 'Pilih Percakapan'}` : 'Pesan ke Admin'}
                             </h3>
-                             {isAdmin && currentThread && onToggleMessagingPermission && (
-                                <div className="flex items-center gap-2 mt-1">
-                                    <label className="text-xs text-gray-500 dark:text-gray-400">Izin Pesan:</label>
-                                    <select
-                                        value={String(messagingEnabled)}
-                                        onChange={(e) => onToggleMessagingPermission(currentThread.userId, e.target.value === 'true')}
-                                        className="p-1 border rounded-md text-xs bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-                                    >
-                                        <option value="true">Izinkan</option>
-                                        <option value="false">Tolak</option>
-                                    </select>
-                                </div>
-                            )}
                         </div>
                     </div>
                     <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
@@ -276,11 +255,11 @@ const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onCl
                                     setNewMessage(e.target.value);
                                 }
                             }}
-                            placeholder={!messagingEnabled ? "Pengiriman pesan dinonaktifkan oleh admin" : (isAdmin && adminTab === 'broadcast' ? "Kirim pesan global..." : "Ketik pesan...")}
+                            placeholder={!isMessagingGloballyEnabled ? "Pesan dinonaktifkan oleh admin." : (isAdmin && adminTab === 'broadcast' ? "Kirim pesan global..." : "Ketik pesan...")}
                             className="flex-grow p-2 border rounded-full text-sm bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:bg-gray-200 dark:disabled:bg-gray-900/50"
-                            disabled={isAdmin ? (adminTab === 'inbox' && !currentThread) : !messagingEnabled}
+                            disabled={isAdmin ? (adminTab === 'inbox' && !currentThread) : !isMessagingGloballyEnabled}
                         />
-                        <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white rounded-full w-9 h-9 flex items-center justify-center flex-shrink-0 disabled:bg-gray-400" disabled={isAdmin ? (adminTab === 'inbox' && !currentThread) : !messagingEnabled}>
+                        <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white rounded-full w-9 h-9 flex items-center justify-center flex-shrink-0 disabled:bg-gray-400" disabled={isAdmin ? (adminTab === 'inbox' && !currentThread) : !isMessagingGloballyEnabled}>
                             <i className="fas fa-paper-plane"></i>
                         </button>
                     </form>

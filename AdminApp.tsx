@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import type { AdminPage, AdminPageProps, Notification, User, RegistrationData, ConfirmationState, AdminConfig, ChatThread } from './types';
-import { getAdminConfig, getRegistrations, onAuthChange, listenToAllChatThreads, sendMessage, deleteMessage, markThreadAsRead, clearChatThread, updateUserMessagingPermission } from './services/firebase';
+import { getAdminConfig, getRegistrations, onAuthChange, listenToAllChatThreads, sendMessage, deleteMessage, markThreadAsRead, clearChatThread, setData } from './services/firebase';
 
 import AdminLayout from './components/admin/AdminLayout';
 import AdminDashboard from './components/admin/AdminDashboard';
@@ -101,28 +101,10 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
             sessionStorage.setItem('seenAdminWelcome', 'true');
         }
         const unsubscribeAuth = onAuthChange(setCurrentUser);
+        
         const unsubscribeChats = listenToAllChatThreads((threads) => {
-            // FIX: The previous implementation incorrectly called an async function synchronously.
-            // This now correctly uses the `allRegistrations` state to build the map.
-            const regsMap = new Map(allRegistrations.map(r => [r.uid, r]));
-
-            // FIX: The `reduce` function had an untyped initial value, causing incorrect type inference for `threadsWithPermissions`.
-            // By adding a type assertion to the initial value and typing the accumulator, we ensure TypeScript knows the correct type,
-            // fixing property access errors on subsequent lines.
-            const threadsWithPermissions = Object.entries(threads).reduce((acc: Record<string, ChatThread>, [userId, thread]) => {
-                const registration = regsMap.get(userId);
-                // FIX: Explicitly type `thread` to avoid `unknown` type issue during spread.
-                acc[userId] = {
-                    ...(thread as ChatThread),
-                    messagingEnabled: registration?.messagingEnabled
-                };
-                return acc;
-            // FIX: The initial value for reduce was an untyped object, causing incorrect type inference for `threadsWithPermissions`.
-            // By adding a type assertion, we ensure TypeScript knows the correct type, fixing the property access error on the following line.
-            }, {} as Record<string, ChatThread>);
-            
-            setChatThreads(threadsWithPermissions);
-            const unreadCount = Object.values(threadsWithPermissions).filter(t => t.unreadByAdmin).length;
+            setChatThreads(threads);
+            const unreadCount = Object.values(threads).filter(t => t.unreadByAdmin).length;
             setMessageBadge(unreadCount);
         });
 
@@ -130,7 +112,7 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
             unsubscribeAuth();
             unsubscribeChats();
         };
-    }, [fetchAdminData, allRegistrations]);
+    }, [fetchAdminData]);
 
     const handleSelectThread = (userId: string | null) => {
         setSelectedThreadId(userId);
@@ -159,27 +141,6 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
         showNotification("Seluruh percakapan telah dihapus.", "success");
     };
 
-    const handleToggleMessagingPermission = async (userId: string, isEnabled: boolean) => {
-        try {
-            await updateUserMessagingPermission(userId, isEnabled);
-            setChatThreads(prev => ({
-                ...prev,
-                [userId]: {
-                    ...prev[userId],
-                    messagingEnabled: isEnabled
-                }
-            }));
-            const regIndex = allRegistrations.findIndex(r => r.uid === userId);
-            if (regIndex > -1) {
-                const updatedRegs = [...allRegistrations];
-                updatedRegs[regIndex].messagingEnabled = isEnabled;
-                setAllRegistrations(updatedRegs);
-            }
-        } catch (error) {
-            showNotification('Gagal mengubah izin pesan.', 'error');
-        }
-    };
-    
     const handleLogout = () => {
         sessionStorage.setItem('adminLoggedOut', 'true');
         onLogout();
@@ -197,7 +158,6 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
                 messages: {},
                 unreadByAdmin: false,
                 unreadByUser: false,
-                messagingEnabled: registration.messagingEnabled
             };
         }
     }
@@ -239,7 +199,7 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
                     onDeleteMessage={handleDeleteMessage}
                     onClearThread={handleClearThread}
                     showConfirmation={showConfirmation}
-                    onToggleMessagingPermission={handleToggleMessagingPermission}
+                    isMessagingGloballyEnabled={adminConfig?.userMessagingActive}
                 />
             )}
            

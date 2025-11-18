@@ -91,7 +91,6 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
     const [isMessageOpen, setIsMessageOpen] = useState(false);
     const [chatThread, setChatThread] = useState<ChatThread | null>(null);
     const [unreadMessages, setUnreadMessages] = useState(0);
-    const [userRegistration, setUserRegistration] = useState<RegistrationData | null>(null);
     const [showWelcomePopup, setShowWelcomePopup] = useState(false);
 
     const showNotification = useCallback((message: string, type: 'success' | 'error') => {
@@ -115,11 +114,8 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
         if (!user) {
             setChatThread(null);
             setUnreadMessages(0);
-            setUserRegistration(null);
             return;
         }
-
-        getUserRegistration(user.uid).then(setUserRegistration);
 
         const unsubscribe = listenToUserChatThread(user.uid, (thread) => {
             setChatThread(thread);
@@ -266,10 +262,9 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
      const handleSendMessage = async (userId: string, text: string, isGlobal: boolean) => {
         if (!user) return;
         
-        if (userRegistration && userRegistration.messagingEnabled === false) {
-            showNotification("Anda perlu izin admin untuk mengirim pesan ke admin, silahkan hubungi admin terkait hal tersebut", 'error');
-            navigate('contact');
-            throw new Error("Messaging disabled");
+        if (adminConfig?.userMessagingActive === false) {
+            showNotification("Pesan dinonaktifkan oleh admin. Silahkan hubungi admin lebih lanjut.", 'error');
+            throw new Error("Messaging disabled globally");
         }
 
         try {
@@ -337,11 +332,12 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
                     isAdmin={false}
                     isOpen={isMessageOpen}
                     onClose={() => setIsMessageOpen(false)}
-                    currentThread={{...chatThread, messagingEnabled: userRegistration?.messagingEnabled} as ChatThread}
+                    currentThread={chatThread}
                     onSendMessage={handleSendMessage}
                     onDeleteMessage={handleDeleteMessage}
                     onClearThread={handleClearThread}
                     showConfirmation={showConfirmation}
+                    isMessagingGloballyEnabled={adminConfig?.userMessagingActive}
                 />
             )}
             <Header 

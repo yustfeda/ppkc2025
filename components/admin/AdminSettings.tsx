@@ -38,6 +38,22 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ onThemeChange, showNotifi
         }
     };
 
+    const handleToggleMessaging = () => {
+        if (!config) return;
+        const newStatus = !config.userMessagingActive;
+        const action = newStatus ? "mengaktifkan" : "menonaktifkan";
+        
+        showConfirmation(
+            `Anda yakin ingin ${action} pengiriman pesan untuk semua pengguna?`,
+            async () => {
+                const updatedConfig = { ...config, userMessagingActive: newStatus };
+                await setData('config', updatedConfig);
+                setConfig(updatedConfig);
+                showNotification(`Status pengiriman pesan untuk semua pengguna berhasil diubah.`, 'success');
+            }
+        );
+    };
+
     const handleReset = () => {
         showConfirmation(
             "Anda yakin ingin menghapus semua data pendaftar? Tindakan ini tidak dapat diurungkan.",
@@ -114,6 +130,24 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ onThemeChange, showNotifi
                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-brand-dark rounded-md">
                     <label htmlFor="loginActive" className="font-medium text-sm text-gray-800 dark:text-white">Tampilkan Tombol Login</label>
                     <input id="loginActive" type="checkbox" checked={config.loginActive} onChange={e => setConfig({...config, loginActive: e.target.checked})} className="h-5 w-5 rounded text-brand-secondary focus:ring-brand-secondary"/>
+                </div>
+            </div>
+
+            <div className="space-y-4 p-4 border rounded-md dark:border-gray-700">
+                <h2 className="text-lg font-semibold text-brand-dark dark:text-white">Pengaturan Pesan Pengguna</h2>
+                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-brand-dark rounded-md">
+                    <div>
+                        <p className="font-medium text-sm text-gray-800 dark:text-white">Status Pesan Pengguna</p>
+                        <p className={`text-xs ${config.userMessagingActive ? 'text-green-600' : 'text-red-600'}`}>
+                            {config.userMessagingActive ? 'Aktif (Semua pengguna dapat mengirim pesan)' : 'Nonaktif (Semua pengguna tidak dapat mengirim pesan)'}
+                        </p>
+                    </div>
+                    <button 
+                        onClick={handleToggleMessaging}
+                        className={`font-bold py-1 px-3 rounded-md text-sm text-white ${config.userMessagingActive ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}
+                    >
+                        {config.userMessagingActive ? 'Nonaktifkan' : 'Aktifkan'}
+                    </button>
                 </div>
             </div>
 
