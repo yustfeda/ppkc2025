@@ -114,7 +114,9 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
                     messagingEnabled: registration?.messagingEnabled
                 };
                 return acc;
-            }, {});
+            // FIX: The initial value for reduce was an untyped object, causing incorrect type inference for `threadsWithPermissions`.
+            // By adding a type assertion, we ensure TypeScript knows the correct type, fixing the property access error on the following line.
+            }, {} as Record<string, ChatThread>);
             
             setChatThreads(threadsWithPermissions);
             const unreadCount = Object.values(threadsWithPermissions).filter(t => t.unreadByAdmin).length;
