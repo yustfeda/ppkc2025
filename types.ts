@@ -32,18 +32,6 @@ export interface AnnouncementDocument {
   thumbnailUrl: string;
 }
 
-export interface WelcomePopupButton {
-  id: string;
-  label: string;
-  link: string;
-}
-
-export interface WelcomePopupConfig {
-  title: string;
-  message: string;
-  buttons: WelcomePopupButton[];
-}
-
 export interface AdminConfig {
     registrationActive: boolean;
     loginActive: boolean;
@@ -51,7 +39,6 @@ export interface AdminConfig {
     showRegistrationButton: boolean;
     registrationComingSoonText: string;
     appVersion: string;
-    welcomePopup?: WelcomePopupConfig;
 }
 
 export interface HomePageUpdate {

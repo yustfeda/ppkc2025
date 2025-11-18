@@ -43,12 +43,7 @@ const MOCK_CONFIG: AdminConfig = {
     theme: 'light',
     showRegistrationButton: true,
     registrationComingSoonText: 'SEGERA HADIR',
-    appVersion: 'v1.1.11',
-    welcomePopup: {
-        title: "Selamat datang, {userName}!",
-        message: "Silahkan klik ok untuk melanjutkan.",
-        buttons: []
-    }
+    appVersion: 'v1.1.11'
 };
 
 const MOCK_UPDATES: HomePageUpdate[] = [

@@ -198,7 +198,7 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
             setCurrentPage('home');
             sessionStorage.removeItem('justLoggedIn');
         }
-     }, [user, showNotification]);
+     }, [user]);
 
     const navigate = useCallback(async (page: PublicPage) => {
         if (page === 'messages') {
@@ -317,12 +317,10 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
         <div className="font-sans bg-brand-light dark:bg-brand-dark min-h-screen text-sm flex flex-col">
             <ConfirmationModal confirmation={confirmation} onCancel={hideConfirmation} />
             {notification && <NotificationPopup notification={notification} onClose={() => setNotification(null)} />}
-            {showWelcomePopup && user && adminConfig?.welcomePopup && (
+            {showWelcomePopup && user && (
                 <WelcomePopup 
                     user={user}
-                    config={adminConfig.welcomePopup}
                     onClose={() => setShowWelcomePopup(false)}
-                    setCurrentPage={navigate}
                 />
             )}
             {dynamicFormState.isOpen && dynamicFormState.button && (
