@@ -106,14 +106,15 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
             // This now correctly uses the `allRegistrations` state to build the map.
             const regsMap = new Map(allRegistrations.map(r => [r.uid, r]));
 
-            const threadsWithPermissions = Object.entries(threads).reduce((acc, [userId, thread]) => {
+            const threadsWithPermissions = Object.entries(threads).reduce((acc: Record<string, ChatThread>, [userId, thread]) => {
                 const registration = regsMap.get(userId);
+                // FIX: Explicitly type `thread` to avoid `unknown` type issue during spread.
                 acc[userId] = {
-                    ...thread,
+                    ...(thread as ChatThread),
                     messagingEnabled: registration?.messagingEnabled
                 };
                 return acc;
-            }, {} as Record<string, ChatThread>);
+            }, {});
             
             setChatThreads(threadsWithPermissions);
             const unreadCount = Object.values(threadsWithPermissions).filter(t => t.unreadByAdmin).length;
