@@ -131,9 +131,9 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage, user, onManagedButtonClick 
             <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
                 <h3 className="text-md font-semibold text-gray-700 dark:text-gray-300 mb-4">{supportersSection.title || 'Didukung Oleh'}</h3>
                 {supportersSection.items.length > 0 ? (
-                    <div className="flex justify-center items-center gap-2 flex-wrap">
+                    <div className="flex justify-center items-center gap-1 flex-wrap">
                         {supportersSection.items.map(supporter => (
-                             <div key={supporter.id} title={supporter.name} className="flex items-center justify-center h-20 w-32 transition-all duration-300">
+                             <div key={supporter.id} title={supporter.name} className="flex items-center justify-center h-20 w-24 transition-all duration-300">
                                {supporter.imageUrl ? (
                                    <img src={supporter.imageUrl} alt={supporter.name} className="max-h-full max-w-full object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                                ) : supporter.icon ? (
