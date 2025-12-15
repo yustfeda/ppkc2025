@@ -74,8 +74,13 @@ const AdminManageUsers: React.FC<AdminManageUsersProps> = ({ showNotification, s
     const handleDelete = async (uid: string) => {
         try {
             await deleteUserRegistration(uid);
+            // DIRECTLY UPDATE STATE: This prevents "ghost data" from reappearing if database fetch is cached or slow
+            setRegistrations(prevRegistrations => prevRegistrations.filter(r => r.uid !== uid));
             showNotification('Pendaftaran pengguna berhasil dihapus.', 'success');
-            fetchData();
+            onUpdate(); 
+            // We don't necessarily need to call fetchData() here if we update state manually, 
+            // but calling it ensures we are eventually in sync. 
+            // The key is the setRegistrations above provides instant feedback.
         } catch (error) {
             console.error("Failed to delete user registration:", error);
             showNotification('Gagal menghapus pendaftaran pengguna.', 'error');

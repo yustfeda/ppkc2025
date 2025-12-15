@@ -118,7 +118,8 @@ const AdminManageHighlights: React.FC<AdminPageProps> = ({ showNotification, sho
     const handleHighlightImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0] && editingHighlight) {
             const file = e.target.files[0];
-            if (file.size > 2 * 1024 * 1024) { showNotification('Max 2MB', 'error'); return; }
+            // 100KB limit
+            if (file.size > 100 * 1024) { showNotification('Max 100KB', 'error'); return; }
             const reader = new FileReader();
             reader.onload = (ev) => setEditingHighlight({...editingHighlight, imageUrl: ev.target?.result as string});
             reader.readAsDataURL(file);
@@ -159,7 +160,8 @@ const AdminManageHighlights: React.FC<AdminPageProps> = ({ showNotification, sho
     const handleSupporterImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0] && editingSupporter) {
             const file = e.target.files[0];
-            if (file.size > 2 * 1024 * 1024) { showNotification('Max 2MB', 'error'); return; }
+            // 100KB limit
+            if (file.size > 100 * 1024) { showNotification('Max 100KB', 'error'); return; }
             const reader = new FileReader();
             reader.onload = (ev) => setEditingSupporter({...editingSupporter, imageUrl: ev.target?.result as string});
             reader.readAsDataURL(file);
@@ -289,6 +291,7 @@ const AdminManageHighlights: React.FC<AdminPageProps> = ({ showNotification, sho
                             ) : (
                                 <input type="file" accept="image/*" onChange={handleHighlightImageUpload} className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-brand-secondary file:text-white hover:file:bg-brand-accent" />
                             )}
+                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Maksimal 100KB.</p>
                         </div>
                     </div>
                 )}
@@ -318,6 +321,7 @@ const AdminManageHighlights: React.FC<AdminPageProps> = ({ showNotification, sho
                             ) : (
                                 <input type="file" accept="image/*" onChange={handleSupporterImageUpload} className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-brand-secondary file:text-white hover:file:bg-brand-accent" />
                             )}
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Maksimal 100KB.</p>
                         </div>
                         <div className="relative input-group">
                             <input value={editingSupporter.icon || ''} onChange={e => setEditingSupporter({...editingSupporter, icon: e.target.value})} className={inputClass} placeholder=" " />

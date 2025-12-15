@@ -71,7 +71,7 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage, user, onManagedButtonClick 
   const allStagesPassed = stages.length > 0 && registration?.stageProgress?.[stages[stages.length - 1].id]?.status === 'lolos';
 
   // Default Hero Image (Placeholder Illustration)
-  const defaultHeroImage = "https://images.unsplash.com/photo-1532375810709-75b1da00537c?q=80&w=1000&auto=format&fit=crop";
+  const defaultHeroImage = "public/banner.png";
 
   const WelcomeSection: React.FC = () => {
     if (user) {

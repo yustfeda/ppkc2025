@@ -101,8 +101,9 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ onThemeChange, showNotifi
     const handleHeroImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
-            if (file.size > 2 * 1024 * 1024) {
-                 showNotification('Ukuran gambar maksimal 2MB.', 'error');
+            // 100KB limit
+            if (file.size > 100 * 1024) {
+                 showNotification('Ukuran gambar maksimal 100KB.', 'error');
                  return;
             }
             const reader = new FileReader();
@@ -152,6 +153,7 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ onThemeChange, showNotifi
                                     <button onClick={() => setConfig({...config, heroImageUrl: ''})} className="text-red-500 text-xs hover:underline">Hapus/Reset</button>
                                 )}
                             </div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Maksimal 100KB.</p>
                         </div>
                     </div>
                 </div>

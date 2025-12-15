@@ -92,18 +92,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, currentPage, setCur
                     </div>
                 </main>
                 
-                {/* Floating Message Button (Mobile/Tablet only, or always visible if preferred) */}
-                <button 
-                    onClick={onMessageIconClick}
-                    className="fixed right-6 bottom-6 bg-brand-secondary text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center z-40 hover:bg-brand-accent transform hover:scale-110 transition-all lg:hidden"
-                    aria-label="Open Messages"
-                >
-                    <i className="fas fa-paper-plane text-xl"></i>
-                    {messageBadge > 0 && (
-                        <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white text-xs font-bold border-2 border-white dark:border-gray-800">{messageBadge}</span>
-                    )}
-                </button>
-
                 <AdminFooter appVersion={appVersion} />
             </div>
         </div>

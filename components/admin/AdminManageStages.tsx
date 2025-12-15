@@ -1,11 +1,63 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { getSelectionStages, setData } from '../../services/firebase';
 import type { SelectionStage, AdminPageProps } from '../../types';
 
+interface EditModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    title: string;
+    children: React.ReactNode;
+    onSave: () => void;
+    onDelete?: () => void;
+}
+
+const EditModal: React.FC<EditModalProps> = ({ isOpen, onClose, title, children, onSave, onDelete }) => {
+    const [isClosing, setIsClosing] = useState(false);
+
+    const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+            onClose();
+            setIsClosing(false);
+        }, 300);
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[1001] p-4" onClick={handleClose}>
+            <div 
+                className={`bg-white dark:bg-brand-primary rounded-lg p-6 max-w-2xl w-full shadow-2xl ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'} flex flex-col max-h-[90vh]`}
+                onClick={e => e.stopPropagation()}
+            >
+                <div className="flex justify-between items-center mb-6 border-b dark:border-gray-700 pb-2">
+                    <h3 className="text-xl font-bold text-brand-primary dark:text-white">{title}</h3>
+                    <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><i className="fas fa-times"></i></button>
+                </div>
+                
+                <div className="flex-grow overflow-y-auto pr-2 custom-scrollbar space-y-4">
+                    {children}
+                </div>
+
+                <div className="mt-6 pt-4 border-t dark:border-gray-700 flex justify-between items-center">
+                    {onDelete ? (
+                        <button onClick={onDelete} className="text-red-500 hover:text-red-700 font-bold text-sm bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-md"><i className="fas fa-trash-alt mr-2"></i>Hapus</button>
+                    ) : <div></div>}
+                    <div className="flex gap-3">
+                        <button onClick={handleClose} className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold py-2 px-4 rounded-md text-sm hover:bg-gray-300 dark:hover:bg-gray-600">Batal</button>
+                        <button onClick={() => { onSave(); handleClose(); }} className="bg-brand-secondary text-white font-bold py-2 px-6 rounded-md text-sm hover:bg-brand-accent">Simpan</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const PopupContentModal: React.FC<{
     stage: SelectionStage | null;
     onClose: () => void;
-    onSave: (stageId: string, newContent: SelectionStage['popupContent']) => void;
+    onSave: (newContent: SelectionStage['popupContent']) => void;
 }> = ({ stage, onClose, onSave }) => {
     const [content, setContent] = useState(stage?.popupContent);
     const [isClosing, setIsClosing] = useState(false);
@@ -26,7 +78,7 @@ const PopupContentModal: React.FC<{
     };
 
     const handleSave = () => {
-        onSave(stage.id, content);
+        onSave(content);
         handleClose();
     };
     
@@ -38,20 +90,28 @@ const PopupContentModal: React.FC<{
     };
 
     const inputClass = "peer form-input p-2 border rounded text-sm w-full bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-brand-accent";
-    const labelClass = "form-label text-xs";
+    const labelClass = "form-label text-xs dark:text-gray-400";
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[1001] p-4" onClick={handleClose}>
-            <div 
-                className={`bg-brand-light dark:bg-gray-700 rounded-lg p-6 max-w-2xl w-full shadow-lg ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'}`}
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[1002] p-4" onClick={handleClose}>
+             <div 
+                className={`bg-brand-light dark:bg-gray-700 rounded-lg p-6 max-w-lg w-full shadow-lg ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'} flex flex-col max-h-[85vh]`}
                 onClick={e => e.stopPropagation()}
             >
-                <h3 className="text-lg font-semibold text-brand-dark dark:text-white mb-4">Edit Konten Popup: {stage.title}</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Kosongkan field untuk menggunakan pesan default.</p>
-                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                <div className="flex justify-between items-center mb-4">
+                     <h3 className="text-lg font-semibold text-brand-dark dark:text-white">Edit Konten Popup</h3>
+                     <button onClick={handleClose} className="text-gray-400"><i className="fas fa-times"></i></button>
+                </div>
+                
+                <div className="space-y-4 overflow-y-auto pr-2 flex-grow">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
+                        <i className="fas fa-info-circle mr-1"></i>
+                        Pesan ini akan muncul saat peserta mengklik kartu tahapan di halaman "Tahapan Seleksi". Kosongkan untuk menggunakan pesan default.
+                    </p>
+
                     {/* Pending */}
-                    <div className="p-3 bg-yellow-50 dark:bg-yellow-900/30 rounded-md">
-                        <h4 className="font-bold text-yellow-700 dark:text-yellow-300 text-sm mb-2">Status: Pending Review</h4>
+                    <div className="p-3 bg-yellow-50 dark:bg-yellow-900/30 rounded-md border border-yellow-100 dark:border-yellow-800">
+                        <h4 className="font-bold text-yellow-700 dark:text-yellow-300 text-sm mb-2 flex items-center"><i className="fas fa-hourglass-half mr-2"></i>Status: Pending Review</h4>
                         <div className="space-y-3">
                             <div className="relative input-group">
                                 <input value={content?.pending?.title || ''} onChange={(e) => handleChange('pending', 'title', e.target.value)} className={inputClass} placeholder=" "/>
@@ -64,8 +124,8 @@ const PopupContentModal: React.FC<{
                         </div>
                     </div>
                      {/* Lolos */}
-                    <div className="p-3 bg-green-50 dark:bg-green-900/30 rounded-md">
-                        <h4 className="font-bold text-green-700 dark:text-green-300 text-sm mb-2">Status: Lolos</h4>
+                    <div className="p-3 bg-green-50 dark:bg-green-900/30 rounded-md border border-green-100 dark:border-green-800">
+                        <h4 className="font-bold text-green-700 dark:text-green-300 text-sm mb-2 flex items-center"><i className="fas fa-check-circle mr-2"></i>Status: Lolos</h4>
                         <div className="space-y-3">
                             <div className="relative input-group">
                                 <input value={content?.lolos?.title || ''} onChange={(e) => handleChange('lolos', 'title', e.target.value)} className={inputClass} placeholder=" "/>
@@ -78,8 +138,8 @@ const PopupContentModal: React.FC<{
                         </div>
                     </div>
                      {/* Gagal */}
-                    <div className="p-3 bg-red-50 dark:bg-red-900/30 rounded-md">
-                        <h4 className="font-bold text-red-700 dark:text-red-300 text-sm mb-2">Status: Gagal</h4>
+                    <div className="p-3 bg-red-50 dark:bg-red-900/30 rounded-md border border-red-100 dark:border-red-800">
+                        <h4 className="font-bold text-red-700 dark:text-red-300 text-sm mb-2 flex items-center"><i className="fas fa-times-circle mr-2"></i>Status: Gagal</h4>
                         <div className="space-y-3">
                             <div className="relative input-group">
                                 <input value={content?.gagal?.title || ''} onChange={(e) => handleChange('gagal', 'title', e.target.value)} className={inputClass} placeholder=" "/>
@@ -92,9 +152,8 @@ const PopupContentModal: React.FC<{
                         </div>
                     </div>
                 </div>
-                <div className="flex justify-end gap-3 mt-6">
-                    <button onClick={handleClose} className="bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-2 px-4 rounded-md text-sm hover:bg-gray-300">Batal</button>
-                    <button onClick={handleSave} className="bg-brand-secondary text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-brand-accent">Simpan</button>
+                <div className="flex justify-end gap-3 mt-4 pt-4 border-t dark:border-gray-600">
+                    <button onClick={handleSave} className="bg-brand-secondary text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-brand-accent w-full">Simpan Konten Popup</button>
                 </div>
             </div>
         </div>
@@ -104,7 +163,11 @@ const PopupContentModal: React.FC<{
 const AdminManageStages: React.FC<AdminPageProps> = ({ showNotification, showConfirmation }) => {
     const [stages, setStages] = useState<SelectionStage[]>([]);
     const [loading, setLoading] = useState(true);
+    
+    // Modal & Editing States
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingStage, setEditingStage] = useState<SelectionStage | null>(null);
+    const [isPopupModalOpen, setIsPopupModalOpen] = useState(false);
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -117,25 +180,24 @@ const AdminManageStages: React.FC<AdminPageProps> = ({ showNotification, showCon
         fetchData();
     }, [fetchData]);
 
-    const handleSave = async () => {
-        setLoading(true);
-        // Ensure IDs are strings and not numbers from Date.now()
-        const stagesToSave = stages.map(stage => ({...stage, id: String(stage.id)}));
+    const handleSaveStage = async () => {
+        if (!editingStage) return;
+
+        const newStages = stages.some(s => s.id === editingStage.id)
+            ? stages.map(s => s.id === editingStage.id ? editingStage : s)
+            : [...stages, editingStage];
+            
+        // Ensure IDs are strings
+        const stagesToSave = newStages.map(stage => ({...stage, id: String(stage.id)}));
+        
         await setData('selectionStages', stagesToSave);
-        setLoading(false);
-        showNotification('Perubahan tahapan berhasil disimpan!', 'success');
-        fetchData(); // Refresh to ensure IDs are consistent
+        setStages(stagesToSave);
+        showNotification('Data tahapan berhasil disimpan!', 'success');
+        setEditingStage(null);
     };
 
-    const handleStageChange = (index: number, field: keyof SelectionStage, value: any) => {
-        const newStages = [...stages];
-        const stageToUpdate = { ...newStages[index], [field]: value };
-        newStages[index] = stageToUpdate;
-        setStages(newStages);
-    }
-    
     const handleAddStage = () => {
-        const newStage: SelectionStage = {
+        setEditingStage({
             id: `new_${Date.now()}`,
             title: '',
             date: '',
@@ -149,104 +211,161 @@ const AdminManageStages: React.FC<AdminPageProps> = ({ showNotification, showCon
                 lolos: { title: '', message: '' },
                 gagal: { title: '', message: '' },
             }
-        };
-        setStages([...stages, newStage]);
+        });
+        setIsModalOpen(true);
     };
 
-    const handleDeleteStage = (id: string) => {
+    const handleEditStage = (stage: SelectionStage) => {
+        setEditingStage(stage);
+        setIsModalOpen(true);
+    }
+
+    const handleDeleteStage = () => {
+        if (!editingStage) return;
         showConfirmation(
             'Anda yakin ingin menghapus tahapan ini? Tindakan ini tidak dapat diurungkan.',
-            () => setStages(stages.filter(s => s.id !== id))
+            async () => {
+                const newStages = stages.filter(s => s.id !== editingStage.id);
+                const stagesToSave = newStages.map(stage => ({...stage, id: String(stage.id)}));
+                await setData('selectionStages', stagesToSave);
+                setStages(stagesToSave);
+                showNotification('Tahapan berhasil dihapus.', 'success');
+                setIsModalOpen(false);
+            }
         );
     };
-
-    const handleSavePopupContent = (stageId: string, newContent: SelectionStage['popupContent']) => {
-        const stageIndex = stages.findIndex(s => s.id === stageId);
-        if (stageIndex !== -1) {
-            handleStageChange(stageIndex, 'popupContent', newContent);
-            showNotification('Konten popup diperbarui. Klik "Simpan Semua" untuk menyimpan ke database.', 'success');
+    
+    const handlePopupContentUpdate = (newContent: SelectionStage['popupContent']) => {
+        if (editingStage) {
+            setEditingStage({ ...editingStage, popupContent: newContent });
         }
-    };
+    }
 
-    const inputClass = "peer form-input p-3 border rounded text-sm w-full bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-brand-accent";
+    const inputClass = "peer form-input p-3 border rounded text-sm w-full bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-brand-accent";
     const labelClass = "form-label text-sm text-gray-500 dark:text-gray-400";
 
     if (loading) return <div className="text-center p-4"><i className="fas fa-spinner fa-spin text-2xl text-brand-secondary"></i></div>;
 
     return (
-        <div className="bg-white dark:bg-brand-primary p-6 rounded-lg shadow-md animate-fade-in">
-             {editingStage && (
+        <div className="space-y-6 animate-fade-in">
+             {isPopupModalOpen && editingStage && (
                 <PopupContentModal 
                     stage={editingStage} 
-                    onClose={() => setEditingStage(null)} 
-                    onSave={handleSavePopupContent} 
+                    onClose={() => setIsPopupModalOpen(false)} 
+                    onSave={handlePopupContentUpdate} 
                 />
             )}
-            <h1 className="text-2xl font-bold text-brand-primary dark:text-white mb-6">Kelola Konten Tahapan Seleksi</h1>
-            <div className="space-y-4">
-                {stages.map((stage, index) => (
-                    <div key={stage.id} className="p-4 bg-gray-50 dark:bg-brand-dark rounded-lg shadow-sm relative form-input-bg-dark">
-                        <div className="absolute top-2 right-2 flex gap-2 z-10">
-                            { index > 0 &&
-                                <button onClick={() => setEditingStage(stage)} className="text-gray-400 hover:text-blue-500 text-xs" title="Edit Konten Popup">
-                                    <i className="fas fa-comment-alt-edit"></i>
-                                </button>
-                            }
-                            { index > 0 && // Don't allow deleting the first (admin) stage
-                                <button onClick={() => handleDeleteStage(stage.id)} className="text-gray-400 hover:text-red-500 text-xs" title="Hapus Tahapan">
-                                    <i className="fas fa-trash-alt"></i>
-                                </button>
-                            }
+
+            <div className="bg-white dark:bg-brand-primary p-6 rounded-lg shadow-md">
+                <div className="flex justify-between items-center mb-6">
+                    <h1 className="text-2xl font-bold text-brand-primary dark:text-white">Kelola Tahapan Seleksi</h1>
+                    <button onClick={handleAddStage} className="bg-green-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-green-700 shadow flex items-center gap-2">
+                        <i className="fas fa-plus"></i> Tambah Tahapan
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {stages.map((stage, index) => (
+                        <div 
+                            key={stage.id} 
+                            onClick={() => handleEditStage(stage)}
+                            className="bg-gray-50 dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-5 cursor-pointer hover:shadow-lg transition-all transform hover:-translate-y-1 relative group flex flex-col h-full"
+                        >
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className="bg-brand-secondary text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shadow-sm flex-shrink-0">
+                                    {index + 1}
+                                </div>
+                                <h3 className="font-bold text-brand-primary dark:text-white text-lg leading-tight line-clamp-2">{stage.title || 'Tanpa Judul'}</h3>
+                            </div>
+                            
+                            <div className="mb-4 flex-grow">
+                                <p className="text-xs font-semibold text-brand-secondary dark:text-blue-300 mb-1">
+                                    <i className="fas fa-calendar-alt mr-1"></i> {stage.date || 'Tanggal belum diatur'}
+                                </p>
+                                <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3">
+                                    {stage.description || 'Tidak ada deskripsi.'}
+                                </p>
+                            </div>
+
+                            <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-black rounded-full p-2 shadow-md">
+                                <i className="fas fa-pen text-sm text-blue-500"></i>
+                            </div>
+                            
+                            <div className="mt-auto pt-3 border-t dark:border-gray-700 flex justify-between items-center text-xs text-gray-400">
+                                <span>ID: {stage.id.substring(0, 8)}...</span>
+                                {index === 0 && <span className="text-yellow-600 font-semibold bg-yellow-100 dark:bg-yellow-900/30 px-2 py-0.5 rounded">Admin Step</span>}
+                            </div>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    ))}
+                     {stages.length === 0 && <p className="text-gray-500 text-sm italic col-span-full text-center py-8">Belum ada tahapan seleksi.</p>}
+                </div>
+            </div>
+
+            {/* Main Edit Modal */}
+            <EditModal 
+                isOpen={isModalOpen} 
+                onClose={() => setIsModalOpen(false)} 
+                title={stages.some(s => s.id === editingStage?.id) ? "Edit Tahapan" : "Tambah Tahapan"}
+                onSave={handleSaveStage}
+                onDelete={stages.some(s => s.id === editingStage?.id) && stages.indexOf(editingStage!) !== 0 ? handleDeleteStage : undefined}
+            >
+                {editingStage && (
+                    <div className="space-y-5 pt-1">
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div className="relative input-group">
-                                <input id={`title-${stage.id}`} value={stage.title} onChange={e => handleStageChange(index, 'title', e.target.value)} className={`${inputClass} font-semibold`} placeholder=" "/>
-                                <label htmlFor={`title-${stage.id}`} className={labelClass}>Judul Tahapan</label>
+                                <input value={editingStage.title} onChange={e => setEditingStage({...editingStage, title: e.target.value})} className={inputClass} placeholder=" " autoFocus/>
+                                <label className={labelClass}>Judul Tahapan</label>
                             </div>
                             <div className="relative input-group">
-                                <input id={`date-${stage.id}`} value={stage.date} onChange={e => handleStageChange(index, 'date', e.target.value)} className={inputClass} placeholder=" "/>
-                                <label htmlFor={`date-${stage.id}`} className={labelClass}>Tanggal</label>
+                                <input value={editingStage.date} onChange={e => setEditingStage({...editingStage, date: e.target.value})} className={inputClass} placeholder=" "/>
+                                <label className={labelClass}>Tanggal Pelaksanaan</label>
                             </div>
-                            <div className="md:col-span-2 relative input-group">
-                                <textarea id={`desc-${stage.id}`} value={stage.description} onChange={e => handleStageChange(index, 'description', e.target.value)} className={`${inputClass}`} placeholder=" " rows={2}/>
-                                <label htmlFor={`desc-${stage.id}`} className={labelClass}>Deskripsi Singkat</label>
-                            </div>
-                            <div className="md:col-span-2 relative input-group">
-                                <input id={`formTitle-${stage.id}`} value={stage.formTitle || ''} onChange={e => handleStageChange(index, 'formTitle', e.target.value)} className={`${inputClass} font-medium`} placeholder=" "/>
-                                <label htmlFor={`formTitle-${stage.id}`} className={labelClass}>Judul Form Tugas (opsional)</label>
-                            </div>
-                            <div className="md:col-span-2 relative input-group">
-                                <textarea id={`formDesc-${stage.id}`} value={stage.formDescription || ''} onChange={e => handleStageChange(index, 'formDescription', e.target.value)} className={`${inputClass}`} placeholder=" " rows={3}/>
-                                <label htmlFor={`formDesc-${stage.id}`} className={labelClass}>Deskripsi Form (opsional)</label>
-                            </div>
-                           <div className="relative input-group">
-                                <input id={`formView-${stage.id}`} value={stage.formViewUrl || ''} onChange={e => handleStageChange(index, 'formViewUrl', e.target.value)} className={inputClass} placeholder=" "/>
-                                <label htmlFor={`formView-${stage.id}`} className={labelClass}>Link Lihat Form (opsional)</label>
-                           </div>
-                           <div className="relative input-group">
-                                <input id={`formDownload-${stage.id}`} value={stage.formDownloadUrl || ''} onChange={e => handleStageChange(index, 'formDownloadUrl', e.target.value)} className={inputClass} placeholder=" "/>
-                                <label htmlFor={`formDownload-${stage.id}`} className={labelClass}>Link Unduh Form (opsional)</label>
-                           </div>
                         </div>
-                        { index === 0 &&
-                            <div className="mt-4 pt-3 border-t dark:border-gray-700">
-                               <p className="text-xs text-gray-500 dark:text-gray-400">
-                                <i className="fas fa-info-circle mr-1"></i>
-                                Tahap Administrasi tidak dapat dihapus. Statusnya dikelola di "Kelola User".
-                               </p>
+                        
+                        <div className="relative input-group">
+                            <textarea value={editingStage.description} onChange={e => setEditingStage({...editingStage, description: e.target.value})} className={inputClass} rows={3} placeholder=" "/>
+                            <label className={labelClass}>Deskripsi Singkat</label>
+                        </div>
+
+                        <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg border dark:border-gray-700">
+                            <h4 className="font-semibold text-brand-primary dark:text-white text-sm mb-3 border-b dark:border-gray-600 pb-2">Konfigurasi Form & Dokumen (Opsional)</h4>
+                            <div className="space-y-4">
+                                <div className="relative input-group">
+                                    <input value={editingStage.formTitle || ''} onChange={e => setEditingStage({...editingStage, formTitle: e.target.value})} className={inputClass} placeholder=" "/>
+                                    <label className={labelClass}>Judul Form Tugas</label>
+                                </div>
+                                <div className="relative input-group">
+                                    <textarea value={editingStage.formDescription || ''} onChange={e => setEditingStage({...editingStage, formDescription: e.target.value})} className={inputClass} rows={2} placeholder=" "/>
+                                    <label className={labelClass}>Deskripsi Form</label>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="relative input-group">
+                                        <input value={editingStage.formViewUrl || ''} onChange={e => setEditingStage({...editingStage, formViewUrl: e.target.value})} className={inputClass} placeholder=" "/>
+                                        <label className={labelClass}>Link Lihat Form (URL)</label>
+                                    </div>
+                                    <div className="relative input-group">
+                                        <input value={editingStage.formDownloadUrl || ''} onChange={e => setEditingStage({...editingStage, formDownloadUrl: e.target.value})} className={inputClass} placeholder=" "/>
+                                        <label className={labelClass}>Link Unduh Form (URL)</label>
+                                    </div>
+                                </div>
                             </div>
-                        }
+                        </div>
+
+                         <button 
+                            onClick={() => setIsPopupModalOpen(true)}
+                            className="w-full py-3 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 rounded-lg border border-indigo-200 dark:border-indigo-700 hover:bg-indigo-200 dark:hover:bg-indigo-900/60 font-semibold text-sm transition-colors flex items-center justify-center gap-2"
+                        >
+                            <i className="fas fa-comment-alt-lines"></i> Edit Pesan Popup (Lolos/Gagal)
+                        </button>
+
+                        {stages.indexOf(editingStage) === 0 && (
+                            <p className="text-xs text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 p-2 rounded border border-yellow-200 dark:border-yellow-800">
+                                Note: Tahap pertama adalah Seleksi Administrasi. Anda tidak dapat menghapusnya, namun dapat mengedit kontennya.
+                            </p>
+                        )}
                     </div>
-                ))}
-            </div>
-            <div className="mt-6 flex flex-col sm:flex-row gap-3">
-                <button onClick={handleAddStage} disabled={loading} className="bg-green-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-green-700">
-                  <i className="fas fa-plus mr-2"></i>Tambah Tahapan
-                </button>
-                <button onClick={handleSave} disabled={loading} className="bg-brand-secondary text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-brand-accent flex-grow">
-                  {loading ? <i className="fas fa-spinner fa-spin"></i> : 'Simpan Semua Perubahan'}
-                </button>
-            </div>
+                )}
+            </EditModal>
         </div>
     );
 };

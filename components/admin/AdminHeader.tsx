@@ -61,10 +61,10 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ toggleSidebar, isSidebarOpen,
             </div>
 
             <div className="flex items-center space-x-4">
-                 {/* Messages Icon (Desktop Header Shortcut) */}
+                 {/* Messages Icon (Visible on all screens now) */}
                  <button
                     onClick={onMessageIconClick}
-                    className="relative p-2 text-gray-300 hover:text-white transition-colors hidden lg:block"
+                    className="relative p-2 text-gray-300 hover:text-white transition-colors"
                     title="Pesan"
                  >
                      <i className="fas fa-paper-plane text-xl"></i>

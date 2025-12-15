@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import type { User, RegistrationData, FormField, AdminConfig } from '../types';
 import { getUserRegistration, setData, deleteUserRegistration, logoutUser, getRegistrationFormFields, getRegistrations } from '../services/firebase';
@@ -77,9 +78,9 @@ const Profile: React.FC<ProfileProps> = ({ user, showNotification, showConfirmat
             const reader = new FileReader();
             reader.onload = (event) => {
                 const base64String = event.target?.result as string;
-                // Basic size check
-                if (base64String.length > 2 * 1024 * 1024) { // ~2MB limit
-                    showNotification('Ukuran gambar terlalu besar. Pilih gambar di bawah 2MB.', 'error');
+                // Size check: 100KB = 100 * 1024 bytes
+                if (file.size > 100 * 1024) { 
+                    showNotification('Ukuran gambar terlalu besar. Maksimal 100KB.', 'error');
                     return;
                 }
                 localStorage.setItem(`profilePic_${user.uid}`, base64String);
@@ -228,6 +229,7 @@ const Profile: React.FC<ProfileProps> = ({ user, showNotification, showConfirmat
                                 Ganti Foto
                             </label>
                         </div>
+                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Maksimal 100KB.</p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
