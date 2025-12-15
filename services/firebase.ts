@@ -43,7 +43,7 @@ const MOCK_CONFIG: AdminConfig = {
     theme: 'light',
     showRegistrationButton: true,
     registrationComingSoonText: 'SEGERA HADIR',
-    appVersion: '',
+    appVersion: 'v1.1.11',
     userMessagingActive: true,
     proofOfPassing: {
       participantNumberAppName: 'PPKC',

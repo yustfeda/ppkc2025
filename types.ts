@@ -1,3 +1,4 @@
+
 export type PublicPage = 
   'home' | 'stages' | 'announcements' | 'contact' | 
   'login' | 'registration' | 'profile' | 'status' | 'messages';
@@ -47,6 +48,7 @@ export interface AdminConfig {
     appVersion: string;
     userMessagingActive: boolean; // Global messaging toggle
     proofOfPassing?: ProofOfPassingConfig;
+    heroImageUrl?: string; // New field for customizable hero image
 }
 
 export interface HomePageUpdate {

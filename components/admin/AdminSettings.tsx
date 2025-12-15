@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { getAdminConfig, setData, resetAllRegistrations, getRegistrationFormFields } from '../../services/firebase';
 import type { AdminConfig, AdminPageProps, FormField, ProofOfPassingConfig } from '../../types';
@@ -96,6 +97,22 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ onThemeChange, showNotifi
     const handleDeleteField = (id: string) => {
         setDocFields(docFields.filter(f => f.id !== id));
     };
+    
+    const handleHeroImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            if (file.size > 2 * 1024 * 1024) {
+                 showNotification('Ukuran gambar maksimal 2MB.', 'error');
+                 return;
+            }
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const base64 = event.target?.result as string;
+                if(config) setConfig({...config, heroImageUrl: base64});
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     if (loading || !config) {
         return <div className="text-center p-4"><i className="fas fa-spinner fa-spin text-2xl text-brand-secondary"></i></div>;
@@ -103,75 +120,123 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ onThemeChange, showNotifi
 
     const inputClass = "peer form-input p-3 border rounded text-sm w-full bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-brand-accent";
     const labelClass = "form-label text-sm text-gray-500 dark:text-gray-400";
+    const sectionClass = "space-y-4 p-5 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50 shadow-sm";
+    const sectionTitleClass = "text-lg font-bold text-brand-primary dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2 mb-4";
     
     return (
-        <div className="bg-white dark:bg-brand-primary p-6 rounded-lg shadow-md max-w-2xl mx-auto space-y-8">
-            <div>
-                <h1 className="text-2xl font-bold text-brand-primary dark:text-white">Pengaturan Global</h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Kontrol fitur utama dan tampilan aplikasi.</p>
+        <div className="bg-white dark:bg-brand-primary p-6 rounded-lg shadow-md max-w-4xl mx-auto space-y-8 animate-fade-in">
+            <div className="text-center border-b pb-4 dark:border-gray-700">
+                <h1 className="text-3xl font-bold text-brand-primary dark:text-white">Pengaturan Global</h1>
+                <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">Kontrol fitur utama, tampilan aplikasi, dan konfigurasi sistem.</p>
             </div>
             
-            <div className="space-y-6 p-4 border rounded-md dark:border-gray-700">
-                <h2 className="text-lg font-semibold text-brand-dark dark:text-white">Tombol Pendaftaran & Login</h2>
-                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-brand-dark rounded-md">
-                    <label htmlFor="showRegBtn" className="font-medium text-sm text-gray-800 dark:text-white">Tampilkan Tombol Daftar</label>
-                    <input id="showRegBtn" type="checkbox" checked={config.showRegistrationButton} onChange={e => setConfig({...config, showRegistrationButton: e.target.checked})} className="h-5 w-5 rounded text-brand-secondary focus:ring-brand-secondary"/>
-                </div>
-                 {config.showRegistrationButton && (
-                    <div className="pl-6 space-y-4">
-                        <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-brand-dark rounded-md">
-                            <label htmlFor="activateRegBtn" className={`font-medium text-sm ${config.showRegistrationButton ? 'text-gray-800 dark:text-white' : 'text-gray-400'}`}>Aktifkan Tombol Daftar</label>
-                            <input id="activateRegBtn" type="checkbox" checked={config.registrationActive} onChange={e => setConfig({...config, registrationActive: e.target.checked})} className="h-5 w-5 rounded text-brand-secondary focus:ring-brand-secondary" disabled={!config.showRegistrationButton}/>
-                        </div>
-                         {!config.registrationActive && (
-                             <div className="relative input-group">
-                                <input 
-                                    id="comingSoonText"
-                                    type="text"
-                                    value={config.registrationComingSoonText}
-                                    onChange={e => setConfig({...config, registrationComingSoonText: e.target.value})}
-                                    className={inputClass}
-                                    placeholder=" "
-                                />
-                                 <label htmlFor="comingSoonText" className={labelClass}>Teks "Segera Hadir" (di atas tombol)</label>
-                             </div>
-                         )}
-                    </div>
-                 )}
-                 <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-brand-dark rounded-md">
-                    <label htmlFor="loginActive" className="font-medium text-sm text-gray-800 dark:text-white">Tampilkan Tombol Login</label>
-                    <input id="loginActive" type="checkbox" checked={config.loginActive} onChange={e => setConfig({...config, loginActive: e.target.checked})} className="h-5 w-5 rounded text-brand-secondary focus:ring-brand-secondary"/>
-                </div>
-            </div>
-
-            <div className="space-y-4 p-4 border rounded-md dark:border-gray-700">
-                <h2 className="text-lg font-semibold text-brand-dark dark:text-white">Pengaturan Pesan Pengguna</h2>
-                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-brand-dark rounded-md">
-                    <div>
-                        <p className="font-medium text-sm text-gray-800 dark:text-white">Status Pesan Pengguna</p>
-                        <p className={`text-xs ${config.userMessagingActive ? 'text-green-600' : 'text-red-600'}`}>
-                            {config.userMessagingActive ? 'Aktif (Semua pengguna dapat mengirim pesan)' : 'Nonaktif (Semua pengguna tidak dapat mengirim pesan)'}
-                        </p>
-                    </div>
-                    <button 
-                        onClick={handleToggleMessaging}
-                        className={`font-bold py-1 px-3 rounded-md text-sm text-white ${config.userMessagingActive ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}
-                    >
-                        {config.userMessagingActive ? 'Nonaktifkan' : 'Aktifkan'}
-                    </button>
-                </div>
-            </div>
-
-             <div className="space-y-6 p-4 border rounded-md dark:border-gray-700">
-                <h2 className="text-lg font-semibold text-brand-dark dark:text-white">Kelola Field Dokumen Pendukung</h2>
-                <div className="space-y-2">
-                    {docFields.map((field, index) => (
-                        <div key={field.id} className="grid grid-cols-1 sm:grid-cols-3 gap-2 p-2 bg-gray-50 dark:bg-brand-dark rounded-md">
-                            <div className="relative input-group sm:col-span-2">
-                                <input value={field.label} onChange={e => handleFieldChange(index, 'label', e.target.value)} className={inputClass} placeholder=" " />
-                                <label className={labelClass}>Label Field</label>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                {/* Tampilan Beranda */}
+                <div className={sectionClass}>
+                    <h2 className={sectionTitleClass}>Tampilan Beranda (Guest)</h2>
+                    <div className="space-y-4">
+                        <div className="relative input-group">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Gambar Hero (Utama)</label>
+                            <div className="flex items-center gap-4">
+                                {config.heroImageUrl ? (
+                                    <img src={config.heroImageUrl} alt="Hero Preview" className="h-20 w-auto object-contain rounded border bg-gray-200" />
+                                ) : (
+                                    <div className="h-20 w-20 bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500">Default</div>
+                                )}
+                                <label className="cursor-pointer bg-brand-secondary text-white px-3 py-2 rounded text-xs font-bold hover:bg-brand-accent transition-colors">
+                                    Upload Gambar
+                                    <input type="file" accept="image/*" className="hidden" onChange={handleHeroImageChange} />
+                                </label>
+                                {config.heroImageUrl && (
+                                    <button onClick={() => setConfig({...config, heroImageUrl: ''})} className="text-red-500 text-xs hover:underline">Hapus/Reset</button>
+                                )}
                             </div>
-                            <div className="flex items-center justify-end gap-4">
+                        </div>
+                    </div>
+                </div>
+
+                {/* Tombol Pendaftaran & Login */}
+                <div className={sectionClass}>
+                    <h2 className={sectionTitleClass}>Akses Pendaftaran</h2>
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <label htmlFor="showRegBtn" className="font-medium text-sm text-gray-800 dark:text-white">Tampilkan Tombol Daftar</label>
+                            <input id="showRegBtn" type="checkbox" checked={config.showRegistrationButton} onChange={e => setConfig({...config, showRegistrationButton: e.target.checked})} className="h-5 w-5 rounded text-brand-secondary focus:ring-brand-secondary"/>
+                        </div>
+                        {config.showRegistrationButton && (
+                            <div className="pl-4 space-y-4 border-l-2 border-gray-200 dark:border-gray-600">
+                                <div className="flex items-center justify-between">
+                                    <label htmlFor="activateRegBtn" className={`font-medium text-sm ${config.showRegistrationButton ? 'text-gray-800 dark:text-white' : 'text-gray-400'}`}>Buka Pendaftaran</label>
+                                    <input id="activateRegBtn" type="checkbox" checked={config.registrationActive} onChange={e => setConfig({...config, registrationActive: e.target.checked})} className="h-5 w-5 rounded text-brand-secondary focus:ring-brand-secondary" disabled={!config.showRegistrationButton}/>
+                                </div>
+                                {!config.registrationActive && (
+                                    <div className="relative input-group">
+                                        <input 
+                                            id="comingSoonText"
+                                            type="text"
+                                            value={config.registrationComingSoonText}
+                                            onChange={e => setConfig({...config, registrationComingSoonText: e.target.value})}
+                                            className={inputClass}
+                                            placeholder=" "
+                                        />
+                                        <label htmlFor="comingSoonText" className={labelClass}>Label Tombol Tutup</label>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        <div className="flex items-center justify-between pt-2 border-t dark:border-gray-600">
+                            <label htmlFor="loginActive" className="font-medium text-sm text-gray-800 dark:text-white">Izinkan Login Peserta</label>
+                            <input id="loginActive" type="checkbox" checked={config.loginActive} onChange={e => setConfig({...config, loginActive: e.target.checked})} className="h-5 w-5 rounded text-brand-secondary focus:ring-brand-secondary"/>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Pengaturan Pesan */}
+                <div className={sectionClass}>
+                    <h2 className={sectionTitleClass}>Fitur Pesan</h2>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="font-medium text-sm text-gray-800 dark:text-white">Global Messaging</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Izinkan user mengirim pesan ke admin</p>
+                        </div>
+                        <button 
+                            onClick={handleToggleMessaging}
+                            className={`font-bold py-1 px-3 rounded-md text-xs text-white ${config.userMessagingActive ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'}`}
+                        >
+                            {config.userMessagingActive ? 'ON' : 'OFF'}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Versi Aplikasi */}
+                <div className={sectionClass}>
+                     <h2 className={sectionTitleClass}>Sistem</h2>
+                    <div className="relative input-group">
+                        <input 
+                            id="appVersion"
+                            type="text"
+                            value={config.appVersion}
+                            onChange={e => setConfig({...config, appVersion: e.target.value})}
+                            className={inputClass}
+                            placeholder=" "
+                        />
+                         <label htmlFor="appVersion" className={labelClass}>Versi Aplikasi (Footer)</label>
+                    </div>
+                </div>
+            </div>
+
+             {/* Dokumen Pendukung */}
+             <div className={sectionClass}>
+                <h2 className={sectionTitleClass}>Field Dokumen Pendaftaran</h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Atur dokumen apa saja yang wajib dilampirkan peserta (berupa Link URL).</p>
+                <div className="space-y-3">
+                    {docFields.map((field, index) => (
+                        <div key={field.id} className="flex flex-col sm:flex-row gap-3 p-3 bg-white dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 items-start sm:items-center">
+                            <div className="flex-grow w-full">
+                                <input value={field.label} onChange={e => handleFieldChange(index, 'label', e.target.value)} className="w-full p-2 text-sm border rounded bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-white" placeholder="Nama Dokumen" />
+                            </div>
+                            <div className="flex items-center justify-between w-full sm:w-auto gap-4">
                                 <label className="flex items-center gap-2 text-sm dark:text-gray-300 cursor-pointer">
                                     <input type="checkbox" checked={field.required} onChange={e => handleFieldChange(index, 'required', e.target.checked)} className="h-4 w-4 rounded text-brand-secondary focus:ring-brand-secondary"/>
                                     Wajib
@@ -181,76 +246,64 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ onThemeChange, showNotifi
                         </div>
                     ))}
                 </div>
-                <button onClick={handleAddField} className="text-sm bg-green-600 text-white font-bold py-1 px-3 rounded-md hover:bg-green-700">
-                    <i className="fas fa-plus mr-1"></i>Tambah Field Dokumen
+                <button onClick={handleAddField} className="mt-2 text-sm bg-green-600 text-white font-bold py-2 px-4 rounded-md hover:bg-green-700 w-full sm:w-auto">
+                    <i className="fas fa-plus mr-1"></i>Tambah Field
                 </button>
             </div>
 
-            <div className="space-y-6 p-4 border rounded-md dark:border-gray-700">
-                <h2 className="text-lg font-semibold text-brand-dark dark:text-white">Pengaturan Bukti Lolos</h2>
-                
-                <div className="relative input-group">
-                    <input 
-                        id="logoUrl"
-                        type="text"
-                        value={config.proofOfPassing?.logoUrl || ''}
-                        onChange={e => handleProofConfigChange('logoUrl', e.target.value)}
-                        className={inputClass}
-                        placeholder=" "
-                    />
-                     <label htmlFor="logoUrl" className={labelClass}>URL Logo (akan tampil di PDF)</label>
-                </div>
-                
-                <div className="relative input-group">
-                    <input 
-                        id="participantNumberAppName"
-                        type="text"
-                        value={config.proofOfPassing?.participantNumberAppName || ''}
-                        onChange={e => handleProofConfigChange('participantNumberAppName', e.target.value)}
-                        className={inputClass}
-                        placeholder=" "
-                    />
-                     <label htmlFor="participantNumberAppName" className={labelClass}>Singkatan Aplikasi (untuk No. Peserta)</label>
-                </div>
+            {/* Bukti Lolos */}
+            <div className={sectionClass}>
+                <h2 className={sectionTitleClass}>Konfigurasi Bukti Lolos (PDF)</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="relative input-group">
+                        <input 
+                            id="logoUrl"
+                            type="text"
+                            value={config.proofOfPassing?.logoUrl || ''}
+                            onChange={e => handleProofConfigChange('logoUrl', e.target.value)}
+                            className={inputClass}
+                            placeholder=" "
+                        />
+                        <label htmlFor="logoUrl" className={labelClass}>URL Logo Kop Surat</label>
+                    </div>
+                    
+                    <div className="relative input-group">
+                        <input 
+                            id="participantNumberAppName"
+                            type="text"
+                            value={config.proofOfPassing?.participantNumberAppName || ''}
+                            onChange={e => handleProofConfigChange('participantNumberAppName', e.target.value)}
+                            className={inputClass}
+                            placeholder=" "
+                        />
+                        <label htmlFor="participantNumberAppName" className={labelClass}>Kode No. Peserta (ex: PPKC)</label>
+                    </div>
 
-                <div className="relative input-group">
-                    <textarea 
-                        id="passingStatement"
-                        value={config.proofOfPassing?.passingStatement || ''}
-                        onChange={e => handleProofConfigChange('passingStatement', e.target.value)}
-                        className={inputClass}
-                        placeholder=" "
-                        rows={3}
-                    />
-                     <label htmlFor="passingStatement" className={labelClass}>Pernyataan Kelulusan (Gunakan {'{year}'} untuk tahun)</label>
+                    <div className="relative input-group md:col-span-2">
+                        <textarea 
+                            id="passingStatement"
+                            value={config.proofOfPassing?.passingStatement || ''}
+                            onChange={e => handleProofConfigChange('passingStatement', e.target.value)}
+                            className={inputClass}
+                            placeholder=" "
+                            rows={3}
+                        />
+                        <label htmlFor="passingStatement" className={labelClass}>Kalimat Pernyataan Lolos (Gunakan {'{year}'} untuk tahun)</label>
+                    </div>
                 </div>
             </div>
 
-            <div className="space-y-6 p-4 border rounded-md dark:border-gray-700">
-                 <h2 className="text-lg font-semibold text-brand-dark dark:text-white">Versi Aplikasi</h2>
-                <div className="relative input-group">
-                    <input 
-                        id="appVersion"
-                        type="text"
-                        value={config.appVersion}
-                        onChange={e => setConfig({...config, appVersion: e.target.value})}
-                        className={inputClass}
-                        placeholder=" "
-                    />
-                     <label htmlFor="appVersion" className={labelClass}>Versi Aplikasi (ditampilkan di footer)</label>
-                </div>
-            </div>
-
-            <div className="p-4 border border-red-500 rounded-md bg-red-50 dark:bg-red-900/20">
-                 <h2 className="text-lg font-semibold text-red-700 dark:text-red-400">Zona Berbahaya</h2>
-                 <p className="text-sm text-red-600 dark:text-red-300 mt-1 mb-4">Tindakan ini bersifat permanen dan tidak dapat diurungkan.</p>
-                 <button onClick={handleReset} className="w-full bg-red-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-red-700 disabled:bg-red-400" disabled={loading}>
+            {/* Zona Bahaya */}
+            <div className="p-5 border border-red-300 dark:border-red-900 rounded-lg bg-red-50 dark:bg-red-900/10">
+                 <h2 className="text-lg font-bold text-red-700 dark:text-red-400 mb-2">Zona Berbahaya</h2>
+                 <p className="text-sm text-red-600 dark:text-red-300 mb-4">Tindakan menghapus data bersifat permanen dan tidak dapat dikembalikan.</p>
+                 <button onClick={handleReset} className="bg-red-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-red-700 disabled:bg-red-400 w-full sm:w-auto" disabled={loading}>
                     {loading ? <i className="fas fa-spinner fa-spin"></i> : <><i className="fas fa-exclamation-triangle mr-2"></i>Reset Semua Data Pendaftar</>}
                  </button>
             </div>
             
-            <div className="mt-2">
-                <button onClick={handleSave} disabled={loading} className="bg-brand-secondary text-white font-bold py-3 px-4 rounded-md text-base hover:bg-brand-accent w-full">
+            <div className="sticky bottom-4 z-10">
+                <button onClick={handleSave} disabled={loading} className="bg-brand-secondary text-white font-bold py-3 px-6 rounded-lg text-lg hover:bg-brand-accent w-full shadow-lg transform hover:-translate-y-1 transition-all">
                     {loading ? <i className="fas fa-spinner fa-spin"></i> : 'Simpan Semua Pengaturan'}
                 </button>
             </div>

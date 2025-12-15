@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import AdminHeader from './AdminHeader';
 import AdminFooter from './AdminFooter';
+import AdminSidebar from './AdminSidebar';
 import type { AdminPage, ConfirmationState } from '../../types';
 
 interface AdminLayoutProps {
@@ -22,9 +24,10 @@ interface AdminLayoutProps {
 const ConfirmationModal: React.FC<{ confirmation: ConfirmationState; onCancel: () => void; }> = ({ confirmation, onCancel }) => {
     const [isClosing, setIsClosing] = useState(false);
     
-    useEffect(() => {
-        setIsClosing(false);
-    }, [confirmation]);
+    // Reset closing state when modal opens
+    React.useEffect(() => {
+        if (confirmation.isOpen) setIsClosing(false);
+    }, [confirmation.isOpen]);
 
     const handleClose = () => {
         setIsClosing(true);
@@ -51,38 +54,58 @@ const ConfirmationModal: React.FC<{ confirmation: ConfirmationState; onCancel: (
 };
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children, currentPage, setCurrentPage, onLogout, isSidebarOpen, toggleSidebar, notificationBadge, confirmation, hideConfirmation, showConfirmation, appVersion, messageBadge, onMessageIconClick }) => {
+    const [isDesktopCollapsed, setIsDesktopCollapsed] = useState(false);
+
     return (
-        <div className="min-h-screen flex flex-col">
+        <div className="min-h-screen flex bg-gray-100 dark:bg-gray-900">
             <ConfirmationModal confirmation={confirmation} onCancel={hideConfirmation} />
-            <AdminHeader 
-                currentPage={currentPage} 
-                setCurrentPage={setCurrentPage} 
-                onLogout={onLogout}
-                isSidebarOpen={isSidebarOpen}
+            
+            {/* Sidebar Component handling both Mobile and Desktop logic */}
+            <AdminSidebar 
+                currentPage={currentPage}
+                setCurrentPage={setCurrentPage}
+                isOpen={isSidebarOpen}
                 toggleSidebar={toggleSidebar}
                 notificationBadge={notificationBadge}
-                showConfirmation={showConfirmation}
                 messageBadge={messageBadge}
-                onMessageIconClick={onMessageIconClick}
+                onLogout={onLogout}
+                isDesktopCollapsed={isDesktopCollapsed}
+                toggleDesktopCollapse={() => setIsDesktopCollapsed(!isDesktopCollapsed)}
             />
-            <main className="flex-1 p-4 sm:p-6 lg:p-8">
-                <div key={currentPage} className="animate-fade-in-up">
-                    {children}
-                </div>
-            </main>
-            {/* Floating Message Button */}
-             <button 
-                onClick={onMessageIconClick}
-                className="hidden lg:flex fixed left-6 bottom-6 bg-brand-secondary text-white w-14 h-14 rounded-full shadow-lg items-center justify-center z-50 hover:bg-brand-accent transform hover:scale-110 transition-all"
-                aria-label="Open Messages"
-                title="Buka Pesan"
-             >
-                <i className="fas fa-paper-plane text-xl"></i>
-                {messageBadge > 0 && (
-                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white text-xs">{messageBadge}</span>
-                )}
-            </button>
-            <AdminFooter appVersion={appVersion} />
+
+            <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
+                <AdminHeader 
+                    currentPage={currentPage} 
+                    setCurrentPage={setCurrentPage} 
+                    onLogout={onLogout}
+                    isSidebarOpen={isSidebarOpen}
+                    toggleSidebar={toggleSidebar}
+                    notificationBadge={notificationBadge}
+                    showConfirmation={showConfirmation}
+                    messageBadge={messageBadge}
+                    onMessageIconClick={onMessageIconClick}
+                />
+                
+                <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+                    <div key={currentPage} className="animate-fade-in-up max-w-7xl mx-auto w-full">
+                        {children}
+                    </div>
+                </main>
+                
+                {/* Floating Message Button (Mobile/Tablet only, or always visible if preferred) */}
+                <button 
+                    onClick={onMessageIconClick}
+                    className="fixed right-6 bottom-6 bg-brand-secondary text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center z-40 hover:bg-brand-accent transform hover:scale-110 transition-all lg:hidden"
+                    aria-label="Open Messages"
+                >
+                    <i className="fas fa-paper-plane text-xl"></i>
+                    {messageBadge > 0 && (
+                        <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white text-xs font-bold border-2 border-white dark:border-gray-800">{messageBadge}</span>
+                    )}
+                </button>
+
+                <AdminFooter appVersion={appVersion} />
+            </div>
         </div>
     );
 };

@@ -1,6 +1,6 @@
 {
-  "name": " of VERSI 1.10.5 (EDIT BUKTI LOLOS) ",
-  "description": "Portal pendaftaran dan informasi untuk seleksi Paskibra Kecamatan Cileles. Dilengkapi dengan panel admin untuk mengelola konten dan pendaftaran.",
+  "name": "pendaftaran paskib (versi baru untuk ubah tampilan)",
+  "description": "ini copy dari apk pendaftarannya saya ingin jadikan tampilan nya lebih modern dengan beberapa perubahan.",
   "requestFramePermissions": [
     "camera"
   ]

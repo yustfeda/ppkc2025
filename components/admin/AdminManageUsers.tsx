@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { getRegistrations, updateRegistrationStatus, deleteUserRegistration, getSelectionStages, updateUserStageProgress } from '../../services/firebase';
 import type { RegistrationData, AdminPageProps, SelectionStage } from '../../types';
@@ -10,6 +11,10 @@ const AdminManageUsers: React.FC<AdminManageUsersProps> = ({ showNotification, s
     const [registrations, setRegistrations] = useState<RegistrationData[]>([]);
     const [stages, setStages] = useState<SelectionStage[]>([]);
     const [loading, setLoading] = useState(true);
+    
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     const fetchData = useCallback(() => {
         setLoading(true);
@@ -163,6 +168,20 @@ const AdminManageUsers: React.FC<AdminManageUsersProps> = ({ showNotification, s
         return <StatusBadge text="Awaiting Submission" className={classNames.awaiting} />;
     };
 
+    // Pagination Logic
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = registrations.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(registrations.length / itemsPerPage);
+
+    const handlePrevPage = () => {
+        setCurrentPage(prev => Math.max(prev - 1, 1));
+    };
+
+    const handleNextPage = () => {
+        setCurrentPage(prev => Math.min(prev + 1, totalPages));
+    };
+
     if (loading) {
         return <div className="text-center p-4"><i className="fas fa-spinner fa-spin text-2xl text-brand-secondary"></i></div>;
     }
@@ -170,7 +189,7 @@ const AdminManageUsers: React.FC<AdminManageUsersProps> = ({ showNotification, s
     return (
         <div className="bg-white dark:bg-brand-primary p-6 rounded-lg shadow-md animate-fade-in">
             <h1 className="text-2xl font-bold text-brand-primary dark:text-white mb-6">Kelola User & Pendaftaran</h1>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto min-h-[400px]">
                 <table className="w-full text-sm text-left">
                     <thead className="bg-gray-50 dark:bg-brand-dark">
                         <tr className="text-gray-800 dark:text-gray-200">
@@ -184,9 +203,9 @@ const AdminManageUsers: React.FC<AdminManageUsersProps> = ({ showNotification, s
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
-                        {registrations.length > 0 ? registrations.map((reg, index) => (
+                        {currentItems.length > 0 ? currentItems.map((reg, index) => (
                             <tr key={reg.uid}>
-                                <td className="p-3 sticky left-0 bg-white dark:bg-brand-primary align-top">{index + 1}</td>
+                                <td className="p-3 sticky left-0 bg-white dark:bg-brand-primary align-top">{indexOfFirstItem + index + 1}</td>
                                 <td className="p-3 font-medium sticky left-8 bg-white dark:bg-brand-primary whitespace-nowrap align-top">{reg.fullName}</td>
                                 <td className="p-3 align-top">{reg.email}</td>
                                 {stages.map((stage, stageIndex) => (
@@ -203,11 +222,39 @@ const AdminManageUsers: React.FC<AdminManageUsersProps> = ({ showNotification, s
                                 </td>
                             </tr>
                         )) : (
-                            <tr><td colSpan={4 + stages.length} className="p-4 text-center text-gray-500">Belum ada pendaftar yang mengirimkan formulir.</td></tr>
+                            <tr><td colSpan={4 + stages.length} className="p-4 text-center text-gray-500">Belum ada data pendaftar.</td></tr>
                         )}
                     </tbody>
                 </table>
             </div>
+            
+            {/* Pagination Controls */}
+            {registrations.length > itemsPerPage && (
+                <div className="flex justify-between items-center mt-6 border-t pt-4 dark:border-gray-700">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                        Menampilkan {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, registrations.length)} dari {registrations.length} peserta
+                    </span>
+                    <div className="flex gap-2">
+                        <button 
+                            onClick={handlePrevPage} 
+                            disabled={currentPage === 1}
+                            className="px-3 py-1 rounded border dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <i className="fas fa-chevron-left"></i>
+                        </button>
+                        <span className="px-3 py-1 font-semibold text-brand-primary dark:text-white bg-gray-100 dark:bg-gray-800 rounded">
+                            {currentPage}
+                        </span>
+                        <button 
+                            onClick={handleNextPage} 
+                            disabled={currentPage === totalPages}
+                            className="px-3 py-1 rounded border dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <i className="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { getRegistrations, getSelectionStages, deleteUserRegistration, getManagedButtons, getAllFormSubmissions, getRegistrationFormFields } from '../../services/firebase';
 import type { RegistrationData, SelectionStage, AdminPageProps, ManagedButton, FormSubmission, FormField } from '../../types';
@@ -67,14 +68,20 @@ const AdminRecap: React.FC<AdminPageProps> = ({ showNotification, showConfirmati
     };
     
     const handleDelete = async (uid: string) => {
-        await deleteUserRegistration(uid);
-        showNotification('Pendaftaran pengguna berhasil dihapus. Pengguna dapat mendaftar ulang.', 'success');
-        fetchData();
+        try {
+            await deleteUserRegistration(uid);
+            // Immediately update local state to reflect deletion
+            setRegistrations(prev => prev.filter(r => r.uid !== uid));
+            showNotification('Pendaftaran pengguna berhasil dihapus. Pengguna dapat mendaftar ulang.', 'success');
+        } catch (error) {
+            console.error("Delete Error:", error);
+            showNotification('Gagal menghapus data dari database.', 'error');
+        }
     };
 
     const handleDeleteWithConfirm = (uid: string) => {
         showConfirmation(
-            'Menghapus pendaftar akan menghapus semua data pendaftaran mereka. Pengguna harus mendaftar ulang dari awal. Anda yakin?',
+            'Menghapus pendaftar akan menghapus semua data pendaftaran mereka secara permanen. Anda yakin?',
             () => handleDelete(uid)
         );
     };
@@ -229,7 +236,7 @@ const AdminRecap: React.FC<AdminPageProps> = ({ showNotification, showConfirmati
                 </div>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto min-h-[400px]">
                 <table className="w-full text-xs text-left">
                      <thead className="bg-gray-50 dark:bg-brand-dark">
                         <tr className="text-gray-800 dark:text-gray-200">
@@ -256,7 +263,7 @@ const AdminRecap: React.FC<AdminPageProps> = ({ showNotification, showConfirmati
                                     </td>
                                 ))}
                                 <td className="p-2">
-                                    <button onClick={() => handleDeleteWithConfirm(reg.uid)} className="text-gray-400 hover:text-red-500">
+                                    <button onClick={() => handleDeleteWithConfirm(reg.uid)} className="text-gray-400 hover:text-red-500" title="Hapus Permanen">
                                         <i className="fas fa-trash-alt"></i>
                                     </button>
                                 </td>

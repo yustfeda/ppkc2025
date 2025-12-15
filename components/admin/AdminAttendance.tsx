@@ -292,7 +292,7 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
                                         </span>
                                     ) : (
                                         <span className="px-2 py-1 rounded-full font-medium text-xs bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
-                                            Tidak Hadir
+                                            Tidak Pernah Hadir
                                         </span>
                                     )}
                                 </td>
