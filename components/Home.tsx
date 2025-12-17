@@ -153,7 +153,7 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage, user, onManagedButtonClick 
                         </div>
                         <h1 className="text-2xl md:text-5xl lg:text-6xl font-bold text-brand-primary dark:text-gray-100 leading-tight mb-6">
                             Purna Paskibra <br/>
-                            <span className="text-red-600 drop-shadow-md">Kecamatan Cileles</span>
+                            <span className="text-red-600 drop-shadow-md">Kecamatan Newyork</span>
                         </h1>
                         <p className="text-sm md:text-lg text-gray-600 dark:text-gray-300 mb-8 leading-relaxed max-w-lg mx-auto md:mx-0">
                             Wujudkan semangat nasionalisme dan kepemimpinan. Bergabunglah menjadi bagian dari putra-putri terbaik bangsa melalui seleksi Paskibra.
