@@ -88,9 +88,10 @@ const AdminRecap: React.FC<AdminPageProps> = ({ showNotification, showConfirmati
     const currentStageTitle = stages.find(s => s.id === selectedStage)?.title || "Semua Pendaftar";
 
     const exportToPDF = () => {
+        const currentYear = new Date().getFullYear();
         const doc = new jspdf.jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
         doc.setFontSize(10);
-        doc.text("Rekapitulasi Pendaftar Calon Paskibra Kecamatan Cileles Tahun 2025", 14, 16);
+        doc.text(`Rekapitulasi Pendaftar Calon Paskibra Kecamatan Cileles Tahun ${currentYear}`, 14, 16);
         doc.setFontSize(9);
         doc.text(`Filter: ${currentStageTitle}, Gender: ${genderFilter}, Sekolah: ${schoolFilter}`, 14, 22);
         

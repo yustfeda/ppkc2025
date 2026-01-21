@@ -15,8 +15,8 @@ const StaticLogo: React.FC = () => {
                 className="h-7 mr-1"
             />
             <span className="text-xl font-bold">
-                <span className="text-orange-500 font-quicksand tracking-wide">PPIK</span>
-                <span className="text-brand-logo-blue font-orbitron">2026</span>
+                <span className="text-orange-500 font-quicksand tracking-wide">PPKC</span>
+                <span className="text-brand-logo-blue font-orbitron">2025</span>
             </span>
         </div>
     );

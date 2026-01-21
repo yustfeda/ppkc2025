@@ -144,7 +144,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ setCurrentPage, showNotification, l
                         <button 
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-secondary transition-colors focus:outline-none bg-transparent border-none shadow-none"
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 focus:outline-none bg-transparent border-none shadow-none btn-no-lift cursor-pointer"
                             aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
                         >
                             <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'} text-lg`}></i>

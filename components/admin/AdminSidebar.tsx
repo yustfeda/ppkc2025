@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { AdminPage } from '../../types';
+import { getData } from '../../services/firebase';
 
 interface AdminNavItem {
     page: AdminPage;
@@ -40,6 +41,31 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
     notificationBadge, 
     onLogout
 }) => {
+    const [profilePic, setProfilePic] = useState<string | null>(null);
+
+    useEffect(() => {
+        const cachedPic = localStorage.getItem('admin_profile_pic');
+        if (cachedPic) {
+            setProfilePic(cachedPic);
+        } else {
+            getData<string | null>('adminMetadata/profilePic').then(dbPic => {
+                if (dbPic) {
+                    setProfilePic(dbPic);
+                    localStorage.setItem('admin_profile_pic', dbPic);
+                }
+            });
+        }
+    }, [currentPage]); // Refresh on navigation to ensure sync
+
+    const ProfileAvatar = () => (
+        <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-brand-secondary bg-gray-700 flex-shrink-0 flex items-center justify-center">
+            {profilePic ? (
+                <img src={profilePic} alt="Admin" className="w-full h-full object-cover" />
+            ) : (
+                <i className="fas fa-user-shield text-xs text-gray-400"></i>
+            )}
+        </div>
+    );
     
     // Mobile Sidebar (Drawer)
     const MobileSidebar = () => (
@@ -50,7 +76,10 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
             />
             <div className={`fixed top-0 left-0 h-full w-64 bg-brand-primary text-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out lg:hidden ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 <div className="p-4 flex justify-between items-center border-b border-blue-800">
-                    <span className="font-bold text-xl font-quicksand">Admin Menu</span>
+                    <div className="flex items-center gap-2">
+                        <ProfileAvatar />
+                        <span className="font-bold text-xl font-quicksand">Admin Menu</span>
+                    </div>
                     <button onClick={toggleSidebar} className="text-gray-300 hover:text-white p-2">
                         <i className="fas fa-times text-xl"></i>
                     </button>
@@ -86,7 +115,8 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
     // Desktop Sidebar (Always Full Width)
     const DesktopSidebar = () => (
         <div className={`hidden lg:flex flex-col h-screen bg-brand-primary text-white shadow-xl transition-all duration-300 ease-in-out sticky top-0 w-64`}>
-            <div className={`flex items-center h-16 lg:h-20 border-b border-blue-800 px-6 justify-center`}>
+            <div className={`flex items-center h-16 lg:h-20 border-b border-blue-800 px-6 justify-center gap-3`}>
+                <ProfileAvatar />
                 <span className="font-bold text-lg font-quicksand tracking-wider uppercase">ADMIN PANEL</span>
             </div>
 
