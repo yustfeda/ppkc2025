@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { getSelectionStages, setData } from '../../services/firebase';
 import type { SelectionStage, AdminPageProps } from '../../types';
 
@@ -13,25 +13,70 @@ interface EditModalProps {
 
 const EditModal: React.FC<EditModalProps> = ({ isOpen, onClose, title, children, onSave, onDelete }) => {
     const [isClosing, setIsClosing] = useState(false);
+    const [position, setPosition] = useState({ x: 0, y: 0 });
+    const [isDragging, setIsDragging] = useState(false);
+    const dragRef = useRef({ startX: 0, startY: 0, initialX: 0, initialY: 0 });
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        // Hanya drag jika yang diklik adalah header (div header)
+        if ((e.target as HTMLElement).closest('.modal-drag-handle')) {
+            setIsDragging(true);
+            dragRef.current = {
+                startX: e.clientX,
+                startY: e.clientY,
+                initialX: position.x,
+                initialY: position.y
+            };
+        }
+    };
+
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            if (!isDragging) return;
+            const dx = e.clientX - dragRef.current.startX;
+            const dy = e.clientY - dragRef.current.startY;
+            setPosition({
+                x: dragRef.current.initialX + dx,
+                y: dragRef.current.initialY + dy
+            });
+        };
+
+        const handleMouseUp = () => setIsDragging(false);
+
+        if (isDragging) {
+            window.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('mouseup', handleMouseUp);
+        }
+
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isDragging]);
 
     const handleClose = () => {
         setIsClosing(true);
         setTimeout(() => {
             onClose();
             setIsClosing(false);
+            setPosition({ x: 0, y: 0 }); // Reset posisi saat modal ditutup
         }, 300);
     };
 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-[99999] p-4 overflow-y-auto" onClick={handleClose}>
+        <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-[99999] p-4 overflow-hidden" onClick={handleClose}>
             <div 
-                className={`bg-white dark:bg-brand-primary rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh] overflow-hidden ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'}`}
+                className={`bg-white dark:bg-brand-primary rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh] overflow-hidden ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'} ${isDragging ? 'select-none' : ''}`}
                 onClick={e => e.stopPropagation()}
+                style={{ transform: `translate(${position.x}px, ${position.y}px)` }}
             >
-                <div className="flex-shrink-0 flex justify-between items-center p-6 border-b dark:border-gray-700 bg-gray-50/50 dark:bg-black/10">
-                    <h3 className="text-xl font-bold text-brand-primary dark:text-white flex items-center gap-2">
+                <div 
+                    onMouseDown={handleMouseDown}
+                    className="modal-drag-handle flex-shrink-0 flex justify-between items-center p-6 border-b dark:border-gray-700 bg-gray-50/50 dark:bg-black/10 cursor-move"
+                >
+                    <h3 className="text-xl font-bold text-brand-primary dark:text-white flex items-center gap-2 pointer-events-none">
                         <i className="fas fa-edit text-brand-secondary"></i>
                         {title}
                     </h3>
@@ -51,10 +96,10 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, onClose, title, children,
                         </button>
                     ) : <div></div>}
                     <div className="flex gap-3">
-                        <button onClick={handleClose} className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold py-2.5 px-5 rounded-xl text-sm hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                        <button onClick={handleClose} className="btn-no-lift bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold py-2.5 px-5 rounded-xl text-sm hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
                             Batal
                         </button>
-                        <button onClick={() => { onSave(); handleClose(); }} className="bg-brand-secondary text-white font-bold py-2.5 px-8 rounded-xl text-sm hover:bg-brand-accent shadow-lg shadow-brand-secondary/20 transition-all active:scale-95">
+                        <button onClick={() => { onSave(); handleClose(); }} className="btn-no-lift bg-brand-secondary text-white font-bold py-2.5 px-8 rounded-xl text-sm hover:bg-brand-accent shadow-lg shadow-brand-secondary/20 transition-all active:scale-95">
                             Simpan Perubahan
                         </button>
                     </div>
@@ -71,6 +116,42 @@ const PopupContentModal: React.FC<{
 }> = ({ stage, onClose, onSave }) => {
     const [content, setContent] = useState(stage?.popupContent);
     const [isClosing, setIsClosing] = useState(false);
+    const [position, setPosition] = useState({ x: 0, y: 0 });
+    const [isDragging, setIsDragging] = useState(false);
+    const dragRef = useRef({ startX: 0, startY: 0, initialX: 0, initialY: 0 });
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if ((e.target as HTMLElement).closest('.modal-drag-handle')) {
+            setIsDragging(true);
+            dragRef.current = {
+                startX: e.clientX,
+                startY: e.clientY,
+                initialX: position.x,
+                initialY: position.y
+            };
+        }
+    };
+
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            if (!isDragging) return;
+            const dx = e.clientX - dragRef.current.startX;
+            const dy = e.clientY - dragRef.current.startY;
+            setPosition({
+                x: dragRef.current.initialX + dx,
+                y: dragRef.current.initialY + dy
+            });
+        };
+        const handleMouseUp = () => setIsDragging(false);
+        if (isDragging) {
+            window.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('mouseup', handleMouseUp);
+        }
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isDragging]);
 
     useEffect(() => {
         setContent(stage?.popupContent || {
@@ -84,7 +165,10 @@ const PopupContentModal: React.FC<{
 
     const handleClose = () => {
         setIsClosing(true);
-        setTimeout(onClose, 300);
+        setTimeout(() => {
+            onClose();
+            setPosition({ x: 0, y: 0 });
+        }, 300);
     };
 
     const handleSave = () => {
@@ -103,13 +187,14 @@ const PopupContentModal: React.FC<{
     const labelClass = "form-label text-xs dark:text-gray-400";
 
     return (
-        <div className="fixed inset-0 bg-gray-900/90 backdrop-blur-md flex items-center justify-center z-[100000] p-4" onClick={handleClose}>
+        <div className="fixed inset-0 bg-gray-900/90 backdrop-blur-md flex items-center justify-center z-[100000] p-4 overflow-hidden" onClick={handleClose}>
              <div 
-                className={`bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl flex flex-col max-h-[85vh] ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'}`}
+                className={`bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl flex flex-col max-h-[85vh] ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'} ${isDragging ? 'select-none' : ''}`}
                 onClick={e => e.stopPropagation()}
+                style={{ transform: `translate(${position.x}px, ${position.y}px)` }}
             >
-                <div className="flex justify-between items-center mb-6">
-                     <h3 className="text-xl font-bold text-brand-dark dark:text-white">Konfigurasi Pesan Popup</h3>
+                <div onMouseDown={handleMouseDown} className="modal-drag-handle flex justify-between items-center mb-6 cursor-move">
+                     <h3 className="text-xl font-bold text-brand-dark dark:text-white pointer-events-none">Konfigurasi Pesan Popup</h3>
                      <button onClick={handleClose} className="text-gray-400 hover:text-red-500 transition-colors"><i className="fas fa-times text-xl"></i></button>
                 </div>
                 
@@ -173,7 +258,7 @@ const PopupContentModal: React.FC<{
                     </div>
                 </div>
                 <div className="flex justify-end gap-3 mt-6 pt-6 border-t dark:border-gray-700">
-                    <button onClick={handleSave} className="bg-brand-secondary text-white font-bold py-3 px-6 rounded-xl text-sm hover:bg-brand-accent w-full shadow-lg shadow-brand-secondary/20 transition-all active:scale-95">
+                    <button onClick={handleSave} className="btn-no-lift bg-brand-secondary text-white font-bold py-3 px-6 rounded-xl text-sm hover:bg-brand-accent w-full shadow-lg shadow-brand-secondary/20 transition-all active:scale-95">
                         Simpan Konfigurasi Pesan
                     </button>
                 </div>
@@ -269,13 +354,12 @@ const AdminManageStages: React.FC<AdminPageProps> = ({ showNotification, showCon
     return (
         <>
             <div className="animate-fade-in space-y-6">
-                <div className="bg-white dark:bg-brand-primary p-6 sm:p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800">
+                <div className="bg-white dark:bg-brand-primary p-6 sm:p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 min-h-[85vh] flex flex-col">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
                         <div>
                             <h1 className="text-2xl sm:text-3xl font-extrabold text-brand-primary dark:text-white tracking-tight">Kelola Tahapan Seleksi</h1>
                             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Atur urutan, jadwal, dan kriteria kelulusan tiap tahap.</p>
                         </div>
-                        {/* Tambahkan btn-no-lift untuk mencegah bug getar dari CSS global */}
                         <button onClick={handleAddStage} className="btn-no-lift bg-green-600 text-white font-bold py-3 px-6 rounded-xl text-sm hover:bg-green-700 shadow-lg shadow-green-600/20 flex items-center gap-2 transition-all active:scale-95">
                             <i className="fas fa-plus"></i> Tambah Tahapan Baru
                         </button>
@@ -390,7 +474,7 @@ const AdminManageStages: React.FC<AdminPageProps> = ({ showNotification, showCon
 
                             <button 
                                 onClick={() => setIsPopupModalOpen(true)}
-                                className="w-full py-4 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 rounded-2xl border border-indigo-100 dark:border-indigo-800/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 font-bold text-sm transition-all flex items-center justify-center gap-3 shadow-md active:scale-95"
+                                className="btn-no-lift w-full py-4 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 rounded-2xl border border-indigo-100 dark:border-indigo-800/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 font-bold text-sm transition-all flex items-center justify-center gap-3 shadow-md active:scale-95"
                             >
                                 <i className="fas fa-comment-dots text-lg"></i> 
                                 Edit Pesan Popup Khusus (Lolos/Gagal/Pending)
