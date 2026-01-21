@@ -25,9 +25,9 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, onClose, title, children,
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[1001] p-6 sm:p-12" onClick={handleClose}>
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-start justify-center z-[1001] p-4 pt-12 sm:pt-20 overflow-y-auto" onClick={handleClose}>
             <div 
-                className={`bg-white dark:bg-brand-primary rounded-lg p-6 max-w-2xl w-full shadow-2xl ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'} flex flex-col max-h-[85vh] overflow-hidden`}
+                className={`bg-white dark:bg-brand-primary rounded-lg p-6 max-w-2xl w-full shadow-2xl ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'} flex flex-col max-h-[85vh] overflow-hidden mb-12`}
                 onClick={e => e.stopPropagation()}
             >
                 <div className="flex-shrink-0 flex justify-between items-center mb-6 border-b dark:border-gray-700 pb-2">

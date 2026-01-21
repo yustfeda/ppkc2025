@@ -19,7 +19,7 @@ const ThemeToggle: React.FC = () => {
     return (
         <button
             onClick={toggleTheme}
-            className="btn-no-lift p-2 rounded-full text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
+            className="btn-no-lift p-2 rounded-full text-gray-500 dark:text-gray-300 hover:text-brand-primary dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
             title={isDarkMode ? 'Mode Terang' : 'Mode Gelap'}
         >
             <i className={`text-xl ${isDarkMode ? 'fas fa-sun' : 'fas fa-moon'}`}></i>
@@ -42,28 +42,28 @@ interface AdminHeaderProps {
 const AdminHeader: React.FC<AdminHeaderProps> = ({ toggleSidebar, isSidebarOpen, messageBadge, onMessageIconClick }) => {
     
     return (
-      <header className="bg-brand-primary text-white shadow-md h-16 sticky top-0 z-30 flex-shrink-0">
+      <header className="bg-white dark:bg-brand-primary text-gray-800 dark:text-white shadow-sm border-b border-gray-100 dark:border-none h-16 sticky top-0 z-30 flex-shrink-0">
         <div className="h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between">
             
             <div className="flex items-center gap-4">
                  {/* Mobile Menu Button */}
                 <button
                     onClick={toggleSidebar}
-                    className="btn-no-lift lg:hidden p-2 -ml-2 text-gray-300 hover:text-white focus:outline-none transition-colors"
+                    className="btn-no-lift lg:hidden p-2 -ml-2 text-gray-500 dark:text-gray-300 hover:text-brand-primary dark:hover:text-white focus:outline-none transition-colors"
                     aria-label="Open main menu"
                 >
                     <i className="fas fa-bars text-2xl"></i>
                 </button>
                 
                 {/* Title */}
-                <span className="text-lg font-bold font-quicksand tracking-wider lg:hidden uppercase">ADMIN PANEL</span>
+                <span className="text-lg font-bold font-quicksand tracking-wider lg:hidden uppercase text-brand-primary dark:text-white">ADMIN PANEL</span>
             </div>
 
             <div className="flex items-center space-x-4">
                  {/* Messages Icon */}
                  <button
                     onClick={onMessageIconClick}
-                    className="btn-no-lift relative p-2 text-gray-300 hover:text-white transition-colors"
+                    className="btn-no-lift relative p-2 text-gray-500 dark:text-gray-300 hover:text-brand-primary dark:hover:text-white transition-colors"
                     title="Pesan"
                  >
                      <i className="fas fa-paper-plane text-xl"></i>
@@ -72,7 +72,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ toggleSidebar, isSidebarOpen,
                      )}
                  </button>
 
-                 <div className="h-6 w-px bg-gray-600 mx-2 hidden lg:block"></div>
+                 <div className="h-6 w-px bg-gray-200 dark:bg-gray-600 mx-2 hidden lg:block"></div>
                  <ThemeToggle />
             </div>
         </div>

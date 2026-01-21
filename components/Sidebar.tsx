@@ -1,4 +1,3 @@
-
 import React from 'react';
 import type { PublicPage, User, ManagedButton } from '../types';
 import AnimatedLogo from './AnimatedLogo';
@@ -72,9 +71,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, isCollapsed, setIsCollapsed, 
       ></div>
 
       {/* Sidebar Container - FIXED on desktop, DRAWER on mobile */}
-      {/* Adjusted width based on isCollapsed state */}
+      {/* Adjusted width based on isCollapsed state with transition-all for smooth scaling */}
       <div
-        className={`fixed top-0 left-0 h-full ${isCollapsed ? 'w-20' : 'w-72'} bg-white dark:bg-brand-primary border-r border-gray-100 dark:border-gray-800 shadow-2xl lg:shadow-none z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed top-0 left-0 h-full ${isCollapsed ? 'w-20' : 'w-72'} bg-white dark:bg-brand-primary border-r border-gray-100 dark:border-gray-800 shadow-2xl lg:shadow-none z-50 transform transition-all duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="p-4 sm:p-6 flex flex-col h-full">
             {/* Logo Area */}

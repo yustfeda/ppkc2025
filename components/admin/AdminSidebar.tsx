@@ -55,10 +55,10 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 }
             });
         }
-    }, [currentPage]); // Refresh on navigation to ensure sync
+    }, [currentPage]);
 
     const ProfileAvatar = () => (
-        <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-brand-secondary bg-gray-700 flex-shrink-0 flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-brand-secondary bg-gray-100 dark:bg-gray-700 flex-shrink-0 flex items-center justify-center">
             {profilePic ? (
                 <img src={profilePic} alt="Admin" className="w-full h-full object-cover" />
             ) : (
@@ -74,13 +74,13 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 className={`fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300 lg:hidden ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                 onClick={toggleSidebar}
             />
-            <div className={`fixed top-0 left-0 h-full w-64 bg-brand-primary text-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out lg:hidden ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                <div className="p-4 flex justify-between items-center border-b border-blue-800">
+            <div className={`fixed top-0 left-0 h-full w-64 bg-white dark:bg-brand-primary text-gray-800 dark:text-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out lg:hidden ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                <div className="p-4 flex justify-between items-center border-b border-gray-100 dark:border-blue-800">
                     <div className="flex items-center gap-2">
                         <ProfileAvatar />
-                        <span className="font-bold text-xl font-quicksand">Admin Menu</span>
+                        <span className="font-bold text-xl font-quicksand text-brand-primary dark:text-white">Admin Menu</span>
                     </div>
-                    <button onClick={toggleSidebar} className="text-gray-300 hover:text-white p-2">
+                    <button onClick={toggleSidebar} className="text-gray-400 dark:text-gray-300 hover:text-red-500 p-2">
                         <i className="fas fa-times text-xl"></i>
                     </button>
                 </div>
@@ -90,7 +90,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                             <li key={item.page}>
                                 <button
                                     onClick={() => { setCurrentPage(item.page); toggleSidebar(); }}
-                                    className={`w-full flex items-center p-3 rounded-lg transition-colors text-sm ${currentPage === item.page ? 'bg-brand-secondary text-white shadow-md' : 'text-gray-300 hover:bg-brand-secondary/30 hover:text-white'}`}
+                                    className={`w-full flex items-center p-3 rounded-lg transition-colors text-sm ${currentPage === item.page ? 'bg-brand-secondary text-white shadow-md' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-brand-secondary/30 hover:text-brand-secondary dark:hover:text-white'}`}
                                 >
                                     <i className={`${item.icon} w-6 text-center`}></i>
                                     <span className="ml-3 font-medium">{item.label}</span>
@@ -102,8 +102,8 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                         ))}
                     </ul>
                 </nav>
-                <div className="absolute bottom-0 w-full p-4 border-t border-blue-800 bg-brand-primary">
-                    <button onClick={onLogout} className="w-full flex items-center p-2 text-red-400 hover:text-red-300 transition-colors text-sm">
+                <div className="absolute bottom-0 w-full p-4 border-t border-gray-100 dark:border-blue-800 bg-white dark:bg-brand-primary">
+                    <button onClick={onLogout} className="w-full flex items-center p-2 text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors text-sm">
                         <i className="fas fa-sign-out-alt w-6"></i>
                         <span className="ml-3 font-bold">Logout</span>
                     </button>
@@ -112,12 +112,12 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
         </>
     );
 
-    // Desktop Sidebar (Always Full Width)
+    // Desktop Sidebar
     const DesktopSidebar = () => (
-        <div className={`hidden lg:flex flex-col h-screen bg-brand-primary text-white shadow-xl transition-all duration-300 ease-in-out sticky top-0 w-64`}>
-            <div className={`flex items-center h-16 lg:h-20 border-b border-blue-800 px-6 justify-center gap-3`}>
+        <div className={`hidden lg:flex flex-col h-screen bg-white dark:bg-brand-primary text-gray-800 dark:text-white shadow-xl transition-all duration-300 ease-in-out sticky top-0 w-64 border-r border-gray-100 dark:border-none`}>
+            <div className={`flex items-center h-16 lg:h-20 border-b border-gray-100 dark:border-blue-800 px-6 justify-center gap-3`}>
                 <ProfileAvatar />
-                <span className="font-bold text-lg font-quicksand tracking-wider uppercase">ADMIN PANEL</span>
+                <span className="font-bold text-lg font-quicksand tracking-wider uppercase text-brand-primary dark:text-white">ADMIN PANEL</span>
             </div>
 
             <nav className="flex-1 overflow-y-auto py-4 overflow-x-hidden custom-scrollbar">
@@ -127,7 +127,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                             <button
                                 onClick={() => setCurrentPage(item.page)}
                                 className={`w-full flex items-center p-3 rounded-lg transition-all duration-200 group relative text-sm
-                                    ${currentPage === item.page ? 'bg-brand-secondary text-white shadow-lg' : 'text-gray-400 hover:bg-brand-secondary/20 hover:text-white'}
+                                    ${currentPage === item.page ? 'bg-brand-secondary text-white shadow-lg' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-brand-secondary/20 hover:text-brand-secondary dark:hover:text-white'}
                                 `}
                             >
                                 <i className={`${item.icon} text-lg w-8 text-center`}></i>
@@ -144,10 +144,10 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 </ul>
             </nav>
 
-            <div className="p-4 border-t border-blue-800">
+            <div className="p-4 border-t border-gray-100 dark:border-blue-800">
                 <button 
                     onClick={onLogout} 
-                    className={`w-full flex items-center rounded-lg transition-colors text-red-400 hover:bg-red-500/10 hover:text-red-300 p-3 text-sm`}
+                    className={`w-full flex items-center rounded-lg transition-colors text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-300 p-3 text-sm`}
                 >
                     <i className="fas fa-sign-out-alt text-lg"></i>
                     <span className="ml-3 font-bold">Logout</span>
