@@ -25,14 +25,16 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, onClose, title, children,
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[9999] p-4 overflow-y-auto" onClick={handleClose}>
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[99999] p-4 overflow-y-auto" onClick={handleClose}>
             <div 
-                className={`bg-white dark:bg-brand-primary rounded-lg p-6 max-w-2xl w-full shadow-2xl ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'} flex flex-col max-h-[90vh] overflow-hidden my-auto`}
+                className={`bg-white dark:bg-brand-primary rounded-lg p-6 max-w-2xl w-full shadow-2xl ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'} flex flex-col max-h-[85vh] overflow-hidden my-auto`}
                 onClick={e => e.stopPropagation()}
             >
                 <div className="flex-shrink-0 flex justify-between items-center mb-6 border-b dark:border-gray-700 pb-2">
                     <h3 className="text-xl font-bold text-brand-primary dark:text-white">{title}</h3>
-                    <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-2"><i className="fas fa-times text-xl"></i></button>
+                    <button onClick={handleClose} className="btn-close-x text-gray-400 hover:text-red-500 transition-colors">
+                        <i className="fas fa-times text-xl"></i>
+                    </button>
                 </div>
                 
                 <div className="flex-grow overflow-y-auto pr-2 custom-scrollbar space-y-4">
@@ -92,20 +94,20 @@ const PopupContentModal: React.FC<{
     const labelClass = "form-label text-xs dark:text-gray-400";
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[10000] p-4" onClick={handleClose}>
+        <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-[100000] p-4" onClick={handleClose}>
              <div 
-                className={`bg-brand-light dark:bg-gray-700 rounded-lg p-6 max-w-lg w-full shadow-lg ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'} flex flex-col max-h-[85vh]`}
+                className={`bg-brand-light dark:bg-gray-700 rounded-lg p-6 max-w-lg w-full shadow-lg ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'} flex flex-col max-h-[80vh]`}
                 onClick={e => e.stopPropagation()}
             >
                 <div className="flex justify-between items-center mb-4">
                      <h3 className="text-lg font-semibold text-brand-dark dark:text-white">Edit Konten Popup</h3>
-                     <button onClick={handleClose} className="text-gray-400"><i className="fas fa-times"></i></button>
+                     <button onClick={handleClose} className="text-gray-400 hover:text-red-500"><i className="fas fa-times text-xl"></i></button>
                 </div>
                 
                 <div className="space-y-4 overflow-y-auto pr-2 flex-grow custom-scrollbar">
                     <p className="text-xs text-gray-500 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
                         <i className="fas fa-info-circle mr-1"></i>
-                        Pesan ini akan muncul saat peserta mengklik kartu tahapan di halaman "Tahapan Seleksi". Kosongkan untuk menggunakan pesan default.
+                        Pesan ini akan muncul saat peserta mengklik kartu tahapan di halaman "Tahapan Seleksi".
                     </p>
 
                     {/* Pending */}
@@ -152,7 +154,7 @@ const PopupContentModal: React.FC<{
                     </div>
                 </div>
                 <div className="flex justify-end gap-3 mt-4 pt-4 border-t dark:border-gray-600">
-                    <button onClick={handleSave} className="bg-brand-secondary text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-brand-accent w-full shadow-md transition-colors">Simpan Konten Popup</button>
+                    <button onClick={handleSave} className="bg-brand-secondary text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-brand-accent w-full shadow-md">Simpan Konten Popup</button>
                 </div>
             </div>
         </div>
@@ -186,7 +188,6 @@ const AdminManageStages: React.FC<AdminPageProps> = ({ showNotification, showCon
             ? stages.map(s => s.id === editingStage.id ? editingStage : s)
             : [...stages, editingStage];
             
-        // Ensure IDs are strings
         const stagesToSave = newStages.map(stage => ({...stage, id: String(stage.id)}));
         
         await setData('selectionStages', stagesToSave);
@@ -246,8 +247,56 @@ const AdminManageStages: React.FC<AdminPageProps> = ({ showNotification, showCon
     if (loading) return <div className="text-center p-4"><i className="fas fa-spinner fa-spin text-2xl text-brand-secondary"></i></div>;
 
     return (
-        <div className="space-y-6 animate-fade-in">
-             {isPopupModalOpen && editingStage && (
+        <>
+            <div className="space-y-6 animate-fade-in">
+                <div className="bg-white dark:bg-brand-primary p-6 rounded-lg shadow-md">
+                    <div className="flex justify-between items-center mb-6">
+                        <h1 className="text-2xl font-bold text-brand-primary dark:text-white">Kelola Tahapan Seleksi</h1>
+                        <button onClick={handleAddStage} className="bg-green-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-green-700 shadow flex items-center gap-2 transition-transform active:scale-95">
+                            <i className="fas fa-plus"></i> Tambah Tahapan
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {stages.map((stage, index) => (
+                            <div 
+                                key={stage.id} 
+                                onClick={() => handleEditStage(stage)}
+                                className="bg-gray-50 dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-5 cursor-pointer hover:shadow-lg transition-all transform hover:-translate-y-1 relative group flex flex-col h-full"
+                            >
+                                <div className="flex items-center gap-3 mb-3">
+                                    <div className="bg-brand-secondary text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shadow-sm flex-shrink-0">
+                                        {index + 1}
+                                    </div>
+                                    <h3 className="font-bold text-brand-primary dark:text-white text-lg leading-tight line-clamp-2">{stage.title || 'Tanpa Judul'}</h3>
+                                </div>
+                                
+                                <div className="mb-4 flex-grow">
+                                    <p className="text-xs font-semibold text-brand-secondary dark:text-blue-300 mb-1">
+                                        <i className="fas fa-calendar-alt mr-1"></i> {stage.date || 'Tanggal belum diatur'}
+                                    </p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3">
+                                        {stage.description || 'Tidak ada deskripsi.'}
+                                    </p>
+                                </div>
+
+                                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-black rounded-full p-2 shadow-md">
+                                    <i className="fas fa-pen text-sm text-blue-500"></i>
+                                </div>
+                                
+                                <div className="mt-auto pt-3 border-t dark:border-gray-700 flex justify-between items-center text-xs text-gray-400">
+                                    <span>ID: {stage.id.substring(0, 8)}...</span>
+                                    {index === 0 && <span className="text-yellow-600 font-semibold bg-yellow-100 dark:bg-yellow-900/30 px-2 py-0.5 rounded">Langkah Utama</span>}
+                                </div>
+                            </div>
+                        ))}
+                        {stages.length === 0 && <p className="text-gray-500 text-sm italic col-span-full text-center py-8">Belum ada tahapan seleksi.</p>}
+                    </div>
+                </div>
+            </div>
+
+            {/* Modal di Render di luar div animasi induk agar tidak terpotong (Stacking Context) */}
+            {isPopupModalOpen && editingStage && (
                 <PopupContentModal 
                     stage={editingStage} 
                     onClose={() => setIsPopupModalOpen(false)} 
@@ -255,52 +304,6 @@ const AdminManageStages: React.FC<AdminPageProps> = ({ showNotification, showCon
                 />
             )}
 
-            <div className="bg-white dark:bg-brand-primary p-6 rounded-lg shadow-md">
-                <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-2xl font-bold text-brand-primary dark:text-white">Kelola Tahapan Seleksi</h1>
-                    <button onClick={handleAddStage} className="bg-green-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-green-700 shadow flex items-center gap-2">
-                        <i className="fas fa-plus"></i> Tambah Tahapan
-                    </button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {stages.map((stage, index) => (
-                        <div 
-                            key={stage.id} 
-                            onClick={() => handleEditStage(stage)}
-                            className="bg-gray-50 dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-5 cursor-pointer hover:shadow-lg transition-all transform hover:-translate-y-1 relative group flex flex-col h-full"
-                        >
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="bg-brand-secondary text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shadow-sm flex-shrink-0">
-                                    {index + 1}
-                                </div>
-                                <h3 className="font-bold text-brand-primary dark:text-white text-lg leading-tight line-clamp-2">{stage.title || 'Tanpa Judul'}</h3>
-                            </div>
-                            
-                            <div className="mb-4 flex-grow">
-                                <p className="text-xs font-semibold text-brand-secondary dark:text-blue-300 mb-1">
-                                    <i className="fas fa-calendar-alt mr-1"></i> {stage.date || 'Tanggal belum diatur'}
-                                </p>
-                                <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3">
-                                    {stage.description || 'Tidak ada deskripsi.'}
-                                </p>
-                            </div>
-
-                            <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-black rounded-full p-2 shadow-md">
-                                <i className="fas fa-pen text-sm text-blue-500"></i>
-                            </div>
-                            
-                            <div className="mt-auto pt-3 border-t dark:border-gray-700 flex justify-between items-center text-xs text-gray-400">
-                                <span>ID: {stage.id.substring(0, 8)}...</span>
-                                {index === 0 && <span className="text-yellow-600 font-semibold bg-yellow-100 dark:bg-yellow-900/30 px-2 py-0.5 rounded">Admin Step</span>}
-                            </div>
-                        </div>
-                    ))}
-                     {stages.length === 0 && <p className="text-gray-500 text-sm italic col-span-full text-center py-8">Belum ada tahapan seleksi.</p>}
-                </div>
-            </div>
-
-            {/* Main Edit Modal */}
             <EditModal 
                 isOpen={isModalOpen} 
                 onClose={() => setIsModalOpen(false)} 
@@ -310,7 +313,7 @@ const AdminManageStages: React.FC<AdminPageProps> = ({ showNotification, showCon
             >
                 {editingStage && (
                     <div className="space-y-5 pt-1">
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div className="relative input-group">
                                 <input value={editingStage.title} onChange={e => setEditingStage({...editingStage, title: e.target.value})} className={inputClass} placeholder=" " autoFocus/>
                                 <label className={labelClass}>Judul Tahapan</label>
@@ -350,11 +353,11 @@ const AdminManageStages: React.FC<AdminPageProps> = ({ showNotification, showCon
                             </div>
                         </div>
 
-                         <button 
+                        <button 
                             onClick={() => setIsPopupModalOpen(true)}
-                            className="w-full py-3 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 rounded-lg border border-indigo-200 dark:border-indigo-700 hover:bg-indigo-200 dark:hover:bg-indigo-900/60 font-semibold text-sm transition-colors flex items-center justify-center gap-2"
+                            className="w-full py-3 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 rounded-lg border border-indigo-200 dark:border-indigo-700 hover:bg-indigo-200 dark:hover:bg-indigo-900/60 font-semibold text-sm transition-colors flex items-center justify-center gap-2 shadow-sm"
                         >
-                            <i className="fas fa-comment-alt-lines"></i> Edit Pesan Popup (Lolos/Gagal)
+                            <i className="fas fa-comment-alt-lines"></i> Edit Pesan Popup Khusus (Lolos/Gagal/Pending)
                         </button>
 
                         {stages.indexOf(editingStage) === 0 && (
@@ -365,7 +368,7 @@ const AdminManageStages: React.FC<AdminPageProps> = ({ showNotification, showCon
                     </div>
                 )}
             </EditModal>
-        </div>
+        </>
     );
 };
 
