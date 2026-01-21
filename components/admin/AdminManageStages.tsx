@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { getSelectionStages, setData } from '../../services/firebase';
 import type { SelectionStage, AdminPageProps } from '../../types';
@@ -28,10 +27,10 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, onClose, title, children,
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[1001] p-4" onClick={handleClose}>
             <div 
-                className={`bg-white dark:bg-brand-primary rounded-lg p-6 max-w-2xl w-full shadow-2xl ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'} flex flex-col max-h-[90vh]`}
+                className={`bg-white dark:bg-brand-primary rounded-lg p-6 max-w-2xl w-full shadow-2xl ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'} flex flex-col max-h-[85vh] overflow-hidden`}
                 onClick={e => e.stopPropagation()}
             >
-                <div className="flex justify-between items-center mb-6 border-b dark:border-gray-700 pb-2">
+                <div className="flex-shrink-0 flex justify-between items-center mb-6 border-b dark:border-gray-700 pb-2">
                     <h3 className="text-xl font-bold text-brand-primary dark:text-white">{title}</h3>
                     <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><i className="fas fa-times"></i></button>
                 </div>
@@ -40,7 +39,7 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, onClose, title, children,
                     {children}
                 </div>
 
-                <div className="mt-6 pt-4 border-t dark:border-gray-700 flex justify-between items-center">
+                <div className="flex-shrink-0 mt-6 pt-4 border-t dark:border-gray-700 flex justify-between items-center">
                     {onDelete ? (
                         <button onClick={onDelete} className="text-red-500 hover:text-red-700 font-bold text-sm bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-md"><i className="fas fa-trash-alt mr-2"></i>Hapus</button>
                     ) : <div></div>}
@@ -95,7 +94,7 @@ const PopupContentModal: React.FC<{
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[1002] p-4" onClick={handleClose}>
              <div 
-                className={`bg-brand-light dark:bg-gray-700 rounded-lg p-6 max-w-lg w-full shadow-lg ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'} flex flex-col max-h-[85vh]`}
+                className={`bg-brand-light dark:bg-gray-700 rounded-lg p-6 max-w-lg w-full shadow-lg ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'} flex flex-col max-h-[80vh]`}
                 onClick={e => e.stopPropagation()}
             >
                 <div className="flex justify-between items-center mb-4">

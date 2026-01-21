@@ -28,7 +28,7 @@ interface AdminSidebarProps {
     notificationBadge?: number;
     messageBadge?: number;
     onLogout: () => void;
-    isDesktopCollapsed?: boolean; // Keep for interface compatibility but not used for collapsing
+    isDesktopCollapsed?: boolean; 
     toggleDesktopCollapse?: () => void;
 }
 
@@ -50,7 +50,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
             />
             <div className={`fixed top-0 left-0 h-full w-64 bg-brand-primary text-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out lg:hidden ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 <div className="p-4 flex justify-between items-center border-b border-blue-800">
-                    <span className="font-bold text-xl font-orbitron">Admin Menu</span>
+                    <span className="font-bold text-xl font-quicksand">Admin Menu</span>
                     <button onClick={toggleSidebar} className="text-gray-300 hover:text-white p-2">
                         <i className="fas fa-times text-xl"></i>
                     </button>
@@ -87,7 +87,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
     const DesktopSidebar = () => (
         <div className={`hidden lg:flex flex-col h-screen bg-brand-primary text-white shadow-xl transition-all duration-300 ease-in-out sticky top-0 w-64`}>
             <div className={`flex items-center h-16 lg:h-20 border-b border-blue-800 px-6 justify-center`}>
-                <span className="font-bold text-lg font-orbitron tracking-wider">ADMIN PANEL</span>
+                <span className="font-bold text-lg font-quicksand tracking-wider uppercase">ADMIN PANEL</span>
             </div>
 
             <nav className="flex-1 overflow-y-auto py-4 overflow-x-hidden custom-scrollbar">
@@ -103,7 +103,6 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                                 <i className={`${item.icon} text-lg w-8 text-center`}></i>
                                 <span className="ml-2 font-medium truncate">{item.label}</span>
                                 
-                                {/* Badges */}
                                 {item.page === 'users' && notificationBadge && notificationBadge > 0 && (
                                     <span className={`bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center ml-auto px-2 py-0.5`}>
                                         {notificationBadge}

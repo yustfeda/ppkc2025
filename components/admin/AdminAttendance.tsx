@@ -42,7 +42,7 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
             } else if (viewType === 'weekly') {
                 const dayOfWeek = date.getUTCDay();
                 const startOfWeek = new Date(date);
-                startOfWeek.setUTCDate(date.getUTCDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1)); // Monday as start of week
+                startOfWeek.setUTCDate(date.getUTCDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1)); 
                 for (let i = 0; i < 7; i++) {
                     const d = new Date(startOfWeek);
                     d.setUTCDate(startOfWeek.getUTCDate() + i);
@@ -131,23 +131,19 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
                 const userToUpdate = allRegs[uid];
 
                 if (!userToUpdate) {
-                    setScanResult({ message: 'Peserta tidak ditemukan di database.', type: 'error' });
+                    setScanResult({ message: 'Peserta tidak ditemukan.', type: 'error' });
                     return;
                 }
                 
-                // Check current attendance status for the selected date
                 const dailyAttendance = await getDailyAttendanceData(selectedDate);
                 const isCurrentlyPresent = dailyAttendance[uid]?.present === true;
 
-                // Toggle status
                 if (isCurrentlyPresent) {
-                    // If present, mark as absent (remove record)
                     await setDailyAttendanceStatus(selectedDate, uid, false);
-                    setScanResult({ message: `Berhasil! ${userToUpdate.fullName || ''} ditandai Tidak Hadir (nonaktif).`, type: 'success' });
+                    setScanResult({ message: `${userToUpdate.fullName || ''} : TIDAK HADIR`, type: 'error' });
                 } else {
-                    // If not present, mark as present
                     await setDailyAttendanceStatus(selectedDate, uid, true);
-                    setScanResult({ message: `Berhasil! ${userToUpdate.fullName || ''} ditandai Hadir.`, type: 'success' });
+                    setScanResult({ message: `${userToUpdate.fullName || ''} : HADIR`, type: 'success' });
                 }
                 
                 fetchData();
@@ -162,8 +158,8 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
         qrCodeScanner.render(onScanSuccess, (error: any) => {});
 
         return () => {
-             if (qrCodeScanner && qrCodeScanner.getState() !== 1) { // 1 is NOT_STARTED
-                qrCodeScanner.clear().catch((error: any) => console.error("Failed to clear scanner.", error));
+             if (qrCodeScanner && qrCodeScanner.getState() !== 1) { 
+                qrCodeScanner.clear().catch((error: any) => console.error("Scanner clear fail.", error));
             }
         };
     }, [scannerActive, showNotification, selectedDate, fetchData, cameraFacingMode]);
@@ -211,7 +207,7 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-brand-primary dark:text-white">Daftar Hadir Peserta Lolos</h1>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Gunakan scanner untuk mencatat kehadiran atau unduh data.</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Gunakan scanner untuk mencatat kehadiran peserta.</p>
                 </div>
                  <div className="flex items-center gap-2 flex-wrap">
                      <select value={viewType} onChange={e => setViewType(e.target.value as any)} className="p-2 border rounded-md text-sm bg-white dark:bg-brand-dark dark:border-gray-600 dark:text-white">
@@ -223,8 +219,8 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
                 </div>
             </div>
             <div className="flex flex-wrap gap-2 mb-6">
-                <button onClick={exportToPDF} className="bg-red-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-red-700"><i className="fas fa-file-pdf mr-2"></i>Unduh PDF</button>
-                <button onClick={exportToExcel} className="bg-green-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-green-700"><i className="fas fa-file-excel mr-2"></i>Unduh Excel</button>
+                <button onClick={exportToPDF} className="bg-red-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-red-700"><i className="fas fa-file-pdf mr-2"></i>PDF</button>
+                <button onClick={exportToExcel} className="bg-green-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-green-700"><i className="fas fa-file-excel mr-2"></i>Excel</button>
             </div>
             
             {viewType === 'daily' && (
@@ -240,10 +236,10 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
                         <div className="relative">
                             <div id="qr-reader" style={{ width: '100%' }}></div>
                             {scanResult && (
-                                <div className={`absolute inset-0 flex items-center justify-center p-4 transition-opacity duration-300 bg-black/70 rounded-md`}>
-                                    <div className={`text-center p-4 rounded-lg ${scanResult.type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white shadow-lg`}>
-                                        <i className={`fas ${scanResult.type === 'success' ? 'fa-check-circle' : 'fa-times-circle'} text-3xl mb-2`}></i>
-                                        <p className="font-bold">{scanResult.message}</p>
+                                <div className={`absolute inset-0 flex items-center justify-center p-4 transition-opacity duration-300 bg-black/70 rounded-md z-20`}>
+                                    <div className={`text-center p-6 rounded-lg ${scanResult.type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white shadow-lg`}>
+                                        <i className={`fas ${scanResult.type === 'success' ? 'fa-check-circle' : 'fa-times-circle'} text-4xl mb-3`}></i>
+                                        <p className="font-bold text-lg">{scanResult.message}</p>
                                     </div>
                                 </div>
                             )}
@@ -257,7 +253,6 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
                                 <button
                                     onClick={() => setCameraFacingMode(prev => prev === 'user' ? 'environment' : 'user')}
                                     className="bg-gray-500 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-gray-600"
-                                    title="Switch Camera"
                                 >
                                     <i className="fas fa-camera-rotate mr-2"></i>Ganti Kamera
                                 </button>
@@ -274,34 +269,38 @@ const AdminAttendance: React.FC<AdminPageProps> = ({ showNotification }) => {
                         <tr className="text-gray-800 dark:text-gray-200">
                             <th className="p-3 font-semibold">#</th>
                             <th className="p-3 font-semibold">Nama</th>
+                            <th className="p-3 font-semibold">Status Hari Ini</th>
                             <th className="p-3 font-semibold">Total Hadir</th>
-                            <th className="p-3 font-semibold">Terakhir Hadir</th>
+                            <th className="p-3 font-semibold">Terakhir Scan</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
                         {loading ? (
-                            <tr><td colSpan={4} className="p-4 text-center"><i className="fas fa-spinner fa-spin text-xl text-brand-secondary"></i></td></tr>
-                        ) : attendees.length > 0 ? attendees.map((attendee, index) => (
-                            <tr key={attendee.uid}>
-                                <td className="p-3">{index + 1}</td>
-                                <td className="p-3 font-medium">{attendee.fullName}</td>
-                                <td className="p-3">
-                                    {attendee.presentCount > 0 ? (
-                                        <span className="px-2 py-1 rounded-full font-medium text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
-                                            Hadir {attendee.presentCount} kali
-                                        </span>
-                                    ) : (
-                                        <span className="px-2 py-1 rounded-full font-medium text-xs bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
-                                            Tidak Pernah Hadir
-                                        </span>
-                                    )}
-                                </td>
-                                 <td className="p-3 font-mono text-xs">
-                                    {attendee.lastTimestamp ? new Date(attendee.lastTimestamp).toLocaleString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', day: '2-digit', month: 'short' }) : '-'}
-                                </td>
-                            </tr>
-                        )) : (
-                            <tr><td colSpan={4} className="p-4 text-center text-gray-500">Belum ada peserta yang lolos seleksi akhir.</td></tr>
+                            <tr><td colSpan={5} className="p-4 text-center"><i className="fas fa-spinner fa-spin text-xl text-brand-secondary"></i></td></tr>
+                        ) : attendees.length > 0 ? attendees.map((attendee, index) => {
+                            const isPresentToday = attendee.lastTimestamp && new Date(attendee.lastTimestamp).toISOString().split('T')[0] === selectedDate;
+                            
+                            return (
+                                <tr key={attendee.uid}>
+                                    <td className="p-3">{index + 1}</td>
+                                    <td className="p-3 font-medium whitespace-nowrap">{attendee.fullName}</td>
+                                    <td className="p-3">
+                                        {isPresentToday ? (
+                                            <span className="text-green-600 font-bold text-xs bg-green-50 px-2 py-1 rounded">HADIR</span>
+                                        ) : (
+                                            <span className="text-red-500 font-bold text-xs bg-red-50 px-2 py-1 rounded">TIDAK HADIR</span>
+                                        )}
+                                    </td>
+                                    <td className="p-3">
+                                        <span className="text-xs">{attendee.presentCount} kali</span>
+                                    </td>
+                                     <td className="p-3 font-mono text-xs">
+                                        {attendee.lastTimestamp ? new Date(attendee.lastTimestamp).toLocaleString('id-ID', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' }) : '-'}
+                                    </td>
+                                </tr>
+                            );
+                        }) : (
+                            <tr><td colSpan={5} className="p-4 text-center text-gray-500">Belum ada peserta yang lolos seleksi akhir.</td></tr>
                         )}
                     </tbody>
                 </table>

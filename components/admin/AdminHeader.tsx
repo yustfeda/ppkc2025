@@ -55,12 +55,12 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ toggleSidebar, isSidebarOpen,
                     <i className="fas fa-bars text-2xl"></i>
                 </button>
                 
-                {/* Title (Visible mostly on mobile since sidebar has logo on desktop) */}
-                <span className="text-lg font-bold font-orbitron tracking-wider lg:hidden">ADMIN PANEL</span>
+                {/* Title */}
+                <span className="text-lg font-bold font-quicksand tracking-wider lg:hidden uppercase">ADMIN PANEL</span>
             </div>
 
             <div className="flex items-center space-x-4">
-                 {/* Messages Icon (Visible on all screens now) */}
+                 {/* Messages Icon */}
                  <button
                     onClick={onMessageIconClick}
                     className="btn-no-lift relative p-2 text-gray-300 hover:text-white transition-colors"
