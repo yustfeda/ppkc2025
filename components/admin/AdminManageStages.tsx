@@ -25,14 +25,14 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, onClose, title, children,
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-start justify-center z-[1001] p-4 pt-12 sm:pt-20 overflow-y-auto" onClick={handleClose}>
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[9999] p-4 overflow-y-auto" onClick={handleClose}>
             <div 
-                className={`bg-white dark:bg-brand-primary rounded-lg p-6 max-w-2xl w-full shadow-2xl ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'} flex flex-col max-h-[85vh] overflow-hidden mb-12`}
+                className={`bg-white dark:bg-brand-primary rounded-lg p-6 max-w-2xl w-full shadow-2xl ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'} flex flex-col max-h-[90vh] overflow-hidden my-auto`}
                 onClick={e => e.stopPropagation()}
             >
                 <div className="flex-shrink-0 flex justify-between items-center mb-6 border-b dark:border-gray-700 pb-2">
                     <h3 className="text-xl font-bold text-brand-primary dark:text-white">{title}</h3>
-                    <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><i className="fas fa-times"></i></button>
+                    <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-2"><i className="fas fa-times text-xl"></i></button>
                 </div>
                 
                 <div className="flex-grow overflow-y-auto pr-2 custom-scrollbar space-y-4">
@@ -45,7 +45,7 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, onClose, title, children,
                     ) : <div></div>}
                     <div className="flex gap-3">
                         <button onClick={handleClose} className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold py-2 px-4 rounded-md text-sm hover:bg-gray-300 dark:hover:bg-gray-600">Batal</button>
-                        <button onClick={() => { onSave(); handleClose(); }} className="bg-brand-secondary text-white font-bold py-2 px-6 rounded-md text-sm hover:bg-brand-accent">Simpan</button>
+                        <button onClick={() => { onSave(); handleClose(); }} className="bg-brand-secondary text-white font-bold py-2 px-6 rounded-md text-sm hover:bg-brand-accent shadow-md">Simpan</button>
                     </div>
                 </div>
             </div>
@@ -92,9 +92,9 @@ const PopupContentModal: React.FC<{
     const labelClass = "form-label text-xs dark:text-gray-400";
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[1002] p-4" onClick={handleClose}>
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[10000] p-4" onClick={handleClose}>
              <div 
-                className={`bg-brand-light dark:bg-gray-700 rounded-lg p-6 max-w-lg w-full shadow-lg ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'} flex flex-col max-h-[80vh]`}
+                className={`bg-brand-light dark:bg-gray-700 rounded-lg p-6 max-w-lg w-full shadow-lg ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'} flex flex-col max-h-[85vh]`}
                 onClick={e => e.stopPropagation()}
             >
                 <div className="flex justify-between items-center mb-4">
@@ -102,7 +102,7 @@ const PopupContentModal: React.FC<{
                      <button onClick={handleClose} className="text-gray-400"><i className="fas fa-times"></i></button>
                 </div>
                 
-                <div className="space-y-4 overflow-y-auto pr-2 flex-grow">
+                <div className="space-y-4 overflow-y-auto pr-2 flex-grow custom-scrollbar">
                     <p className="text-xs text-gray-500 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
                         <i className="fas fa-info-circle mr-1"></i>
                         Pesan ini akan muncul saat peserta mengklik kartu tahapan di halaman "Tahapan Seleksi". Kosongkan untuk menggunakan pesan default.
@@ -152,7 +152,7 @@ const PopupContentModal: React.FC<{
                     </div>
                 </div>
                 <div className="flex justify-end gap-3 mt-4 pt-4 border-t dark:border-gray-600">
-                    <button onClick={handleSave} className="bg-brand-secondary text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-brand-accent w-full">Simpan Konten Popup</button>
+                    <button onClick={handleSave} className="bg-brand-secondary text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-brand-accent w-full shadow-md transition-colors">Simpan Konten Popup</button>
                 </div>
             </div>
         </div>
