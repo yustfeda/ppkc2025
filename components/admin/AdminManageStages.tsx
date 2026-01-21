@@ -67,7 +67,7 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, onClose, title, children,
     return (
         <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-[99999] p-4 overflow-hidden" onClick={handleClose}>
             <div 
-                className={`bg-white dark:bg-brand-primary rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh] overflow-hidden ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'} ${isDragging ? 'select-none' : ''}`}
+                className={`bg-white dark:bg-brand-primary rounded-2xl shadow-2xl w-full max-w-xl flex flex-col max-h-[90vh] overflow-hidden ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'} ${isDragging ? 'select-none' : ''}`}
                 onClick={e => e.stopPropagation()}
                 style={{ transform: `translate(${position.x}px, ${position.y}px)` }}
             >
