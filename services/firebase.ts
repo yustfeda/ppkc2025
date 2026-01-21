@@ -155,9 +155,15 @@ export const updateUserStageProgress = (uid: string, stageId: string, progress: 
     return database.ref(`registrations/${uid}/stageProgress/${stageId}`).set(progress);
 };
 
-export const deleteUserRegistration = (uid: string): Promise<void> => {
-    // This removes the entire registration node for the user.
-    return database.ref(`registrations/${uid}`).remove();
+export const deleteUserRegistration = async (uid: string): Promise<void> => {
+    // Completely remove user from various database paths for thorough deletion
+    const updates: Record<string, any> = {};
+    updates[`registrations/${uid}`] = null;
+    updates[`chats/${uid}`] = null;
+    updates[`messageLimits/${uid}`] = null;
+    
+    // Attempt multi-path delete
+    await database.ref().update(updates);
 };
 
 export const setDailyAttendanceStatus = async (date: string, uid: string, present: boolean): Promise<void> => {

@@ -2,23 +2,19 @@ import React, { useState } from 'react';
 import type { PublicPage, User, ManagedButton } from '../types';
 import AnimatedLogo from './AnimatedLogo';
 
-interface NavItem {
-  page: PublicPage;
-  label: string;
-  icon: string;
-  roles: ('guest' | 'user')[];
+interface HeaderProps {
+  currentPage: PublicPage;
+  setCurrentPage: (page: PublicPage) => void;
+  toggleSidebar: () => void;
+  user: User | null;
+  onLogout: () => void;
+  isSidebarOpen: boolean;
+  isSelectionFinished: boolean;
+  managedButtons: ManagedButton[];
+  onManagedButtonClick: (button: ManagedButton) => void;
+  loginActive: boolean;
+  unreadMessages: number;
 }
-
-const navItems: NavItem[] = [
-  { page: 'home', label: 'Beranda', icon: 'fas fa-home', roles: ['guest', 'user'] },
-  { page: 'stages', label: 'Tahapan Seleksi', icon: 'fas fa-list-ol', roles: ['guest', 'user'] },
-  { page: 'announcements', label: 'Pengumuman', icon: 'fas fa-bullhorn', roles: ['guest', 'user'] },
-  { page: 'messages', label: 'Pesan', icon: 'fas fa-paper-plane', roles: ['user'] },
-  { page: 'profile', label: 'Profil & Pendaftaran', icon: 'fas fa-user-circle', roles: ['user'] },
-  { page: 'registration', label: 'Proses Seleksi', icon: 'fas fa-tasks', roles: ['user'] },
-  { page: 'status', label: 'Status Kelulusan', icon: 'fas fa-award', roles: ['user'] },
-  { page: 'contact', label: 'Kontak', icon: 'fas fa-address-book', roles: ['guest', 'user'] },
-];
 
 const ThemeToggle: React.FC = () => {
     const [isDarkMode, setIsDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
@@ -36,116 +32,67 @@ const ThemeToggle: React.FC = () => {
     };
 
     return (
-        <button onClick={toggleTheme} className="group relative flex flex-col items-center justify-center px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-brand-secondary transition-colors text-xs"
+        <button 
+            onClick={toggleTheme} 
+            className="btn-no-lift p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors" 
+            title={isDarkMode ? 'Mode Terang' : 'Mode Gelap'}
         >
             <i className={`text-xl ${isDarkMode ? 'fas fa-sun' : 'fas fa-moon'}`}></i>
-             <span className="absolute top-full mt-2 text-xs font-semibold bg-brand-dark text-white px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                {isDarkMode ? 'Mode Terang' : 'Mode Gelap'}
-             </span>
         </button>
     );
 };
 
-
-interface HeaderProps {
-  currentPage: PublicPage;
-  setCurrentPage: (page: PublicPage) => void;
-  toggleSidebar: () => void;
-  user: User | null;
-  onLogout: () => void;
-  isSidebarOpen: boolean;
-  isSelectionFinished: boolean;
-  managedButtons: ManagedButton[];
-  onManagedButtonClick: (button: ManagedButton) => void;
-  loginActive: boolean;
-  unreadMessages: number;
-}
-
-const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, toggleSidebar, user, onLogout, isSidebarOpen, isSelectionFinished, managedButtons, onManagedButtonClick, loginActive, unreadMessages }) => {
-  
-  const getRole = (): 'user' | 'guest' => {
-    return user ? 'user' : 'guest';
-  };
-  const userRole = getRole();
-  
-  const visibleNavItems = navItems.filter(item => {
-    if (!item.roles.includes(userRole)) return false;
-    if (userRole === 'user') {
-      if (item.page === 'registration' && isSelectionFinished) return false;
-      if (item.page === 'status' && !isSelectionFinished) return false;
-    }
-    return true;
-  });
-
+const Header: React.FC<HeaderProps> = ({ toggleSidebar, user, onLogout, isSidebarOpen, loginActive, unreadMessages, setCurrentPage }) => {
   return (
-    <header className="bg-white dark:bg-brand-primary shadow-md sticky top-0 z-40 h-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
+    <header className="bg-white dark:bg-brand-primary shadow-sm sticky top-0 z-30 h-16 lg:h-20 transition-all">
+      <div className="max-w-full px-4 sm:px-6 lg:px-8 h-full">
         <div className="flex items-center justify-between h-full">
-          {/* Logo */}
-          <div onClick={() => setCurrentPage('home')}>
-             <AnimatedLogo />
-          </div>
-
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-1">
-            <nav className="flex items-center space-x-2">
-              {visibleNavItems.map(item => (
-                <button
-                  key={item.page}
-                  onClick={() => setCurrentPage(item.page)}
-                  className={`group relative flex flex-col items-center justify-center px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-brand-secondary transition-colors text-xs ${currentPage === item.page ? 'text-brand-secondary' : ''}`}
-                >
-                  <i className={`${item.icon} text-xl`}></i>
-                  {item.page === 'messages' && unreadMessages > 0 && (
-                      <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white text-[10px]">{unreadMessages}</span>
-                  )}
-                  <span className="absolute top-full mt-2 text-xs font-semibold bg-brand-dark text-white px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                    {item.label}
-                  </span>
-                </button>
-              ))}
-              {managedButtons.map(button => (
-                <button
-                  key={button.id}
-                  onClick={() => onManagedButtonClick(button)}
-                  className="group relative flex flex-col items-center justify-center px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-brand-secondary transition-colors text-xs"
-                >
-                  <i className={`${button.icon} text-xl`}></i>
-                  <span className="absolute top-full mt-2 text-xs font-semibold bg-brand-dark text-white px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                    {button.label}
-                  </span>
-                </button>
-              ))}
-            </nav>
-            <div className="h-8 w-px bg-gray-200 dark:bg-gray-700 mx-2"></div>
-            <ThemeToggle />
-            { user ? (
-                 <button onClick={onLogout} className="group relative flex flex-col items-center justify-center px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-brand-secondary transition-colors text-xs">
-                    <i className="fas fa-sign-out-alt text-xl"></i>
-                    <span className="absolute top-full mt-2 text-xs font-semibold bg-brand-dark text-white px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Logout</span>
-                 </button>
-            ) : (
-                <>
-                {loginActive && (
-                  <button onClick={() => setCurrentPage('login')} className="bg-brand-secondary text-white font-bold py-1 px-4 rounded-md text-xs hover:bg-brand-accent transition-colors">
-                      Daftar/Masuk
-                  </button>
-                )}
-                </>
-            )}
-          </div>
-
-          {/* Mobile Menu Button */}
-          <div className="md:hidden">
+          {/* Mobile Menu Button & Logo */}
+          <div className="flex items-center gap-4">
             <button
               onClick={toggleSidebar}
-              className={`hamburger ${isSidebarOpen ? 'is-active' : ''}`}
-              aria-label="Open main menu"
+              className="btn-no-lift lg:hidden p-2 -ml-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 rounded-md transition-colors"
             >
-              <span className="hamburger-line"></span>
-              <span className="hamburger-line"></span>
-              <span className="hamburger-line"></span>
+              <i className={`fas ${isSidebarOpen ? 'fa-times' : 'fa-bars'} text-2xl`}></i>
             </button>
+            <div onClick={() => setCurrentPage('home')} className="lg:hidden cursor-pointer">
+               <AnimatedLogo />
+            </div>
+            <div className="hidden lg:block">
+                <span className="font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest text-xs">Portal Seleksi Paskibraka</span>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center space-x-3">
+            <ThemeToggle />
+            
+            {user ? (
+                 <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => setCurrentPage('messages')}
+                        className="btn-no-lift relative p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 rounded-full transition-colors"
+                    >
+                         <i className="fas fa-paper-plane text-xl"></i>
+                         {unreadMessages > 0 && (
+                            <span className="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white text-[10px] border-2 border-white dark:border-brand-primary">{unreadMessages}</span>
+                         )}
+                    </button>
+                    <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block"></div>
+                    <button onClick={onLogout} className="flex items-center gap-2 px-3 py-1.5 text-red-600 dark:text-red-400 font-bold hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-sm">
+                        <i className="fas fa-sign-out-alt"></i>
+                        <span className="hidden sm:inline">Logout</span>
+                    </button>
+                 </div>
+            ) : (
+                <div className="lg:hidden"> {/* Tombol login HANYA tampil di mobile di Header, di Desktop hanya di sidebar */}
+                {loginActive && (
+                  <button onClick={() => setCurrentPage('login')} className="bg-brand-secondary text-white font-bold py-1.5 px-4 rounded-lg text-xs hover:bg-brand-accent transition-all shadow-md">
+                      Masuk
+                  </button>
+                )}
+                </div>
+            )}
           </div>
         </div>
       </div>

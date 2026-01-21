@@ -81,6 +81,7 @@ interface PublicAppProps {
 const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => {
     const [currentPage, setCurrentPage] = useState<PublicPage>(() => (sessionStorage.getItem('currentPage') as PublicPage) || 'home');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem('sidebar_collapsed') === 'true');
     const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
     const [notification, setNotification] = useState<Notification | null>(null);
     const [confirmation, setConfirmation] = useState<ConfirmationState>({ isOpen: false, message: '', onConfirm: () => {} });
@@ -242,10 +243,15 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
         setCurrentPage(page);
     }, [user, adminConfig, showNotification]);
     
-    const handleLogout = () => {
-        onLogout();
-        navigate('home');
-    }
+    const handleLogout = useCallback(() => {
+        showConfirmation(
+            "Apakah Anda yakin ingin keluar?",
+            () => {
+                onLogout();
+                navigate('home');
+            }
+        );
+    }, [onLogout, navigate, showConfirmation]);
 
     const toggleSidebar = useCallback(() => {
         setIsSidebarOpen(prev => !prev);
@@ -309,7 +315,7 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
     });
 
     return (
-        <div className="font-sans bg-brand-light dark:bg-brand-dark min-h-screen text-sm flex flex-col">
+        <div className="font-sans bg-brand-light dark:bg-brand-dark min-h-screen text-sm flex">
             <ConfirmationModal confirmation={confirmation} onCancel={hideConfirmation} />
             {notification && <NotificationPopup notification={notification} onClose={() => setNotification(null)} />}
             {showWelcomePopup && user && (
@@ -340,21 +346,12 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
                     isMessagingGloballyEnabled={adminConfig?.userMessagingActive}
                 />
             )}
-            <Header 
-                currentPage={currentPage}
-                setCurrentPage={navigate}
-                toggleSidebar={toggleSidebar}
-                user={user}
-                onLogout={handleLogout}
-                isSidebarOpen={isSidebarOpen}
-                isSelectionFinished={isSelectionFinished}
-                managedButtons={visibleButtons}
-                onManagedButtonClick={handleManagedButtonClick}
-                loginActive={adminConfig?.loginActive ?? true}
-                unreadMessages={unreadMessages}
-            />
+            
+            {/* Sidebar rendered as part of a flex row on desktop */}
             <Sidebar
                 isOpen={isSidebarOpen}
+                isCollapsed={isSidebarCollapsed}
+                setIsCollapsed={(v) => { setIsSidebarCollapsed(v); localStorage.setItem('sidebar_collapsed', String(v)); }}
                 currentPage={currentPage}
                 setCurrentPage={navigate}
                 toggleSidebar={toggleSidebar}
@@ -366,12 +363,32 @@ const PublicApp: React.FC<PublicAppProps> = ({ user, onSetAdmin, onLogout }) => 
                 loginActive={adminConfig?.loginActive ?? true}
                 unreadMessages={unreadMessages}
             />
-            <main className="flex-grow">
-                <div key={currentPage} className="animate-fade-in-up">
-                    {renderPage()}
-                </div>
-            </main>
-            <Footer setCurrentPage={navigate} appVersion={adminConfig?.appVersion} />
+
+            {/* Content Wrapper shifts for Desktop Sidebar */}
+            <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-72'}`}>
+                <Header 
+                    currentPage={currentPage}
+                    setCurrentPage={navigate}
+                    toggleSidebar={toggleSidebar}
+                    user={user}
+                    onLogout={handleLogout}
+                    isSidebarOpen={isSidebarOpen}
+                    isSelectionFinished={isSelectionFinished}
+                    managedButtons={visibleButtons}
+                    onManagedButtonClick={handleManagedButtonClick}
+                    loginActive={adminConfig?.loginActive ?? true}
+                    unreadMessages={unreadMessages}
+                />
+                
+                <main className="flex-grow">
+                    <div key={currentPage} className="animate-fade-in-up">
+                        {renderPage()}
+                    </div>
+                </main>
+                
+                <Footer setCurrentPage={navigate} appVersion={adminConfig?.appVersion} />
+            </div>
+
             {isAdminLoginOpen && <AdminLoginModal onClose={handleCloseAdminLogin} onLogin={onSetAdmin} />}
         </div>
     );

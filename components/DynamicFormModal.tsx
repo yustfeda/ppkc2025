@@ -56,8 +56,8 @@ const DynamicFormModal: React.FC<DynamicFormModalProps> = ({ button, user, onClo
             >
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-semibold text-brand-dark dark:text-white">{button.formTitle || 'Formulir'}</h3>
-                    <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                        <i className="fas fa-times"></i>
+                    <button onClick={handleClose} className="btn-close-x text-gray-400">
+                        <i className="fas fa-times text-xl"></i>
                     </button>
                 </div>
                 <form onSubmit={handleSubmit} className="space-y-6">

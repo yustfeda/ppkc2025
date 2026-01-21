@@ -24,6 +24,11 @@ const WelcomePopup: React.FC<WelcomePopupProps> = ({ user, onClose }) => {
                 className={`bg-brand-light dark:bg-brand-primary rounded-lg p-6 max-w-sm w-full shadow-lg text-center ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'}`}
                 onClick={e => e.stopPropagation()}
             >
+                <div className="flex justify-end -mt-2 -mr-2">
+                    <button onClick={handleClose} className="btn-close-x text-gray-400">
+                        <i className="fas fa-times"></i>
+                    </button>
+                </div>
                 <h3 className="text-xl font-bold text-brand-dark dark:text-white mb-2">{title}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">{message}</p>
                 <div className="flex flex-col gap-3">

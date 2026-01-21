@@ -141,10 +141,15 @@ const AdminApp: React.FC<AdminAppProps> = ({ onLogout }) => {
         showNotification("Seluruh percakapan telah dihapus.", "success");
     };
 
-    const handleLogout = () => {
-        sessionStorage.setItem('adminLoggedOut', 'true');
-        onLogout();
-    }
+    const handleLogout = useCallback(() => {
+        showConfirmation(
+            "Apakah Anda yakin ingin keluar dari halaman admin?",
+            () => {
+                sessionStorage.setItem('adminLoggedOut', 'true');
+                onLogout();
+            }
+        );
+    }, [onLogout, showConfirmation]);
 
     const selectedThread = selectedThreadId ? chatThreads[selectedThreadId] : null;
     let threadForPopup = selectedThread;

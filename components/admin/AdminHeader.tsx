@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import type { AdminPage } from '../../types';
 
@@ -20,7 +19,7 @@ const ThemeToggle: React.FC = () => {
     return (
         <button
             onClick={toggleTheme}
-            className="p-2 rounded-full text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
+            className="btn-no-lift p-2 rounded-full text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
             title={isDarkMode ? 'Mode Terang' : 'Mode Gelap'}
         >
             <i className={`text-xl ${isDarkMode ? 'fas fa-sun' : 'fas fa-moon'}`}></i>
@@ -50,7 +49,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ toggleSidebar, isSidebarOpen,
                  {/* Mobile Menu Button */}
                 <button
                     onClick={toggleSidebar}
-                    className="lg:hidden p-2 -ml-2 text-gray-300 hover:text-white focus:outline-none"
+                    className="btn-no-lift lg:hidden p-2 -ml-2 text-gray-300 hover:text-white focus:outline-none transition-colors"
                     aria-label="Open main menu"
                 >
                     <i className="fas fa-bars text-2xl"></i>
@@ -64,7 +63,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ toggleSidebar, isSidebarOpen,
                  {/* Messages Icon (Visible on all screens now) */}
                  <button
                     onClick={onMessageIconClick}
-                    className="relative p-2 text-gray-300 hover:text-white transition-colors"
+                    className="btn-no-lift relative p-2 text-gray-300 hover:text-white transition-colors"
                     title="Pesan"
                  >
                      <i className="fas fa-paper-plane text-xl"></i>

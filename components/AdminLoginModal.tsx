@@ -32,7 +32,7 @@ const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ onClose, onLogin }) =
             >
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-lg font-bold text-brand-dark dark:text-white">Admin Login</h2>
-                    <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                    <button onClick={handleClose} className="btn-close-x text-gray-400">
                         <i className="fas fa-times"></i>
                     </button>
                 </div>

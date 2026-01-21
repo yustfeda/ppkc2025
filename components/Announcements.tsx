@@ -1,23 +1,49 @@
-
 import React, { useState, useEffect } from 'react';
 import { getAnnouncements } from '../services/firebase';
 import type { AnnouncementDocument } from '../types';
 
-// Cached Image Helper (Inline for simplicity in this file)
+// Improved Cached Image Helper with loading state and sync logic
 const CachedImage: React.FC<{ src: string; alt: string; className: string; id: string }> = ({ src, alt, className, id }) => {
-    const [imgSrc, setImgSrc] = useState<string>(src);
+    const [imgSrc, setImgSrc] = useState<string>('');
+    const [isLoaded, setIsLoaded] = useState(false);
     
     useEffect(() => {
         const cacheKey = `ann_img_cache_${id}`;
         const cached = localStorage.getItem(cacheKey);
+
         if (cached && cached === src) {
             setImgSrc(cached);
         } else {
-            try { localStorage.setItem(cacheKey, src); } catch (e) {}
+            if (src) {
+                try {
+                    localStorage.setItem(cacheKey, src);
+                } catch (e) {}
+            }
             setImgSrc(src);
         }
     }, [src, id]);
-    return <img src={imgSrc} alt={alt} className={className} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />;
+
+    return (
+        <div className={`relative ${className} bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden`}>
+            {!isLoaded && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-50 dark:bg-gray-900 animate-pulse">
+                    <div className="w-8 h-8 border-4 border-brand-secondary border-t-transparent rounded-full animate-spin"></div>
+                </div>
+            )}
+            {imgSrc && (
+                <img 
+                    src={imgSrc} 
+                    alt={alt} 
+                    className={`${className} ${isLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-500 ease-in-out`} 
+                    onLoad={() => setIsLoaded(true)}
+                    onError={(e) => { 
+                        (e.target as HTMLImageElement).style.display = 'none'; 
+                        setIsLoaded(true); 
+                    }} 
+                />
+            )}
+        </div>
+    );
 };
 
 const DocumentCard: React.FC<{ doc: AnnouncementDocument; showNotification: (message: string, type: 'success' | 'error') => void; }> = ({ doc, showNotification }) => {
@@ -39,26 +65,26 @@ const DocumentCard: React.FC<{ doc: AnnouncementDocument; showNotification: (mes
 
     return (
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg flex flex-col overflow-hidden transition-all hover:shadow-2xl hover:-translate-y-1 duration-300">
-            <div className="p-5 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+            {/* Image at the very top, full width */}
+            {doc.thumbnailUrl && (
+                <div className="w-full h-40 sm:h-52 bg-gray-100 dark:bg-gray-900 overflow-hidden relative">
+                    <CachedImage
+                        id={doc.id}
+                        src={doc.thumbnailUrl}
+                        alt={doc.title}
+                        className="w-full h-full object-cover"
+                    />
+                </div>
+            )}
+
+            <div className="p-5 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30">
                 <h3 className="font-bold text-lg text-brand-dark dark:text-white line-clamp-2">{doc.title}</h3>
             </div>
             
             <div className="p-5 flex-grow">
-                {doc.thumbnailUrl && (
-                     <div className="mb-4 h-48 bg-gray-100 dark:bg-gray-900 rounded-lg overflow-hidden flex items-center justify-center border border-gray-200 dark:border-gray-700">
-                        {/* Using object-contain to prevent cropping as requested */}
-                        <CachedImage
-                            id={doc.id}
-                            src={doc.thumbnailUrl}
-                            alt={doc.title}
-                            className="w-full h-full object-contain"
-                        />
-                    </div>
-                )}
-                {doc.description && (
+                {doc.description ? (
                     <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{doc.description}</p>
-                )}
-                 {(!doc.thumbnailUrl && !doc.description) && (
+                ) : (
                     <p className="text-sm text-gray-400 italic">Tidak ada detail tambahan.</p>
                 )}
             </div>

@@ -152,7 +152,7 @@ const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onCl
                             </h3>
                         </div>
                     </div>
-                    <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                    <button onClick={handleClose} className="btn-close-x text-gray-400">
                         <i className="fas fa-times text-xl"></i>
                     </button>
                 </header>
@@ -228,12 +228,12 @@ const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onCl
                                 )}
                                 {messagesToDisplay.map((msg: Message) => (
                                     <div key={msg.id} className={`flex items-end gap-2 group ${msg.sender === (isAdmin ? 'admin' : 'user') ? 'justify-end' : 'justify-start'}`}>
-                                        {msg.sender === (isAdmin ? 'admin' : 'user') && <button onClick={() => handleDelete(msg)} className="text-gray-400 hover:text-red-500 text-xs opacity-0 group-hover:opacity-100"><i className="fas fa-trash"></i></button>}
+                                        {msg.sender === (isAdmin ? 'admin' : 'user') && <button onClick={() => handleDelete(msg)} className="text-gray-400 hover:text-red-500 text-xs opacity-0 group-hover:opacity-100 p-1 bg-transparent border-none shadow-none"><i className="fas fa-trash"></i></button>}
                                         <div className={`relative chat-bubble ${msg.sender === (isAdmin ? 'admin' : 'user') ? 'chat-bubble-sent' : 'chat-bubble-received'}`}>
                                             {msg.isGlobal && <span className="font-bold text-xs block text-yellow-300">[PENGUMUMAN GLOBAL]</span>}
                                             <p>{msg.text}</p>
                                         </div>
-                                        {msg.sender !== (isAdmin ? 'admin' : 'user') && <button onClick={() => handleDelete(msg)} className="text-gray-400 hover:text-red-500 text-xs opacity-0 group-hover:opacity-100"><i className="fas fa-trash"></i></button>}
+                                        {msg.sender !== (isAdmin ? 'admin' : 'user') && <button onClick={() => handleDelete(msg)} className="text-gray-400 hover:text-red-500 text-xs opacity-0 group-hover:opacity-100 p-1 bg-transparent border-none shadow-none"><i className="fas fa-trash"></i></button>}
                                     </div>
                                 ))}
                                 </>
@@ -259,7 +259,7 @@ const MessagePopup: React.FC<MessagePopupProps> = ({ user, isAdmin, isOpen, onCl
                             className="flex-grow p-2 border rounded-full text-sm bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:bg-gray-200 dark:disabled:bg-gray-900/50"
                             disabled={isAdmin ? (adminTab === 'inbox' && !currentThread) : !isMessagingGloballyEnabled}
                         />
-                        <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white rounded-full w-9 h-9 flex items-center justify-center flex-shrink-0 disabled:bg-gray-400" disabled={isAdmin ? (adminTab === 'inbox' && !currentThread) : !isMessagingGloballyEnabled}>
+                        <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white rounded-full w-9 h-9 flex items-center justify-center flex-shrink-0 disabled:bg-gray-400 shadow-md" disabled={isAdmin ? (adminTab === 'inbox' && !currentThread) : !isMessagingGloballyEnabled}>
                             <i className="fas fa-paper-plane"></i>
                         </button>
                     </form>
