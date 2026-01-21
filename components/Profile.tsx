@@ -130,7 +130,7 @@ const Profile: React.FC<ProfileProps> = ({ user, showNotification, showConfirmat
                 if (!finalParticipantNumber) {
                     const allRegs = await getRegistrations();
                     const count = allRegs ? Object.keys(allRegs).length : 0;
-                    const appName = adminConfig?.proofOfPassing?.participantNumberAppName || 'PPKC';
+                    const appName = adminConfig?.proofOfPassing?.participantNumberAppName || 'PPIKC';
                     const year = new Date().getFullYear().toString().slice(-2);
                     const sequence = (count + 1).toString().padStart(4, '0');
                     finalParticipantNumber = `${appName}-${year}-${sequence}`;
