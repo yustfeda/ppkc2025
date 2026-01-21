@@ -67,15 +67,15 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, onClose, title, children,
     return (
         <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-[99999] p-4 overflow-hidden" onClick={handleClose}>
             <div 
-                className={`bg-white dark:bg-brand-primary rounded-2xl shadow-2xl w-full max-w-xl flex flex-col max-h-[90vh] overflow-hidden ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'} ${isDragging ? 'select-none' : ''}`}
+                className={`bg-white dark:bg-brand-primary rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[80vh] overflow-hidden ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'} ${isDragging ? 'select-none' : ''}`}
                 onClick={e => e.stopPropagation()}
                 style={{ transform: `translate(${position.x}px, ${position.y}px)` }}
             >
                 <div 
                     onMouseDown={handleMouseDown}
-                    className="modal-drag-handle flex-shrink-0 flex justify-between items-center p-6 border-b dark:border-gray-700 bg-gray-50/50 dark:bg-black/10 cursor-move"
+                    className="modal-drag-handle flex-shrink-0 flex justify-between items-center p-5 border-b dark:border-gray-700 bg-gray-50/50 dark:bg-black/10 cursor-move"
                 >
-                    <h3 className="text-xl font-bold text-brand-primary dark:text-white flex items-center gap-2 pointer-events-none">
+                    <h3 className="text-lg font-bold text-brand-primary dark:text-white flex items-center gap-2 pointer-events-none">
                         <i className="fas fa-edit text-brand-secondary"></i>
                         {title}
                     </h3>
@@ -84,22 +84,22 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, onClose, title, children,
                     </button>
                 </div>
                 
-                <div className="flex-grow overflow-y-auto p-6 custom-scrollbar space-y-4">
+                <div className="flex-grow overflow-y-auto p-5 custom-scrollbar space-y-4">
                     {children}
                 </div>
 
-                <div className="flex-shrink-0 p-6 border-t dark:border-gray-700 bg-gray-50/50 dark:bg-black/10 flex justify-between items-center">
+                <div className="flex-shrink-0 p-5 border-t dark:border-gray-700 bg-gray-50/50 dark:bg-black/10 flex justify-between items-center">
                     {onDelete ? (
-                        <button onClick={onDelete} className="btn-no-lift text-red-500 hover:text-red-700 font-bold text-sm bg-red-50 dark:bg-red-900/20 px-4 py-2 rounded-xl transition-colors">
-                            <i className="fas fa-trash-alt mr-2"></i>Hapus Tahapan
+                        <button onClick={onDelete} className="btn-no-lift text-red-500 hover:text-red-700 font-bold text-xs bg-red-50 dark:bg-red-900/20 px-4 py-2 rounded-xl transition-colors">
+                            <i className="fas fa-trash-alt mr-2"></i>Hapus
                         </button>
                     ) : <div></div>}
                     <div className="flex gap-3">
-                        <button onClick={handleClose} className="btn-no-lift bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold py-2.5 px-5 rounded-xl text-sm hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                        <button onClick={handleClose} className="btn-no-lift bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold py-2.5 px-5 rounded-xl text-xs hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
                             Batal
                         </button>
-                        <button onClick={() => { onSave(); handleClose(); }} className="btn-no-lift bg-brand-secondary text-white font-bold py-2.5 px-8 rounded-xl text-sm hover:bg-brand-accent shadow-lg shadow-brand-secondary/20 transition-all active:scale-95">
-                            Simpan Perubahan
+                        <button onClick={() => { onSave(); handleClose(); }} className="btn-no-lift bg-brand-secondary text-white font-bold py-2.5 px-8 rounded-xl text-xs hover:bg-brand-accent shadow-lg shadow-brand-secondary/20 transition-all active:scale-95">
+                            Simpan
                         </button>
                     </div>
                 </div>
