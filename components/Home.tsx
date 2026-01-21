@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import type { PublicPage, AdminConfig, HomePageUpdate, User, RegistrationData, SelectionStage, ManagedButton, SupportersSection } from '../types';
 import { getAdminConfig, getHomeUpdates, getUserRegistration, getSelectionStages, getSupporters } from '../services/firebase';
 
-// --- SILAKAN UBAH URL GAMBAR DI BAWAH INI UNTUK GANTI GAMBAR HERO BERANDA GUEST ---
-const DEFAULT_HERO_IMAGE = "banner.png";
+// --- SILAKAN UBAH NAMA FILE DI BAWAH INI UNTUK GANTI GAMBAR HERO BERANDA GUEST ---
+// Pastikan file gambar (misalnya hero.png) sudah ada di folder proyek Anda.
+const DEFAULT_HERO_IMAGE ="/banner.png";
 
 interface HomeProps {
   setCurrentPage: (page: PublicPage) => void;
