@@ -25,29 +25,38 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, onClose, title, children,
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[99999] p-4 overflow-y-auto" onClick={handleClose}>
+        <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-[99999] p-4 overflow-y-auto" onClick={handleClose}>
             <div 
-                className={`bg-white dark:bg-brand-primary rounded-lg p-6 max-w-2xl w-full shadow-2xl ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'} flex flex-col max-h-[85vh] overflow-hidden my-auto`}
+                className={`bg-white dark:bg-brand-primary rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh] overflow-hidden ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'}`}
                 onClick={e => e.stopPropagation()}
             >
-                <div className="flex-shrink-0 flex justify-between items-center mb-6 border-b dark:border-gray-700 pb-2">
-                    <h3 className="text-xl font-bold text-brand-primary dark:text-white">{title}</h3>
+                <div className="flex-shrink-0 flex justify-between items-center p-6 border-b dark:border-gray-700 bg-gray-50/50 dark:bg-black/10">
+                    <h3 className="text-xl font-bold text-brand-primary dark:text-white flex items-center gap-2">
+                        <i className="fas fa-edit text-brand-secondary"></i>
+                        {title}
+                    </h3>
                     <button onClick={handleClose} className="btn-close-x text-gray-400 hover:text-red-500 transition-colors">
                         <i className="fas fa-times text-xl"></i>
                     </button>
                 </div>
                 
-                <div className="flex-grow overflow-y-auto pr-2 custom-scrollbar space-y-4">
+                <div className="flex-grow overflow-y-auto p-6 custom-scrollbar space-y-4">
                     {children}
                 </div>
 
-                <div className="flex-shrink-0 mt-6 pt-4 border-t dark:border-gray-700 flex justify-between items-center">
+                <div className="flex-shrink-0 p-6 border-t dark:border-gray-700 bg-gray-50/50 dark:bg-black/10 flex justify-between items-center">
                     {onDelete ? (
-                        <button onClick={onDelete} className="text-red-500 hover:text-red-700 font-bold text-sm bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-md"><i className="fas fa-trash-alt mr-2"></i>Hapus</button>
+                        <button onClick={onDelete} className="text-red-500 hover:text-red-700 font-bold text-sm bg-red-50 dark:bg-red-900/20 px-4 py-2 rounded-xl transition-colors">
+                            <i className="fas fa-trash-alt mr-2"></i>Hapus Tahapan
+                        </button>
                     ) : <div></div>}
                     <div className="flex gap-3">
-                        <button onClick={handleClose} className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold py-2 px-4 rounded-md text-sm hover:bg-gray-300 dark:hover:bg-gray-600">Batal</button>
-                        <button onClick={() => { onSave(); handleClose(); }} className="bg-brand-secondary text-white font-bold py-2 px-6 rounded-md text-sm hover:bg-brand-accent shadow-md">Simpan</button>
+                        <button onClick={handleClose} className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold py-2.5 px-5 rounded-xl text-sm hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                            Batal
+                        </button>
+                        <button onClick={() => { onSave(); handleClose(); }} className="bg-brand-secondary text-white font-bold py-2.5 px-8 rounded-xl text-sm hover:bg-brand-accent shadow-lg shadow-brand-secondary/20 transition-all active:scale-95">
+                            Simpan Perubahan
+                        </button>
                     </div>
                 </div>
             </div>
@@ -90,30 +99,34 @@ const PopupContentModal: React.FC<{
         }));
     };
 
-    const inputClass = "peer form-input p-2 border rounded text-sm w-full bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-brand-accent";
+    const inputClass = "peer form-input p-3 border rounded-xl text-sm w-full bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-brand-accent transition-all";
     const labelClass = "form-label text-xs dark:text-gray-400";
 
     return (
-        <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-[100000] p-4" onClick={handleClose}>
+        <div className="fixed inset-0 bg-gray-900/90 backdrop-blur-md flex items-center justify-center z-[100000] p-4" onClick={handleClose}>
              <div 
-                className={`bg-brand-light dark:bg-gray-700 rounded-lg p-6 max-w-lg w-full shadow-lg ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'} flex flex-col max-h-[80vh]`}
+                className={`bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl flex flex-col max-h-[85vh] ${isClosing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'}`}
                 onClick={e => e.stopPropagation()}
             >
-                <div className="flex justify-between items-center mb-4">
-                     <h3 className="text-lg font-semibold text-brand-dark dark:text-white">Edit Konten Popup</h3>
-                     <button onClick={handleClose} className="text-gray-400 hover:text-red-500"><i className="fas fa-times text-xl"></i></button>
+                <div className="flex justify-between items-center mb-6">
+                     <h3 className="text-xl font-bold text-brand-dark dark:text-white">Konfigurasi Pesan Popup</h3>
+                     <button onClick={handleClose} className="text-gray-400 hover:text-red-500 transition-colors"><i className="fas fa-times text-xl"></i></button>
                 </div>
                 
-                <div className="space-y-4 overflow-y-auto pr-2 flex-grow custom-scrollbar">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
-                        <i className="fas fa-info-circle mr-1"></i>
-                        Pesan ini akan muncul saat peserta mengklik kartu tahapan di halaman "Tahapan Seleksi".
-                    </p>
+                <div className="space-y-6 overflow-y-auto pr-2 flex-grow custom-scrollbar">
+                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800">
+                        <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
+                            <i className="fas fa-info-circle mr-2 text-sm"></i>
+                            Pesan di bawah ini akan muncul saat peserta mengklik kartu tahapan sesuai dengan status seleksi mereka.
+                        </p>
+                    </div>
 
                     {/* Pending */}
-                    <div className="p-3 bg-yellow-50 dark:bg-yellow-900/30 rounded-md border border-yellow-100 dark:border-yellow-800">
-                        <h4 className="font-bold text-yellow-700 dark:text-yellow-300 text-sm mb-2 flex items-center"><i className="fas fa-hourglass-half mr-2"></i>Status: Pending Review</h4>
-                        <div className="space-y-3">
+                    <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl border border-yellow-100 dark:border-yellow-800/50">
+                        <h4 className="font-bold text-yellow-700 dark:text-yellow-400 text-sm mb-4 flex items-center gap-2">
+                            <i className="fas fa-clock"></i> Status: Sedang Ditinjau
+                        </h4>
+                        <div className="space-y-4">
                             <div className="relative input-group">
                                 <input value={content?.pending?.title || ''} onChange={(e) => handleChange('pending', 'title', e.target.value)} className={inputClass} placeholder=" "/>
                                 <label className={labelClass}>Judul Popup</label>
@@ -124,10 +137,13 @@ const PopupContentModal: React.FC<{
                             </div>
                         </div>
                     </div>
+
                      {/* Lolos */}
-                    <div className="p-3 bg-green-50 dark:bg-green-900/30 rounded-md border border-green-100 dark:border-green-800">
-                        <h4 className="font-bold text-green-700 dark:text-green-300 text-sm mb-2 flex items-center"><i className="fas fa-check-circle mr-2"></i>Status: Lolos</h4>
-                        <div className="space-y-3">
+                    <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-800/50">
+                        <h4 className="font-bold text-green-700 dark:text-green-400 text-sm mb-4 flex items-center gap-2">
+                            <i className="fas fa-check-circle"></i> Status: Lolos Tahapan
+                        </h4>
+                        <div className="space-y-4">
                             <div className="relative input-group">
                                 <input value={content?.lolos?.title || ''} onChange={(e) => handleChange('lolos', 'title', e.target.value)} className={inputClass} placeholder=" "/>
                                 <label className={labelClass}>Judul Popup</label>
@@ -138,10 +154,13 @@ const PopupContentModal: React.FC<{
                             </div>
                         </div>
                     </div>
+
                      {/* Gagal */}
-                    <div className="p-3 bg-red-50 dark:bg-red-900/30 rounded-md border border-red-100 dark:border-red-800">
-                        <h4 className="font-bold text-red-700 dark:text-red-300 text-sm mb-2 flex items-center"><i className="fas fa-times-circle mr-2"></i>Status: Gagal</h4>
-                        <div className="space-y-3">
+                    <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-100 dark:border-red-800/50">
+                        <h4 className="font-bold text-red-700 dark:text-red-400 text-sm mb-4 flex items-center gap-2">
+                            <i className="fas fa-times-circle"></i> Status: Tidak Lolos
+                        </h4>
+                        <div className="space-y-4">
                             <div className="relative input-group">
                                 <input value={content?.gagal?.title || ''} onChange={(e) => handleChange('gagal', 'title', e.target.value)} className={inputClass} placeholder=" "/>
                                 <label className={labelClass}>Judul Popup</label>
@@ -153,8 +172,10 @@ const PopupContentModal: React.FC<{
                         </div>
                     </div>
                 </div>
-                <div className="flex justify-end gap-3 mt-4 pt-4 border-t dark:border-gray-600">
-                    <button onClick={handleSave} className="bg-brand-secondary text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-brand-accent w-full shadow-md">Simpan Konten Popup</button>
+                <div className="flex justify-end gap-3 mt-6 pt-6 border-t dark:border-gray-700">
+                    <button onClick={handleSave} className="bg-brand-secondary text-white font-bold py-3 px-6 rounded-xl text-sm hover:bg-brand-accent w-full shadow-lg shadow-brand-secondary/20 transition-all active:scale-95">
+                        Simpan Konfigurasi Pesan
+                    </button>
                 </div>
             </div>
         </div>
@@ -165,7 +186,6 @@ const AdminManageStages: React.FC<AdminPageProps> = ({ showNotification, showCon
     const [stages, setStages] = useState<SelectionStage[]>([]);
     const [loading, setLoading] = useState(true);
     
-    // Modal & Editing States
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingStage, setEditingStage] = useState<SelectionStage | null>(null);
     const [isPopupModalOpen, setIsPopupModalOpen] = useState(false);
@@ -241,133 +261,152 @@ const AdminManageStages: React.FC<AdminPageProps> = ({ showNotification, showCon
         }
     }
 
-    const inputClass = "peer form-input p-3 border rounded text-sm w-full bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-brand-accent";
+    const inputClass = "peer form-input p-3 border rounded-xl text-sm w-full bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-brand-accent transition-all";
     const labelClass = "form-label text-sm text-gray-500 dark:text-gray-400";
 
-    if (loading) return <div className="text-center p-4"><i className="fas fa-spinner fa-spin text-2xl text-brand-secondary"></i></div>;
+    if (loading) return <div className="text-center p-12"><i className="fas fa-spinner fa-spin text-3xl text-brand-secondary"></i></div>;
 
     return (
         <>
-            <div className="space-y-6 animate-fade-in">
-                <div className="bg-white dark:bg-brand-primary p-6 rounded-lg shadow-md">
-                    <div className="flex justify-between items-center mb-6">
-                        <h1 className="text-2xl font-bold text-brand-primary dark:text-white">Kelola Tahapan Seleksi</h1>
-                        <button onClick={handleAddStage} className="bg-green-600 text-white font-bold py-2 px-4 rounded-md text-sm hover:bg-green-700 shadow flex items-center gap-2 transition-transform active:scale-95">
-                            <i className="fas fa-plus"></i> Tambah Tahapan
+            <div className="animate-fade-in space-y-6">
+                <div className="bg-white dark:bg-brand-primary p-6 sm:p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+                        <div>
+                            <h1 className="text-2xl sm:text-3xl font-extrabold text-brand-primary dark:text-white tracking-tight">Kelola Tahapan Seleksi</h1>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Atur urutan, jadwal, dan kriteria kelulusan tiap tahap.</p>
+                        </div>
+                        {/* Tambahkan btn-no-lift untuk mencegah bug getar dari CSS global */}
+                        <button onClick={handleAddStage} className="btn-no-lift bg-green-600 text-white font-bold py-3 px-6 rounded-xl text-sm hover:bg-green-700 shadow-lg shadow-green-600/20 flex items-center gap-2 transition-all active:scale-95">
+                            <i className="fas fa-plus"></i> Tambah Tahapan Baru
                         </button>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {stages.map((stage, index) => (
                             <div 
                                 key={stage.id} 
                                 onClick={() => handleEditStage(stage)}
-                                className="bg-gray-50 dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-5 cursor-pointer hover:shadow-lg transition-all transform hover:-translate-y-1 relative group flex flex-col h-full"
+                                className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 cursor-pointer hover:shadow-xl hover:border-brand-secondary/30 transition-all transform hover:-translate-y-1 relative group flex flex-col h-full overflow-hidden"
                             >
-                                <div className="flex items-center gap-3 mb-3">
-                                    <div className="bg-brand-secondary text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shadow-sm flex-shrink-0">
+                                <div className="absolute top-0 left-0 w-1 h-full bg-brand-secondary"></div>
+                                <div className="flex items-center gap-4 mb-4">
+                                    <div className="bg-brand-secondary/10 dark:bg-brand-secondary/20 text-brand-secondary w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xl shadow-sm flex-shrink-0">
                                         {index + 1}
                                     </div>
-                                    <h3 className="font-bold text-brand-primary dark:text-white text-lg leading-tight line-clamp-2">{stage.title || 'Tanpa Judul'}</h3>
+                                    <h3 className="font-bold text-brand-primary dark:text-white text-lg leading-snug line-clamp-2 group-hover:text-brand-secondary transition-colors">{stage.title || 'Tanpa Judul'}</h3>
                                 </div>
                                 
-                                <div className="mb-4 flex-grow">
-                                    <p className="text-xs font-semibold text-brand-secondary dark:text-blue-300 mb-1">
-                                        <i className="fas fa-calendar-alt mr-1"></i> {stage.date || 'Tanggal belum diatur'}
-                                    </p>
-                                    <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3">
-                                        {stage.description || 'Tidak ada deskripsi.'}
+                                <div className="mb-6 flex-grow">
+                                    <div className="flex items-center gap-2 text-xs font-bold text-brand-secondary dark:text-blue-300 mb-2 uppercase tracking-wider">
+                                        <i className="fas fa-calendar-alt"></i>
+                                        <span>{stage.date || 'Tanggal belum diatur'}</span>
+                                    </div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3 leading-relaxed">
+                                        {stage.description || 'Tidak ada deskripsi tahapan.'}
                                     </p>
                                 </div>
 
-                                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-black rounded-full p-2 shadow-md">
-                                    <i className="fas fa-pen text-sm text-blue-500"></i>
+                                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all transform translate-x-4 group-hover:translate-x-0 bg-white dark:bg-gray-900 rounded-xl p-2.5 shadow-xl z-10 border dark:border-gray-700">
+                                    <i className="fas fa-pen text-sm text-brand-secondary"></i>
                                 </div>
                                 
-                                <div className="mt-auto pt-3 border-t dark:border-gray-700 flex justify-between items-center text-xs text-gray-400">
-                                    <span>ID: {stage.id.substring(0, 8)}...</span>
-                                    {index === 0 && <span className="text-yellow-600 font-semibold bg-yellow-100 dark:bg-yellow-900/30 px-2 py-0.5 rounded">Langkah Utama</span>}
+                                <div className="mt-auto pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                    <span>ID: {stage.id.substring(0, 8)}</span>
+                                    {index === 0 && <span className="text-amber-600 bg-amber-100 dark:bg-amber-900/30 px-3 py-1 rounded-full border border-amber-200 dark:border-amber-800/50">Langkah Utama</span>}
                                 </div>
                             </div>
                         ))}
-                        {stages.length === 0 && <p className="text-gray-500 text-sm italic col-span-full text-center py-8">Belum ada tahapan seleksi.</p>}
+                        {stages.length === 0 && (
+                            <div className="col-span-full py-16 text-center bg-gray-50 dark:bg-gray-800/30 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-700">
+                                <i className="fas fa-layer-group text-4xl text-gray-300 dark:text-gray-600 mb-4 block"></i>
+                                <p className="text-gray-500 dark:text-gray-400 font-medium">Belum ada tahapan seleksi yang dibuat.</p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
 
-            {/* Modal di Render di luar div animasi induk agar tidak terpotong (Stacking Context) */}
-            {isPopupModalOpen && editingStage && (
-                <PopupContentModal 
-                    stage={editingStage} 
-                    onClose={() => setIsPopupModalOpen(false)} 
-                    onSave={handlePopupContentUpdate} 
-                />
-            )}
-
-            <EditModal 
-                isOpen={isModalOpen} 
-                onClose={() => setIsModalOpen(false)} 
-                title={stages.some(s => s.id === editingStage?.id) ? "Edit Tahapan" : "Tambah Tahapan"}
-                onSave={handleSaveStage}
-                onDelete={stages.some(s => s.id === editingStage?.id) && stages.indexOf(editingStage!) !== 0 ? handleDeleteStage : undefined}
-            >
-                {editingStage && (
-                    <div className="space-y-5 pt-1">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <div className="relative input-group">
-                                <input value={editingStage.title} onChange={e => setEditingStage({...editingStage, title: e.target.value})} className={inputClass} placeholder=" " autoFocus/>
-                                <label className={labelClass}>Judul Tahapan</label>
-                            </div>
-                            <div className="relative input-group">
-                                <input value={editingStage.date} onChange={e => setEditingStage({...editingStage, date: e.target.value})} className={inputClass} placeholder=" "/>
-                                <label className={labelClass}>Tanggal Pelaksanaan</label>
-                            </div>
-                        </div>
-                        
-                        <div className="relative input-group">
-                            <textarea value={editingStage.description} onChange={e => setEditingStage({...editingStage, description: e.target.value})} className={inputClass} rows={3} placeholder=" "/>
-                            <label className={labelClass}>Deskripsi Singkat</label>
-                        </div>
-
-                        <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg border dark:border-gray-700">
-                            <h4 className="font-semibold text-brand-primary dark:text-white text-sm mb-3 border-b dark:border-gray-600 pb-2">Konfigurasi Form & Dokumen (Opsional)</h4>
-                            <div className="space-y-4">
-                                <div className="relative input-group">
-                                    <input value={editingStage.formTitle || ''} onChange={e => setEditingStage({...editingStage, formTitle: e.target.value})} className={inputClass} placeholder=" "/>
-                                    <label className={labelClass}>Judul Form Tugas</label>
-                                </div>
-                                <div className="relative input-group">
-                                    <textarea value={editingStage.formDescription || ''} onChange={e => setEditingStage({...editingStage, formDescription: e.target.value})} className={inputClass} rows={2} placeholder=" "/>
-                                    <label className={labelClass}>Deskripsi Form</label>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="relative input-group">
-                                        <input value={editingStage.formViewUrl || ''} onChange={e => setEditingStage({...editingStage, formViewUrl: e.target.value})} className={inputClass} placeholder=" "/>
-                                        <label className={labelClass}>Link Lihat Form (URL)</label>
-                                    </div>
-                                    <div className="relative input-group">
-                                        <input value={editingStage.formDownloadUrl || ''} onChange={e => setEditingStage({...editingStage, formDownloadUrl: e.target.value})} className={inputClass} placeholder=" "/>
-                                        <label className={labelClass}>Link Unduh Form (URL)</label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <button 
-                            onClick={() => setIsPopupModalOpen(true)}
-                            className="w-full py-3 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 rounded-lg border border-indigo-200 dark:border-indigo-700 hover:bg-indigo-200 dark:hover:bg-indigo-900/60 font-semibold text-sm transition-colors flex items-center justify-center gap-2 shadow-sm"
-                        >
-                            <i className="fas fa-comment-alt-lines"></i> Edit Pesan Popup Khusus (Lolos/Gagal/Pending)
-                        </button>
-
-                        {stages.indexOf(editingStage) === 0 && (
-                            <p className="text-xs text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 p-2 rounded border border-yellow-200 dark:border-yellow-800">
-                                Note: Tahap pertama adalah Seleksi Administrasi. Anda tidak dapat menghapusnya, namun dapat mengedit kontennya.
-                            </p>
-                        )}
-                    </div>
+            {/* Modal Container - Rendered at root level of component for full view isolation */}
+            <div id="modal-portal">
+                {isPopupModalOpen && editingStage && (
+                    <PopupContentModal 
+                        stage={editingStage} 
+                        onClose={() => setIsPopupModalOpen(false)} 
+                        onSave={handlePopupContentUpdate} 
+                    />
                 )}
-            </EditModal>
+
+                <EditModal 
+                    isOpen={isModalOpen} 
+                    onClose={() => setIsModalOpen(false)} 
+                    title={stages.some(s => s.id === editingStage?.id) ? "Edit Detail Tahapan" : "Tambah Tahapan Baru"}
+                    onSave={handleSaveStage}
+                    onDelete={stages.some(s => s.id === editingStage?.id) && stages.indexOf(editingStage!) !== 0 ? handleDeleteStage : undefined}
+                >
+                    {editingStage && (
+                        <div className="space-y-6 pt-1">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="relative input-group">
+                                    <input value={editingStage.title} onChange={e => setEditingStage({...editingStage, title: e.target.value})} className={inputClass} placeholder=" " autoFocus/>
+                                    <label className={labelClass}>Judul Tahapan</label>
+                                </div>
+                                <div className="relative input-group">
+                                    <input value={editingStage.date} onChange={e => setEditingStage({...editingStage, date: e.target.value})} className={inputClass} placeholder=" "/>
+                                    <label className={labelClass}>Tanggal Pelaksanaan</label>
+                                </div>
+                            </div>
+                            
+                            <div className="relative input-group">
+                                <textarea value={editingStage.description} onChange={e => setEditingStage({...editingStage, description: e.target.value})} className={inputClass} rows={3} placeholder=" "/>
+                                <label className={labelClass}>Deskripsi Singkat Tahapan</label>
+                            </div>
+
+                            <div className="bg-gray-50 dark:bg-gray-700/30 p-5 rounded-2xl border dark:border-gray-700 space-y-4">
+                                <h4 className="font-bold text-brand-primary dark:text-white text-sm flex items-center gap-2">
+                                    <i className="fas fa-file-alt text-brand-secondary"></i>
+                                    Konfigurasi Form & Dokumen (Opsional)
+                                </h4>
+                                <div className="space-y-5">
+                                    <div className="relative input-group">
+                                        <input value={editingStage.formTitle || ''} onChange={e => setEditingStage({...editingStage, formTitle: e.target.value})} className={inputClass} placeholder=" "/>
+                                        <label className={labelClass}>Judul Form Tugas</label>
+                                    </div>
+                                    <div className="relative input-group">
+                                        <textarea value={editingStage.formDescription || ''} onChange={e => setEditingStage({...editingStage, formDescription: e.target.value})} className={inputClass} rows={2} placeholder=" "/>
+                                        <label className={labelClass}>Deskripsi Form</label>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        <div className="relative input-group">
+                                            <input value={editingStage.formViewUrl || ''} onChange={e => setEditingStage({...editingStage, formViewUrl: e.target.value})} className={inputClass} placeholder=" "/>
+                                            <label className={labelClass}>Link Lihat Form (URL)</label>
+                                        </div>
+                                        <div className="relative input-group">
+                                            <input value={editingStage.formDownloadUrl || ''} onChange={e => setEditingStage({...editingStage, formDownloadUrl: e.target.value})} className={inputClass} placeholder=" "/>
+                                            <label className={labelClass}>Link Unduh Form (URL)</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button 
+                                onClick={() => setIsPopupModalOpen(true)}
+                                className="w-full py-4 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 rounded-2xl border border-indigo-100 dark:border-indigo-800/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 font-bold text-sm transition-all flex items-center justify-center gap-3 shadow-md active:scale-95"
+                            >
+                                <i className="fas fa-comment-dots text-lg"></i> 
+                                Edit Pesan Popup Khusus (Lolos/Gagal/Pending)
+                            </button>
+
+                            {stages.indexOf(editingStage) === 0 && (
+                                <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-100 dark:border-amber-800/50 flex gap-3">
+                                    <i className="fas fa-exclamation-triangle text-amber-600 dark:text-amber-500 mt-0.5"></i>
+                                    <p className="text-xs text-amber-700 dark:text-amber-400 font-medium leading-relaxed">
+                                        Catatan: Tahap pertama adalah Seleksi Administrasi (Sistem Utama). Tahap ini tidak dapat dihapus untuk menjaga integritas data pendaftaran.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </EditModal>
+                </div>
         </>
     );
 };
