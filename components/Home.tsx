@@ -3,7 +3,7 @@ import type { PublicPage, AdminConfig, HomePageUpdate, User, RegistrationData, S
 import { getAdminConfig, getHomeUpdates, getUserRegistration, getSelectionStages, getSupporters } from '../services/firebase';
 
 // --- SILAKAN UBAH URL GAMBAR DI BAWAH INI UNTUK GANTI GAMBAR HERO BERANDA GUEST ---
-const DEFAULT_HERO_IMAGE = "https://images.unsplash.com/photo-1532375810709-75b1da00537c?q=80&w=1000&auto=format&fit=crop";
+const DEFAULT_HERO_IMAGE = "banner.png";
 
 interface HomeProps {
   setCurrentPage: (page: PublicPage) => void;
