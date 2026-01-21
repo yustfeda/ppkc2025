@@ -23,7 +23,8 @@ const AdminManageUsers: React.FC<AdminManageUsersProps> = ({ showNotification, s
         ]).then(([regsData, stagesData]) => {
             const regsArray = regsData ? Object.values(regsData) : [];
             // ONLY show users who have actually submitted their registration (status is not draft 'Belum Mendaftar')
-            const registeredUsers = regsArray.filter(reg => reg.status && reg.status !== 'Belum Mendaftar');
+            // And filter out null entries
+            const registeredUsers = regsArray.filter(reg => reg && reg.status && reg.status !== 'Belum Mendaftar');
             setRegistrations(registeredUsers.sort((a, b) => (b.submittedAt || 0) - (a.submittedAt || 0)));
             setStages(stagesData || []);
             setLoading(false);
@@ -199,18 +200,18 @@ const AdminManageUsers: React.FC<AdminManageUsersProps> = ({ showNotification, s
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
                         {currentItems.length > 0 ? currentItems.map((reg, index) => (
-                            <tr key={reg.uid}>
+                            <tr key={reg?.uid || index}>
                                 <td className="p-3 align-top">{indexOfFirstItem + index + 1}</td>
-                                <td className="p-3 font-medium whitespace-nowrap align-top">{reg.fullName}</td>
-                                <td className="p-3 align-top">{reg.email}</td>
+                                <td className="p-3 font-medium whitespace-nowrap align-top">{reg?.fullName || 'N/A'}</td>
+                                <td className="p-3 align-top">{reg?.email || 'N/A'}</td>
                                 {stages.map((stage, stageIndex) => (
                                     <td key={stage.id} className="p-3 align-top">
-                                        {renderStageCell(reg, stage, stageIndex)}
+                                        {reg && renderStageCell(reg, stage, stageIndex)}
                                     </td>
                                 ))}
                                 <td className="p-3 align-top">
                                     <button 
-                                        onClick={() => handleDeleteWithConfirm(reg.uid, reg.fullName)} 
+                                        onClick={() => reg && handleDeleteWithConfirm(reg.uid, reg.fullName)} 
                                         className="text-gray-400 hover:text-red-500 transition-colors p-1" 
                                         title="Hapus Permanen"
                                     >

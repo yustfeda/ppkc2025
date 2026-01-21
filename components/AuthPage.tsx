@@ -24,6 +24,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ setCurrentPage, showNotification, l
     
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [captchaVerified, setCaptchaVerified] = useState(false);
     const [isVerifyingCaptcha, setIsVerifyingCaptcha] = useState(false);
@@ -130,16 +131,24 @@ const AuthPage: React.FC<AuthPageProps> = ({ setCurrentPage, showNotification, l
                     <div className="relative input-group form-input-bg-light dark:form-input-bg-dark">
                         <input
                             id="password"
-                            type="password"
+                            type={showPassword ? "text" : "password"}
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="peer form-input shadow-inner appearance-none border rounded-xl w-full py-3 px-4 text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-brand-dark dark:border-gray-600 leading-tight focus:outline-none focus:ring-2 focus:ring-brand-accent text-sm"
+                            className="peer form-input shadow-inner appearance-none border rounded-xl w-full py-3 pl-4 pr-12 text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-brand-dark dark:border-gray-600 leading-tight focus:outline-none focus:ring-2 focus:ring-brand-accent text-sm"
                             required
                              placeholder=" "
                         />
                          <label htmlFor="password" className="form-label text-sm">
                             Password
                         </label>
+                        <button 
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-secondary transition-colors focus:outline-none bg-transparent border-none shadow-none"
+                            aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                        >
+                            <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'} text-lg`}></i>
+                        </button>
                     </div>
 
                     {mode === 'register' && (

@@ -121,7 +121,21 @@ export const getAdminConfig = async (): Promise<AdminConfig> => {
 };
 
 export const getHomeUpdates = () => getData<HomePageUpdate[]>('homeUpdates', MOCK_UPDATES);
-export const getRegistrations = () => getData<{[uid: string]: RegistrationData}>('registrations', {});
+
+/**
+ * Mendapatkan semua data registrasi dengan proteksi terhadap entri null/rusak.
+ */
+export const getRegistrations = async (): Promise<{[uid: string]: RegistrationData}> => {
+    const data = await getData<{[uid: string]: RegistrationData}>('registrations', {});
+    const cleaned: {[uid: string]: RegistrationData} = {};
+    if (data) {
+        Object.entries(data).forEach(([key, val]) => {
+            if (val && typeof val === 'object' && val.uid) cleaned[key] = val;
+        });
+    }
+    return cleaned;
+};
+
 export const getUserRegistration = (uid: string) => getData<RegistrationData | null>(`registrations/${uid}`);
 export const getManagedButtons = () => getData<ManagedButton[]>('managedButtons', MOCK_BUTTONS);
 export const getSupporters = () => getData<SupportersSection>('supporters', MOCK_SUPPORTERS_SECTION);
