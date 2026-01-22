@@ -159,7 +159,7 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig, showNotification }) 
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(10);
             doc.text("BUKTI LOLOS SELEKSI", 105, currentY, { align: 'center' });
-            currentY += 20;
+            currentY += 28;
             
             // --- Participant Data & Photo ---
             const dataStartY = currentY;
