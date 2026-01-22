@@ -18,11 +18,11 @@ const AnimatedLogo: React.FC = () => {
                 className="h-7 mr-1"
             />
             <span className="text-xl font-bold">
-                <span className="text-orange-500 font-quicksand tracking-wide">PPKC</span>
+                <span className="text-orange-500 font-quicksand tracking-wide">PPIK</span>
                 <span className="text-brand-logo-blue font-orbitron">
                   202
                   {animate ? (
-                     <span className="inline-block animate-logo-5">5</span>
+                     <span className="inline-block animate-logo-5">6</span>
                   ) : (
                      <span className="inline-block">5</span>
                   )}

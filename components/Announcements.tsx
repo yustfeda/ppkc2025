@@ -132,7 +132,7 @@ const Announcements: React.FC<{ showNotification: (message: string, type: 'succe
                     <h1 className="text-4xl md:text-5xl font-extrabold text-brand-dark dark:text-gray-100 tracking-tight">Pengumuman</h1>
                     <div className="w-20 h-1.5 bg-brand-secondary mx-auto mt-4 rounded-full"></div>
                     <p className="text-lg text-gray-600 dark:text-gray-300 mt-4 max-w-2xl mx-auto">
-                        Informasi resmi, dokumen penting, dan panduan terkait proses seleksi Paskibraka.
+                        Informasi resmi, dokumen penting, dan panduan terkait proses seleksi Paskibra.
                     </p>
                 </div>
                 {documents.length > 0 ? (

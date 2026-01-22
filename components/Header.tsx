@@ -59,7 +59,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, user, onLogout, isSideba
                <AnimatedLogo />
             </div>
             <div className="hidden lg:block">
-                <span className="font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest text-xs">Portal Seleksi Paskibraka</span>
+                <span className="font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest text-xs">Portal Seleksi Paskibra</span>
             </div>
           </div>
 
