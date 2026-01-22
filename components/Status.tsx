@@ -178,7 +178,7 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig, showNotification }) 
             doc.setFontSize(14);
             doc.setTextColor(0, 0, 0);
             doc.text(finalStatement, 105, currentY, { align: 'center', maxWidth: 170 });
-            currentY += 15;
+            currentY += 25;
             
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(10);
