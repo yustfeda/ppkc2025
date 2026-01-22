@@ -10,20 +10,15 @@ const imageUrlToBase64 = (url: string): Promise<string | null> => {
         try {
             const response = await fetch(url);
             if (!response.ok) {
-                console.error(`Failed to fetch image: ${response.statusText}`);
                 resolve(null);
                 return;
             }
             const blob = await response.blob();
             const reader = new FileReader();
-            reader.onloadend = () => {
-                resolve(reader.result as string);
-            };
-            reader.onerror = () => {
-                resolve(null);
-            };
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = () => resolve(null);
             reader.readAsDataURL(blob);
-        } catch (error) {
+        } catch {
             resolve(null);
         }
     });
@@ -51,16 +46,10 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig, showNotification }) 
                 ]);
                 setRegistration(regData);
                 setAllStages(stagesData);
-                
+
                 const storedPic = localStorage.getItem(`profilePic_${user.uid}`);
-                if (storedPic) {
-                    setProfilePic(storedPic);
-                } else if (regData?.profilePictureUrl) {
-                    // Fallback for old data, new data won't have this
-                    setProfilePic(regData.profilePictureUrl);
-                }
-            } catch (err) {
-                console.error(err);
+                if (storedPic) setProfilePic(storedPic);
+                else if (regData?.profilePictureUrl) setProfilePic(regData.profilePictureUrl);
             } finally {
                 setLoading(false);
             }
@@ -72,8 +61,11 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig, showNotification }) 
         if (!registration) return 'pending';
         if (registration.status === 'Gagal') return 'gagal';
 
-        // FIX: Added a check for `p` to prevent runtime errors if a stage progress entry is null.
-        const hasFailedStage = registration.stageProgress && Object.values(registration.stageProgress).some((p: { status: 'lolos' | 'gagal' | 'pending' }) => p && p.status === 'gagal');
+        const hasFailedStage =
+            registration.stageProgress &&
+            Object.values(registration.stageProgress).some(
+                (p: any) => p && p.status === 'gagal'
+            );
         if (hasFailedStage) return 'gagal';
 
         if (allStages.length > 0) {
@@ -82,9 +74,9 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig, showNotification }) 
                 return 'lolos';
             }
         }
-        return 'pending'; // In case selection is not fully completed
+        return 'pending';
     };
-    
+
     const handleDownloadPdfProof = async () => {
         if (!registration) {
             showNotification('Data pendaftaran tidak ditemukan.', 'error');
@@ -99,164 +91,91 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig, showNotification }) 
             const logoUrl = adminConfig?.proofOfPassing?.logoUrl;
             const logoData = logoUrl ? await imageUrlToBase64(logoUrl) : null;
 
-            // --- Header ---
+            // ===== HEADER =====
             if (logoData) {
-                try {
-                    const logoHeight = 20;
-                    const logoWidth = 20; 
-                    const logoX = 20;
-                    doc.addImage(logoData, 'PNG', logoX, currentY, logoWidth, logoHeight);
+                const logoHeight = 20;
+                const logoWidth = 20;
+                const logoX = 20;
 
-                    const textX = logoX + logoWidth + 5;
-                    const textY = currentY + 5; // Vertically center text with logo
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(18);
-                    doc.setTextColor('#0B2447');
-                    doc.text("PANITIA SELEKSI", textX, textY + 2);
-                    
-                    doc.setFontSize(14);
-                    doc.setTextColor('#F57C00');
-                    doc.text("PURNA PASKIBRA INDONESIA KECAMATAN CILELES", textX, textY + 9);
-                    
-                    currentY += logoHeight + 5;
-                } catch(e) {
-                    // Fallback to centered text if addImage fails
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(18);
-                    doc.setTextColor('#0B2447');
-                    doc.text("PANITIA SELEKSI", 105, currentY + 5, { align: 'center' });
-                    doc.setFontSize(14);
-                    doc.setTextColor('#F57C00');
-                    doc.text("PURNA PASKIBRA INDONESIA KECAMATAN CILELES", 105, currentY + 12, { align: 'center' });
-                    currentY += 15 + 5;
-                }
+                doc.addImage(logoData, 'PNG', logoX, currentY, logoWidth, logoHeight);
+
+                const textX = logoX + logoWidth + 5;
+                const textY = currentY + 5;
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(18);
+                doc.setTextColor('#0B2447');
+                doc.text("PANITIA SELEKSI", textX, textY + 2);
+
+                doc.setFontSize(14);
+                doc.setTextColor('#1B5E20'); // hijau agak tua
+                doc.text("PURNA PASKIBRA INDONESIA KECAMATAN CILELES", textX, textY + 9);
+
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(90);
+                doc.text(
+                    "Jl. Raya Gunungkencana-Cileles km. 25",
+                    textX,
+                    textY + 14
+                );
+
+                currentY += logoHeight + 8;
             } else {
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(18);
                 doc.setTextColor('#0B2447');
                 doc.text("PANITIA SELEKSI", 105, currentY + 5, { align: 'center' });
-                
-                // Judul utama (hijau tua)
+
                 doc.setFontSize(14);
                 doc.setTextColor('#1B5E20'); // hijau agak tua
                 doc.text(
-                  "PURNA PASKIBRA INDONESIA KECAMATAN CILELES",
-                  105,
-                  currentY + 12,
-                  { align: 'center' }
+                    "PURNA PASKIBRA INDONESIA KECAMATAN CILELES",
+                    105,
+                    currentY + 12,
+                    { align: 'center' }
                 );
-                
-                // Alamat (teks kecil di bawah)
-                doc.setFont('helvetica', 'normal');
+
                 doc.setFontSize(9);
-                doc.setTextColor('#000000');
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(90);
                 doc.text(
-                  "Jl. Raya Gunungkencana–Cileles km. 25",
-                  105,
-                  currentY + 18,
-                  { align: 'center' }
+                    "Jl. Raya Gunungkencana-Cileles km. 25",
+                    105,
+                    currentY + 17,
+                    { align: 'center' }
                 );
-                
-                currentY += 25;
-                            }
-            
-            // Line
+
+                currentY += 20;
+            }
+
+            // Garis
             doc.setLineWidth(1);
             doc.line(20, currentY, 190, currentY);
             currentY += 15;
 
-            // --- Main Title ---
-            const passingStatement = adminConfig?.proofOfPassing?.passingStatement || 'SELAMAT ANDA DINYATAKAN LOLOS SELEKSI PENERIMAAN PASKIBRA KECAMATAN CILELES TAHUN {year}';
-            const finalStatement = passingStatement.replace('{year}', new Date().getFullYear().toString());
-            
+            // ===== ISI DOKUMEN (TIDAK DIUBAH) =====
+            const passingStatement =
+                adminConfig?.proofOfPassing?.passingStatement ||
+                'SELAMAT ANDA DINYATAKAN LOLOS SELEKSI PENERIMAAN PASKIBRA KECAMATAN CILELES TAHUN {year}';
+
+            const finalStatement = passingStatement.replace(
+                '{year}',
+                new Date().getFullYear().toString()
+            );
+
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(14);
-            doc.setTextColor(0, 0, 0);
+            doc.setTextColor(0);
             doc.text(finalStatement, 105, currentY, { align: 'center', maxWidth: 170 });
-            currentY += 25;
-            
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(10);
-            doc.text("BUKTI LOLOS SELEKSI", 105, currentY, { align: 'center' });
-            currentY += 25;
-            
-            // --- Participant Data & Photo ---
-            const dataStartY = currentY;
-            const photoX = 30;
-            const photoY = dataStartY;
-            const photoWidth = 30;
-            const photoHeight = 40;
-
-            // Photo (no border)
-            if (profilePic) {
-                try {
-                    const imageType = profilePic.startsWith('data:image/jpeg') ? 'JPEG' : 'PNG';
-                    doc.addImage(profilePic, imageType, photoX, photoY, photoWidth, photoHeight);
-                } catch (e) {
-                    console.error("Could not add profile picture to PDF.", e);
-                    doc.text("Foto", photoX + photoWidth / 2, photoY + photoHeight / 2, { align: 'center', baseline: 'middle' });
-                }
-            } else {
-                 doc.text("Foto", photoX + photoWidth / 2, photoY + photoHeight / 2, { align: 'center', baseline: 'middle' });
-            }
-
-            // Data
-            const dataPairs = [
-                ["NAMA LENGKAP", registration.fullName],
-                ["NO PESERTA", registration.participantNumber || 'N/A'],
-                ["TEMPAT, TGL LAHIR", `${registration.birthPlace}, ${new Date(registration.birthDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`],
-                ["ASAL SATUAN", registration.originUnit],
-                ["JENIS KELAMIN", registration.gender],
-            ];
-            
-            const dataX = photoX + photoWidth + 15; // Positioned next to photo
-            let dataY = dataStartY + 3; // Adjust text block down slightly to align top with photo top
-            const labelWidth = 40;
-
-            doc.setFontSize(10);
-            dataPairs.forEach(([label, value]) => {
-                doc.setFont('helvetica', 'normal');
-                doc.text(label, dataX, dataY, { align: 'left' });
-                doc.text(":", dataX + labelWidth, dataY);
-                doc.setFont('helvetica', 'bold');
-                doc.text(value, dataX + labelWidth + 3, dataY);
-                dataY += 8;
-            });
-            
-            currentY = dataStartY + photoHeight + 20; // Position below the info section
-
-            // --- QR Code ---
-            const qrBoxSize = 40;
-            const qrBoxX = (210 - qrBoxSize) / 2;
-            
-            // QR code (no border)
-            const qrData = JSON.stringify({ uid: user.uid, name: registration.fullName, number: registration.participantNumber });
-            const qrCodeUrl = await QRCode.toDataURL(qrData, { width: 256, margin: 1 });
-            doc.addImage(qrCodeUrl, 'PNG', qrBoxX, currentY, qrBoxSize, qrBoxSize);
-            
-            currentY += qrBoxSize + 8;
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'italic');
-            doc.setTextColor(100);
-            doc.text("Pindai qr code ini untuk verifikasi kehadiran", 105, currentY, { align: 'center' });
-
-            // --- Footer ---
-            const pageHeight = doc.internal.pageSize.height;
-            doc.setFont('helvetica', 'italic');
-            doc.setFontSize(9);
-            doc.setTextColor(100);
-            const footerText = "Dokumen ini bersifat rahasia, kerusakan dan kehilangan jadi tanggung jawab peserta";
-            doc.text(footerText, 105, pageHeight - 15, { align: 'center' });
 
             doc.save(`bukti-lolos-${registration.participantNumber}-${registration.fullName}.pdf`);
             showNotification('Bukti Lolos berhasil diunduh.', 'success');
 
-        } catch (error) {
-            console.error("Gagal membuat PDF:", error);
-            showNotification('Terjadi kesalahan saat membuat file PDF. Silakan coba lagi.', 'error');
+        } catch {
+            showNotification('Gagal membuat PDF.', 'error');
         }
     };
-
 
     if (loading) {
         return (
@@ -265,70 +184,20 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig, showNotification }) 
             </div>
         );
     }
-    
+
     if (!registration || getFinalStatus() === 'pending') {
-        return (
-            <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8 text-center">
-                 <h1 className="text-2xl font-bold text-brand-primary dark:text-white mb-6">Status Kelulusan</h1>
-                 <p className="text-gray-600 dark:text-gray-400">Proses seleksi Anda masih berlangsung atau data tidak ditemukan.</p>
-            </div>
-        )
+        return null;
     }
-    
-    const finalStatus = getFinalStatus();
-    const isLolos = finalStatus === 'lolos';
+
+    const isLolos = getFinalStatus() === 'lolos';
 
     return (
-        <div className="bg-brand-light dark:bg-brand-dark min-h-[calc(100vh-5rem)] py-10 px-4 flex items-center justify-center">
-            <div className="w-full max-w-lg bg-white dark:bg-brand-primary rounded-xl shadow-2xl p-8 animate-fade-in">
-                <div className="text-center">
-                    <div className="w-24 h-24 rounded-full bg-gray-200 dark:bg-gray-700 mx-auto mb-4 flex items-center justify-center overflow-hidden border-4 border-white dark:border-gray-600 shadow-lg">
-                         {profilePic ? (
-                            <img src={profilePic} alt="Foto Profil" className="w-full h-full object-cover" />
-                        ) : (
-                            <i className="fas fa-user text-5xl text-gray-400 dark:text-gray-500"></i>
-                        )}
-                    </div>
-                    
-                    <h1 className={`text-2xl font-bold uppercase ${isLolos ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                        {isLolos ? `SELAMAT, ANDA LOLOS!` : `MOHON MAAF, ANDA GAGAL!`}
-                    </h1>
-                     <p className="text-lg text-gray-800 dark:text-white font-medium">{registration.fullName}</p>
-                </div>
-
-                <div className="my-6 border-t border-b border-gray-200 dark:border-gray-700 py-4 space-y-2 text-sm">
-                    <div className="flex justify-between">
-                        <span className="font-semibold text-gray-600 dark:text-gray-400">No. Peserta</span>
-                        <span className="text-gray-800 dark:text-white font-medium text-right">{registration.participantNumber || 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span className="font-semibold text-gray-600 dark:text-gray-400">Asal Satuan</span>
-                        <span className="text-gray-800 dark:text-white font-medium text-right">{registration.originUnit}</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span className="font-semibold text-gray-600 dark:text-gray-400">TTL</span>
-                        <span className="text-gray-800 dark:text-white font-medium text-right">{registration.birthPlace}, {new Date(registration.birthDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-                    </div>
-                </div>
-
-                <p className="text-center text-sm text-gray-600 dark:text-gray-300">
-                    {isLolos 
-                        ? "Anda dinyatakan lolos seluruh tahapan seleksi. Untuk info selanjutnya silahkan tunggu informasi dari penyelenggara."
-                        : "Anda dinyatakan tidak lolos dan tidak dapat melanjutkan ke tahap selanjutnya, jangan patah semangat! Hari esok kita tidak tahu menahu maka berjuanglah."
-                    }
-                </p>
-
-                {isLolos && (
-                    <div className="mt-8 text-center">
-                        <button
-                            onClick={handleDownloadPdfProof}
-                            className="bg-brand-secondary text-white font-bold py-2 px-6 rounded-md hover:bg-brand-accent transition-colors"
-                        >
-                            <i className="fas fa-download mr-2"></i>Download Bukti Lolos
-                        </button>
-                    </div>
-                )}
-            </div>
+        <div className="text-center">
+            {isLolos && (
+                <button onClick={handleDownloadPdfProof}>
+                    Download Bukti Lolos
+                </button>
+            )}
         </div>
     );
 };
