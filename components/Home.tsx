@@ -164,7 +164,7 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage, user, onManagedButtonClick 
                             Official Portal
                         </div>
                         <h1 className="text-xl md:text-5xl lg:text-6xl font-bold text-brand-primary dark:text-gray-100 leading-tight mb-4 sm:mb-6">
-                            Purna Paskibra <br/>
+                            Purna Paskibra Indonesia <br/>
                             <span className="text-red-600 drop-shadow-md">Kecamatan Cileles</span>
                         </h1>
                         <p className="text-xs md:text-lg text-gray-600 dark:text-gray-300 mb-6 sm:mb-8 leading-relaxed max-w-lg mx-auto md:mx-0">
