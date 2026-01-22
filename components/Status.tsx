@@ -126,9 +126,18 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig, showNotification }) 
                     doc.setTextColor('#0B2447');
                     doc.text("PANITIA SELEKSI", 105, currentY + 5, { align: 'center' });
                     doc.setFontSize(14);
-                    doc.setTextColor('#F57C00');
+                    doc.setTextColor('#1B5E20');
                     doc.text("PURNA PASKIBRA INDONESIA KECAMATAN CILELES", 105, currentY + 12, { align: 'center' });
                     currentY += 15 + 5;
+                    doc.setFontSize(9);
+doc.setFont('helvetica', 'normal');
+doc.setTextColor(90);
+doc.text(
+  "Jl. Raya Gunungkencana-Cileles km. 25",
+  105,
+  currentY + 17,
+  { align: 'center' }
+);
                 }
             } else {
                 doc.setFont('helvetica', 'bold');
@@ -139,6 +148,14 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig, showNotification }) 
                 doc.setTextColor('#1B5E20');
                 doc.text("PURNA PASKIBRA INDONESIA KECAMATAN CILELES", 105, currentY + 12, { align: 'center' });
                 currentY += 15 + 5;
+                doc.setFontSize(9);
+doc.setFont('helvetica', 'normal');
+doc.setTextColor(90);
+doc.text(
+  "Jl. Raya Gunungkencana-Cileles km. 25",
+  textX,
+  textY + 14
+);
             }
             
             // Line
