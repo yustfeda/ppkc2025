@@ -51,25 +51,43 @@ const DocumentCard: React.FC<{ doc: AnnouncementDocument; showNotification: (mes
     const convertGoogleDriveLink = (url: string) => {
         if (!url || url === '#') return '#';
         
-        // Regex for /file/d/[ID]/view
+        // 1. Format Standar File (PDF, Image, Zip, etc.) - /file/d/[ID]/view
         const fileDRegex = /drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/;
         const fileDMatch = url.match(fileDRegex);
         if (fileDMatch && fileDMatch[1]) {
             return `https://drive.google.com/uc?export=download&id=${fileDMatch[1]}`;
         }
 
-        // Regex for ?id=[ID] or &id=[ID]
+        // 2. Format Open Link - ?id=[ID]
         const idRegex = /[?&]id=([a-zA-Z0-9_-]+)/;
         const idMatch = url.match(idRegex);
         if (idMatch && idMatch[1]) {
             return `https://drive.google.com/uc?export=download&id=${idMatch[1]}`;
         }
 
+        // 3. Format Google Docs
+        if (url.includes('docs.google.com/document/d/')) {
+            const docId = url.match(/\/document\/d\/([a-zA-Z0-9_-]+)/)?.[1];
+            if (docId) return `https://docs.google.com/document/d/${docId}/export?format=pdf`;
+        }
+
+        // 4. Format Google Sheets
+        if (url.includes('docs.google.com/spreadsheets/d/')) {
+            const sheetId = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/)?.[1];
+            if (sheetId) return `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=xlsx`;
+        }
+
+        // 5. Format Google Slides
+        if (url.includes('docs.google.com/presentation/d/')) {
+            const slideId = url.match(/\/presentation\/d\/([a-zA-Z0-9_-]+)/)?.[1];
+            if (slideId) return `https://docs.google.com/presentation/d/${slideId}/export/pdf`;
+        }
+
         return url;
     };
     
     const handleDownloadClick = () => {
-        showNotification('Proses unduh dimulai...', 'success');
+        showNotification('Proses unduh dimulai secara otomatis...', 'success');
     };
 
     const downloadUrl = doc.fileUrl ? convertGoogleDriveLink(doc.fileUrl) : '#';
@@ -105,7 +123,7 @@ const DocumentCard: React.FC<{ doc: AnnouncementDocument; showNotification: (mes
                      <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="flex-1 text-center bg-white dark:bg-gray-700 text-brand-secondary dark:text-white border border-brand-secondary dark:border-gray-600 px-4 py-2 rounded-lg font-bold hover:bg-brand-secondary hover:text-white transition-all text-sm shadow-sm">
                         <i className="fas fa-external-link-alt mr-2"></i>Buka
                     </a>
-                     <a href={downloadUrl} target="_blank" rel="noopener noreferrer" onClick={handleDownloadClick} className="flex-1 text-center bg-brand-secondary text-white px-4 py-2 rounded-lg font-bold hover:bg-brand-accent transition-all text-sm shadow-md">
+                     <a href={downloadUrl} download target="_blank" rel="noopener noreferrer" onClick={handleDownloadClick} className="flex-1 text-center bg-brand-secondary text-white px-4 py-2 rounded-lg font-bold hover:bg-brand-accent transition-all text-sm shadow-md">
                         <i className="fas fa-download mr-2"></i>Unduh
                     </a>
                 </div>
