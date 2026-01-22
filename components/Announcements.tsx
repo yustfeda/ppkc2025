@@ -49,16 +49,27 @@ const CachedImage: React.FC<{ src: string; alt: string; className: string; id: s
 const DocumentCard: React.FC<{ doc: AnnouncementDocument; showNotification: (message: string, type: 'success' | 'error') => void; }> = ({ doc, showNotification }) => {
     
     const convertGoogleDriveLink = (url: string) => {
-        const regex = /https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/;
-        const match = url.match(regex);
-        if (match && match[1]) {
-            return `https://drive.google.com/uc?export=download&id=${match[1]}`;
+        if (!url || url === '#') return '#';
+        
+        // Regex for /file/d/[ID]/view
+        const fileDRegex = /drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/;
+        const fileDMatch = url.match(fileDRegex);
+        if (fileDMatch && fileDMatch[1]) {
+            return `https://drive.google.com/uc?export=download&id=${fileDMatch[1]}`;
         }
+
+        // Regex for ?id=[ID] or &id=[ID]
+        const idRegex = /[?&]id=([a-zA-Z0-9_-]+)/;
+        const idMatch = url.match(idRegex);
+        if (idMatch && idMatch[1]) {
+            return `https://drive.google.com/uc?export=download&id=${idMatch[1]}`;
+        }
+
         return url;
     };
     
     const handleDownloadClick = () => {
-        showNotification('Download Anda telah dimulai...', 'success');
+        showNotification('Proses unduh dimulai...', 'success');
     };
 
     const downloadUrl = doc.fileUrl ? convertGoogleDriveLink(doc.fileUrl) : '#';
@@ -132,7 +143,7 @@ const Announcements: React.FC<{ showNotification: (message: string, type: 'succe
                     <h1 className="text-4xl md:text-5xl font-extrabold text-brand-dark dark:text-gray-100 tracking-tight">Pengumuman</h1>
                     <div className="w-20 h-1.5 bg-brand-secondary mx-auto mt-4 rounded-full"></div>
                     <p className="text-lg text-gray-600 dark:text-gray-300 mt-4 max-w-2xl mx-auto">
-                        Informasi resmi, dokumen penting, dan panduan terkait proses seleksi Paskibra.
+                        Informasi resmi, dokumen penting, dan panduan terkait proses seleksi Paskibraka.
                     </p>
                 </div>
                 {documents.length > 0 ? (
