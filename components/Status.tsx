@@ -96,6 +96,14 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig, showNotification }) 
             const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
             let currentY = 20;
 
+            // --- PILIHAN WARNA BACKGROUND KERTAS ---
+            // Silakan ganti kode hex di bawah ini (e.g. #FDF5E6) untuk mengubah warna background kertas
+            const PAGE_BG_COLOR = '#FFFFFF'; 
+            if (PAGE_BG_COLOR !== '#FFFFFF') {
+                doc.setFillColor(PAGE_BG_COLOR);
+                doc.rect(0, 0, 210, 297, 'F');
+            }
+
             const logoUrl = adminConfig?.proofOfPassing?.logoUrl;
             const logoData = logoUrl ? await imageUrlToBase64(logoUrl) : null;
 
@@ -114,9 +122,15 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig, showNotification }) 
                     doc.setTextColor('#0B2447');
                     doc.text("PANITIA SELEKSI", textX, textY + 2);
                     
-                    doc.setFontSize(14);
-                    doc.setTextColor('#F57C00');
+                    doc.setFontSize(13);
+                    doc.setTextColor('#006400'); // Hijau Tua
                     doc.text("PURNA PASKIBRA INDONESIA KECAMATAN CILELES", textX, textY + 9);
+
+                    doc.setFontSize(8);
+                    doc.setTextColor(0, 0, 0); // Hitam
+                    doc.setFont('helvetica', 'italic');
+                    doc.text("Jl. Raya Cileles-Gunungkencana Km. 25", textX, textY + 14);
+                    doc.setFont('helvetica', 'bold'); // Reset font ke bold untuk konten selanjutnya
                     
                     currentY += logoHeight + 5;
                 } catch(e) {
@@ -125,37 +139,30 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig, showNotification }) 
                     doc.setFontSize(18);
                     doc.setTextColor('#0B2447');
                     doc.text("PANITIA SELEKSI", 105, currentY + 5, { align: 'center' });
-                    doc.setFontSize(14);
-                    doc.setTextColor('#1B5E20');
+                    doc.setFontSize(13);
+                    doc.setTextColor('#006400'); // Hijau Tua
                     doc.text("PURNA PASKIBRA INDONESIA KECAMATAN CILELES", 105, currentY + 12, { align: 'center' });
-                    currentY += 15 + 5;
-                    doc.setFontSize(9);
-doc.setFont('helvetica', 'normal');
-doc.setTextColor(90);
-doc.text(
-  "Jl. Raya Gunungkencana-Cileles km. 25",
-  105,
-  currentY + 17,
-  { align: 'center' }
-);
+                    doc.setFontSize(8);
+                    doc.setTextColor(0, 0, 0); // Hitam
+                    doc.setFont('helvetica', 'italic');
+                    doc.text("Jl. Raya Cileles-Gunungkencana Km. 25", 105, currentY + 17, { align: 'center' });
+                    doc.setFont('helvetica', 'bold');
+                    currentY += 20 + 5;
                 }
             } else {
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(18);
                 doc.setTextColor('#0B2447');
                 doc.text("PANITIA SELEKSI", 105, currentY + 5, { align: 'center' });
-                doc.setFontSize(14);
-                doc.setTextColor('#1B5E20');
+                doc.setFontSize(13);
+                doc.setTextColor('#006400'); // Hijau Tua
                 doc.text("PURNA PASKIBRA INDONESIA KECAMATAN CILELES", 105, currentY + 12, { align: 'center' });
-                currentY += 15 + 5;
-                doc.setFontSize(9);
-doc.setFont('helvetica', 'normal');
-doc.setTextColor(90);
-doc.text(
-  "Jl. Raya Gunungkencana-Cileles km. 25",
-  textX,
-  textY + 14
-);
+                doc.setFontSize(8);
+                doc.setTextColor(0, 0, 0); // Hitam
+                doc.setFont('helvetica', 'italic');
+                doc.text("Jl. Raya Cileles-Gunungkencana Km. 25", 105, currentY + 17, { align: 'center' });
+                doc.setFont('helvetica', 'bold');
+                currentY += 20 + 5;
             }
             
             // Line
@@ -171,12 +178,12 @@ doc.text(
             doc.setFontSize(14);
             doc.setTextColor(0, 0, 0);
             doc.text(finalStatement, 105, currentY, { align: 'center', maxWidth: 170 });
-            currentY += 25;
+            currentY += 15;
             
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(10);
             doc.text("BUKTI LOLOS SELEKSI", 105, currentY, { align: 'center' });
-            currentY += 25;
+            currentY += 20;
             
             // --- Participant Data & Photo ---
             const dataStartY = currentY;
