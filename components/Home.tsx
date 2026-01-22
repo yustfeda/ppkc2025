@@ -4,7 +4,7 @@ import { getAdminConfig, getHomeUpdates, getUserRegistration, getSelectionStages
 
 // --- SILAKAN UBAH NAMA FILE DI BAWAH INI UNTUK GANTI GAMBAR HERO BERANDA GUEST ---
 // Pastikan file gambar (misalnya hero.png) sudah ada di folder proyek Anda.
-const DEFAULT_HERO_IMAGE = "./hero.png";
+const DEFAULT_HERO_IMAGE = "/profil.png";
 
 interface HomeProps {
   setCurrentPage: (page: PublicPage) => void;

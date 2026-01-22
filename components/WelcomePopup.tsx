@@ -16,7 +16,7 @@ const WelcomePopup: React.FC<WelcomePopupProps> = ({ user, onClose }) => {
     
     const userName = user.displayName || user.email || 'Pengguna';
     const title = `Selamat Datang`;
-    const message = `Selamat datang ${userName}, silahkan lanjutkan untuk menjelajahi alur dari aplikasi dan selamat berproses mendekiawan muda Indonesia.`;
+    const message = `Selamat datang ${userName}, silahkan lanjutkan untuk menjelajahi alur dari aplikasi dan selamat berproses Cendekiawan muda Indonesia.`;
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[1001] p-4" onClick={handleClose}>

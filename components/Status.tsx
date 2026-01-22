@@ -116,7 +116,7 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig, showNotification }) 
                     
                     doc.setFontSize(14);
                     doc.setTextColor('#F57C00');
-                    doc.text("PURNA PASKIBRA KECAMATAN CILELES", textX, textY + 9);
+                    doc.text("PURNA PASKIBRA INDONESIA KECAMATAN CILELES", textX, textY + 9);
                     
                     currentY += logoHeight + 5;
                 } catch(e) {
@@ -127,7 +127,7 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig, showNotification }) 
                     doc.text("PANITIA SELEKSI", 105, currentY + 5, { align: 'center' });
                     doc.setFontSize(14);
                     doc.setTextColor('#F57C00');
-                    doc.text("PURNA PASKIBRA KECAMATAN CILELES", 105, currentY + 12, { align: 'center' });
+                    doc.text("PURNA PASKIBRA INDONESIA KECAMATAN CILELES", 105, currentY + 12, { align: 'center' });
                     currentY += 15 + 5;
                 }
             } else {
@@ -137,7 +137,7 @@ const Status: React.FC<StatusProps> = ({ user, adminConfig, showNotification }) 
                 doc.text("PANITIA SELEKSI", 105, currentY + 5, { align: 'center' });
                 doc.setFontSize(14);
                 doc.setTextColor('#F57C00');
-                doc.text("PURNA PASKIBRA KECAMATAN CILELES", 105, currentY + 12, { align: 'center' });
+                doc.text("PURNA PASKIBRA INDONESIA KECAMATAN CILELES", 105, currentY + 12, { align: 'center' });
                 currentY += 15 + 5;
             }
             
